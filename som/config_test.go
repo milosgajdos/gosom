@@ -10,7 +10,6 @@ import (
 var (
 	// Init to default config
 	c = &Config{
-		Init:     "random",
 		Dims:     []int{2, 3},
 		Grid:     "planar",
 		UShape:   "hexagon",
@@ -21,32 +20,6 @@ var (
 		LCool:    "lin",
 	}
 )
-
-func TestValidateInit(t *testing.T) {
-	assert := assert.New(t)
-
-	errString := "Unsupported SOM initialization type: %s\n"
-	testCases := []struct {
-		init   string
-		expErr bool
-	}{
-		{"random", false},
-		{"linear", false},
-		{"foobar", true},
-	}
-
-	origInit := c.Init
-	for _, tc := range testCases {
-		c.Init = tc.init
-		err := validateConfig(c)
-		if tc.expErr {
-			assert.EqualError(err, fmt.Sprintf(errString, c.Init))
-		} else {
-			assert.NoError(err)
-		}
-	}
-	c.Init = origInit
-}
 
 func TestValidateDims(t *testing.T) {
 	assert := assert.New(t)

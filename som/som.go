@@ -1,6 +1,19 @@
 package som
 
-import "github.com/gonum/matrix/mat64"
+import (
+	"fmt"
+
+	"github.com/gonum/matrix/mat64"
+)
+
+// CodebookInitFunc defines SOM codebook initialization function
+type CodebookInitFunc func(*mat64.Dense, int) (*mat64.Dense, error)
+
+// CoordsInitFunc defines SOM grid coordinates initialization function
+type CoordsInitFunc func(string) (*mat64.Dense, error)
+
+// NeighbFunc defines SOM neighbourhood function
+type NeighbFunc func(float64, float64) float64
 
 // Map is a Self Organizing Map (SOM)
 type Map struct {
@@ -18,12 +31,23 @@ type Map struct {
 	bmus []int
 }
 
-// NewMap creates new SOM based on the provided configuration and data stored in a matrix.
-// It fails with error if the provided configuration is not valid or data matrix passed in is empty.
-func NewMap(c *Config, d mat64.Matrix) (*Map, error) {
+// NewMap creates new SOM based on the provided configuration and input data stored passed in as a
+// parameter. NewMap allows you to pass in SOM codebook init function that is used to initialize
+// SOM codebook vectors to initial values.
+// It returns error if the provided configuration is not valid or data matrix passed in is empty
+// or if the codebook init function passed in is nil.
+func NewMap(c *Config, initFunc CodebookInitFunc, data mat64.Matrix) (*Map, error) {
 	// validate the map configuration
 	if err := validateConfig(c); err != nil {
 		return nil, err
+	}
+	// if nil codebook init function is passed in, use random init
+	if initFunc == nil {
+		return nil, fmt.Errorf("Invalid codebook init function: %v\n", initFunc)
+	}
+	// if input data is empty throw error
+	if data == nil {
+		return nil, fmt.Errorf("Invalid input data: %v\n", data)
 	}
 	return &Map{}, nil
 }

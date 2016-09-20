@@ -1,46 +1,33 @@
 package som
 
-import (
-	"fmt"
+import "fmt"
 
-	"github.com/gonum/matrix/mat64"
-)
-
-// CodebookInitFunc defines SOM codebook initialization function
-type CodebookInitFunc func(mat64.Matrix, int) (*mat64.Dense, error)
-
-// somInit maps SOM init type to its actual implementations
-var somCodebookInit = map[string]CodebookInitFunc{
+// CodebookInit maps SOM init function types to itheir actual implementations
+var CodebookInit = map[string]CodebookInitFunc{
 	"linear": LinInit,
 	"random": RandInit,
 }
 
-// somUshape contains supported SOM unit shapes
-var somUShape = map[string]bool{
+// Ushape contains supported SOM unit shapes
+var UShape = map[string]bool{
 	"hexagon":   true,
 	"rectangle": true,
 }
 
-// CoordsInitFunc defines SOM grid coordinates initialization function
-type CoordsInitFunc func(string) (*mat64.Dense, error)
-
-// somCoordsInit maps supported grid initialization functions to their implementations
-var somCoordsInit = map[string]CoordsInitFunc{
+// CoordsInit maps supported grid coordinates function types to their implementations
+var CoordsInit = map[string]CoordsInitFunc{
 	"planar": PlaneGridCoords,
 }
 
-// NeighbFunc defines SOM neighbourhood function
-type NeighbFunc func(float64, float64) float64
-
-// somNeighb maps supported neighbourhood functions to their implementations
-var somNeighb = map[string]NeighbFunc{
+// Neighb maps supported neighbourhood functions to their implementations
+var Neighb = map[string]NeighbFunc{
 	"gaussian": Gaussian,
 	"bubble":   Bubble,
 	"mexican":  Mexican,
 }
 
-// somLCool defines learning rate cooling strategy
-var somCool = map[string]bool{
+// Cool maps supported cooling strategies
+var Cool = map[string]bool{
 	"lin": true,
 	"exp": true,
 	"inv": true,
@@ -48,8 +35,6 @@ var somCool = map[string]bool{
 
 // Config holds SOM configuration
 type Config struct {
-	// Init specifies SOM initization type: random, linear
-	Init string
 	// Dims specifies SOM dimensions
 	Dims []int
 	// Grid specifies the type of SOM grid: planar
@@ -71,10 +56,6 @@ type Config struct {
 // validateConfig validates SOM configuration.
 // It returns error if any of the config parameters are invalid
 func validateConfig(c *Config) error {
-	// check if the init type is supported
-	if _, ok := somCodebookInit[c.Init]; !ok {
-		return fmt.Errorf("Unsupported SOM initialization type: %s\n", c.Init)
-	}
 	// SOM must have 2 dimensions
 	// TODO: figure out 3D maps
 	if dimLen := len(c.Dims); dimLen != 2 {
@@ -87,11 +68,11 @@ func validateConfig(c *Config) error {
 		}
 	}
 	// check if the supplied grid type is supported
-	if _, ok := somCoordsInit[c.Grid]; !ok {
+	if _, ok := CoordsInit[c.Grid]; !ok {
 		return fmt.Errorf("Unsupported SOM grid type: %s\n", c.Grid)
 	}
 	// check if the supplied unit shape type is supported
-	if _, ok := somUShape[c.UShape]; !ok {
+	if _, ok := UShape[c.UShape]; !ok {
 		return fmt.Errorf("Unsupported SOM unit shape: %s\n", c.UShape)
 	}
 	// initial SOM unit radius must be greater than zero
@@ -99,11 +80,11 @@ func validateConfig(c *Config) error {
 		return fmt.Errorf("Invalid SOM unit radius: %d\n", c.Radius)
 	}
 	// check Radius cooling strategy
-	if _, ok := somCool[c.RCool]; !ok {
+	if _, ok := Cool[c.RCool]; !ok {
 		return fmt.Errorf("Unsupported Radius cooling strategy: %s\n", c.RCool)
 	}
 	// hcheck the supplied neighbourhood function
-	if _, ok := somNeighb[c.NeighbFn]; !ok {
+	if _, ok := Neighb[c.NeighbFn]; !ok {
 		return fmt.Errorf("Unsupported Neighbourhood function: %s\n", c.NeighbFn)
 	}
 	// initial SOM learning rate must be greater than zero
@@ -111,7 +92,7 @@ func validateConfig(c *Config) error {
 		return fmt.Errorf("Invalid SOM learning rate: %d\n", c.LRate)
 	}
 	// check Learning rate cooling strategy
-	if _, ok := somCool[c.LCool]; !ok {
+	if _, ok := Cool[c.LCool]; !ok {
 		return fmt.Errorf("Unsupported Learning rate cooling strategy: %s\n", c.LCool)
 	}
 	return nil

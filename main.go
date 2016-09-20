@@ -71,6 +71,12 @@ func main() {
 		fmt.Printf("Error parsing grid dimensions: %s\n", err)
 		os.Exit(1)
 	}
+	// check if the codebook init is supported
+	cbInitFunc, ok := som.CodebookInit[minit]
+	if !ok {
+		fmt.Printf("Incorrect codebook init requested: %s\n", minit)
+		os.Exit(1)
+	}
 	// load data set from a file in provided path
 	ds, err := dataset.New(input)
 	if err != nil {
@@ -84,7 +90,6 @@ func main() {
 	}
 	// SOM configuration
 	config := &som.Config{
-		Init:     minit,
 		Dims:     mdims,
 		Grid:     grid,
 		UShape:   ushape,
@@ -95,7 +100,7 @@ func main() {
 		LCool:    lcool,
 	}
 	// create new SOM map
-	smap, err := som.NewMap(config, data)
+	smap, err := som.NewMap(config, cbInitFunc, data)
 	if err != nil {
 		fmt.Printf("Failed to create new SOM: %s\n", err)
 		os.Exit(1)
