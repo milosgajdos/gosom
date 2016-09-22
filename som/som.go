@@ -36,7 +36,7 @@ type Map struct {
 // SOM codebook vectors to initial values.
 // It returns error if the provided configuration is not valid or data matrix passed in is empty
 // or if the codebook init function passed in is nil.
-func NewMap(c *Config, initFunc CodebookInitFunc, data mat64.Matrix) (*Map, error) {
+func NewMap(c *Config, initFunc CodebookInitFunc, data *mat64.Dense) (*Map, error) {
 	// validate the map configuration
 	if err := validateConfig(c); err != nil {
 		return nil, err
@@ -49,7 +49,21 @@ func NewMap(c *Config, initFunc CodebookInitFunc, data mat64.Matrix) (*Map, erro
 	if data == nil {
 		return nil, fmt.Errorf("Invalid input data: %v\n", data)
 	}
-	return &Map{}, nil
+	// count the number of map units
+	// TODO: figure out dims if Dims is 0,0
+	mapUnits := 1
+	for _, dim := range c.Dims {
+		mapUnits = mapUnits * dim
+	}
+	// initialize codebook
+	codebook, err := initFunc(data, mapUnits)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to initialize codebook: %s\n", err)
+	}
+	// return pointer to new map
+	return &Map{
+		codebook: codebook,
+	}, nil
 }
 
 // Codebook returns a matrix which contains SOM codebook vectors

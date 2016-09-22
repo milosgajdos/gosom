@@ -15,20 +15,21 @@ func TestRandInit(t *testing.T) {
 	data := []float64{min1, min2, max1, max2}
 	inMx := mat64.NewDense(2, 2, data)
 	assert.NotNil(inMx)
-	_, cols := inMx.Dims()
 
+	_, cols := inMx.Dims()
 	rows := 4
+	// initialize random matrix
 	randMx, err := RandInit(inMx, rows)
 	assert.NotNil(randMx)
 	assert.NoError(err)
 	r, c := randMx.Dims()
 	assert.Equal(rows, r)
 	assert.Equal(cols, c)
-	for i := 0; i < c; i++ {
+	for i := 0; i < cols; i++ {
 		inCol := inMx.ColView(i)
 		randCol := randMx.ColView(i)
-		assert.True(inCol.At(0, 0) <= mat64.Min(randCol))
-		assert.True(inCol.At(1, 0) >= mat64.Max(randCol))
+		assert.True(mat64.Min(inCol) <= mat64.Min(randCol))
+		assert.True(mat64.Max(inCol) >= mat64.Max(randCol))
 	}
 
 	// nil input matrix

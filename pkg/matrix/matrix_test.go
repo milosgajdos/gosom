@@ -9,34 +9,59 @@ import (
 )
 
 var (
-	errInvMx = "Invalid matrix supplied: %v\n"
-	errEmpMx = "Empty matrix supplied: %v\n"
+	errInvMx     = "Invalid matrix supplied: %v\n"
+	errInvColsMx = "Invalid number of columns supplied: %v\n"
+	errInvRowsMx = "Invalid number of rows supplied: %v\n"
+	errExcCols   = "Column count exceeds matrix dimensions: %d\n"
+	errExcRows   = "Row count exceeds matrix dimensions: %d\n"
 )
 
-func TestColsMax(t *testing.T) {
+func TestRowsColsMax(t *testing.T) {
 	assert := assert.New(t)
 
 	data := []float64{1.2, 3.4, 4.5, 6.7, 8.9, 10.0}
 	colsMax := []float64{8.9, 10.0}
+	rowsMax := []float64{3.4, 6.7, 10.0}
 	mx := mat64.NewDense(3, 2, data)
 	assert.NotNil(mx)
-	// check cols
-	max, err := ColsMax(mx)
+
+	rows, cols := mx.Dims()
+	// check cols max
+	max, err := ColsMax(cols, mx)
 	assert.NotNil(max)
 	assert.NoError(err)
 	assert.EqualValues(colsMax, max)
+	// check rows max
+	max, err = RowsMax(rows, mx)
+	assert.NotNil(max)
+	assert.NoError(err)
+	assert.EqualValues(rowsMax, max)
+	// requested number of cols exceeds matrix dims
+	max, err = ColsMax(cols+1, mx)
+	assert.Nil(max)
+	assert.EqualError(err, fmt.Sprintf(errExcCols, cols+1))
+	// requested number of rows exceeds matrix dims
+	max, err = RowsMax(rows+1, mx)
+	assert.Nil(max)
+	assert.EqualError(err, fmt.Sprintf(errExcRows, rows+1))
 	// should get nil back
 	mx = nil
-	max, err = ColsMax(mx)
+	max, err = ColsMax(cols, mx)
+	assert.Nil(max)
+	assert.EqualError(err, fmt.Sprintf(errInvMx, mx))
+	max, err = RowsMax(rows, mx)
 	assert.Nil(max)
 	assert.EqualError(err, fmt.Sprintf(errInvMx, mx))
 	// zero elements in matrix
 	data = []float64{}
 	mx = mat64.NewDense(0, 0, data)
 	assert.NotNil(mx)
-	max, err = ColsMax(mx)
+	max, err = ColsMax(cols, mx)
 	assert.Nil(max)
-	assert.EqualError(err, fmt.Sprintf(errEmpMx, mx))
+	assert.EqualError(err, fmt.Sprintf(errInvColsMx, mx))
+	max, err = RowsMax(rows, mx)
+	assert.Nil(max)
+	assert.EqualError(err, fmt.Sprintf(errInvRowsMx, mx))
 }
 
 func TestColsMin(t *testing.T) {
@@ -44,25 +69,47 @@ func TestColsMin(t *testing.T) {
 
 	data := []float64{1.2, 3.4, 4.5, 6.7, 8.9, 10.0}
 	colsMin := []float64{1.2, 3.4}
+	rowsMin := []float64{1.2, 4.5, 8.9}
 	mx := mat64.NewDense(3, 2, data)
 	assert.NotNil(mx)
+
+	rows, cols := mx.Dims()
 	// check cols
-	min, err := ColsMin(mx)
+	min, err := ColsMin(cols, mx)
 	assert.NotNil(min)
 	assert.NoError(err)
 	assert.EqualValues(colsMin, min)
+	// check rows
+	min, err = RowsMin(rows, mx)
+	assert.NotNil(min)
+	assert.NoError(err)
+	assert.EqualValues(rowsMin, min)
+	// requested number of cols exceeds matrix dims
+	min, err = ColsMax(cols+1, mx)
+	assert.Nil(min)
+	assert.EqualError(err, fmt.Sprintf(errExcCols, cols+1))
+	// requested number of rows exceeds matrix dims
+	min, err = RowsMin(rows+1, mx)
+	assert.Nil(min)
+	assert.EqualError(err, fmt.Sprintf(errExcRows, rows+1))
 	// should get nil back
 	mx = nil
-	min, err = ColsMin(mx)
+	min, err = ColsMin(cols, mx)
+	assert.Nil(min)
+	assert.EqualError(err, fmt.Sprintf(errInvMx, mx))
+	min, err = RowsMin(rows, mx)
 	assert.Nil(min)
 	assert.EqualError(err, fmt.Sprintf(errInvMx, mx))
 	// zero elements in matrix
 	data = []float64{}
 	mx = mat64.NewDense(0, 0, data)
 	assert.NotNil(mx)
-	min, err = ColsMin(mx)
+	min, err = ColsMin(cols, mx)
 	assert.Nil(min)
-	assert.EqualError(err, fmt.Sprintf(errEmpMx, mx))
+	assert.EqualError(err, fmt.Sprintf(errInvColsMx, mx))
+	min, err = RowsMin(rows, mx)
+	assert.Nil(min)
+	assert.EqualError(err, fmt.Sprintf(errInvRowsMx, mx))
 }
 
 func TestMakeRandom(t *testing.T) {
