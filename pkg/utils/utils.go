@@ -28,3 +28,32 @@ func ParseDims(dimString string) ([]int, error) {
 	}
 	return intDims, nil
 }
+
+// IntProduct calculates a product of all items in slice passed in as a parameter
+// It returns 1.0 if the slice is nil or empty.
+func IntProduct(vector []int) int {
+	if len(vector) == 0 || vector == nil {
+		return 1
+	}
+	product := 1
+	for _, v := range vector {
+		product = product * v
+	}
+	return product
+}
+
+// IntCumProduct calculates a cumulative product of all items in slice as a parameter
+// and returns it in a new slice. The origin slice remains unmodified
+// It returns empty slice if either the supplied slice is empty or nil
+func IntCumProduct(vector []int) []int {
+	cumProd := []int{}
+	if len(vector) == 0 || vector == nil {
+		return cumProd
+	}
+	partProd := 1
+	for _, val := range vector {
+		partProd = partProd * val
+		cumProd = append(cumProd, partProd)
+	}
+	return cumProd
+}

@@ -8,7 +8,7 @@ var CodebookInit = map[string]CodebookInitFunc{
 	"random": RandInit,
 }
 
-// Ushape contains supported SOM unit shapes
+// UShape contains supported SOM unit shapes
 var UShape = map[string]bool{
 	"hexagon":   true,
 	"rectangle": true,

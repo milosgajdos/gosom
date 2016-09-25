@@ -31,3 +31,39 @@ func TestParseDims(t *testing.T) {
 		}
 	}
 }
+
+func TestProduct(t *testing.T) {
+	assert := assert.New(t)
+
+	testFloatCases := []struct {
+		vector   []int
+		expected int
+	}{
+		{nil, 1},
+		{[]int{}, 1},
+		{[]int{1, 2, 3}, 6},
+	}
+
+	for _, tc := range testFloatCases {
+		p := IntProduct(tc.vector)
+		assert.EqualValues(p, tc.expected)
+	}
+}
+
+func TestCumProduct(t *testing.T) {
+	assert := assert.New(t)
+
+	testFloatCases := []struct {
+		vector   []int
+		expected []int
+	}{
+		{nil, []int{}},
+		{[]int{}, []int{}},
+		{[]int{1, 2, 3}, []int{1, 2, 6}},
+	}
+
+	for _, tc := range testFloatCases {
+		p := IntCumProduct(tc.vector)
+		assert.EqualValues(p, tc.expected)
+	}
+}

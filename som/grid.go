@@ -44,9 +44,10 @@ func RandInit(inMx *mat64.Dense, rows int) (*mat64.Dense, error) {
 	return outMx, nil
 }
 
-// LinInit returns a matrix initialized to values from a linear space
-// spanned by the values stored in inMx matrix.
-// The returned matrix has rows number of rows and as many columns as inMx.
+// LinInit returns a matrix initialized to values lying in a linear space
+// spanned by the top principal components of the values stored in the matrix passed in
+// as a parameter. The returned matrix has rows number of rows and
+// as many columns as the input matrix passed in as a parameter
 // It fails with error if the new matrix could not be initialized or if inMx is nil.
 func LinInit(inMx *mat64.Dense, rows int) (*mat64.Dense, error) {
 	// if nil matrix is passed in, return error

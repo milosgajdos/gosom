@@ -1,10 +1,12 @@
 package som
 
 import (
+	"errors"
 	"os"
 	"testing"
 
 	"github.com/gonum/matrix/mat64"
+	"github.com/milosgajdos83/gosom/pkg/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,6 +45,10 @@ func TestMain(m *testing.M) {
 	os.Exit(retCode)
 }
 
+func mockInit(d *mat64.Dense, mUnits int) (*mat64.Dense, error) {
+	return nil, errors.New("Test error")
+}
+
 func TestNewMap(t *testing.T) {
 	assert := assert.New(t)
 
@@ -57,24 +63,31 @@ func TestNewMap(t *testing.T) {
 	assert.Nil(m)
 	assert.Error(err)
 	cSom.LCool = origLcool
-	// incorrect init function
+	// when nil init function, use RandInit
 	m, err = NewMap(cSom, nil, dataMx)
-	assert.Nil(m)
-	assert.Error(err)
+	assert.NotNil(m)
+	assert.NoError(err)
 	// incorrect init matrix
 	m, err = NewMap(cSom, RandInit, nil)
 	assert.Nil(m)
 	assert.Error(err)
 	// incorrect number of map units
+	origDims := cSom.Dims
+	cSom.Dims = []int{0, 0}
+	m, err = NewMap(cSom, RandInit, dataMx)
+	assert.NotNil(m)
+	assert.NoError(err)
+	cSom.Dims = origDims
+	// init func that always returns error
+	m, err = NewMap(cSom, mockInit, dataMx)
+	assert.Nil(m)
+	assert.Error(err)
 }
 
 func TestCodebook(t *testing.T) {
 	assert := assert.New(t)
 
-	mapUnits := 1
-	for _, dim := range c.Dims {
-		mapUnits = mapUnits * dim
-	}
+	mapUnits := utils.IntProduct(c.Dims)
 	_, cols := dataMx.Dims()
 	// default config should not throw any errors
 	m, err := NewMap(cSom, RandInit, dataMx)
@@ -85,4 +98,32 @@ func TestCodebook(t *testing.T) {
 	cbRows, cbCols := codebook.Dims()
 	assert.Equal(mapUnits, cbRows)
 	assert.Equal(cols, cbCols)
+}
+
+func TestGridDims(t *testing.T) {
+	assert := assert.New(t)
+
+	uShape := "hexagon"
+	// 1D data with more than one sample
+	data := mat64.NewDense(2, 1, []float64{2, 3})
+	dims, err := gridDims(data, uShape)
+	assert.NoError(err)
+	assert.EqualValues(dims, []int{1, 8})
+	// 2D data with one sample
+	data = mat64.NewDense(1, 2, []float64{2, 3})
+	dims, err = gridDims(data, uShape)
+	assert.NoError(err)
+	assert.EqualValues(dims, []int{2, 2})
+	// 2D+ data with more than one sample
+	data = mat64.NewDense(6, 4, []float64{
+		5.1, 3.5, 1.4, 0.2,
+		4.9, 3.0, 1.4, 0.2,
+		4.7, 3.2, 1.3, 0.2,
+		4.6, 3.1, 1.5, 0.2,
+		5.0, 3.6, 1.4, 0.2,
+		5.4, 3.9, 1.7, 0.4,
+	})
+	dims, err = gridDims(data, uShape)
+	assert.NoError(err)
+	assert.EqualValues(dims, []int{4, 3})
 }
