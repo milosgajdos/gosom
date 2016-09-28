@@ -47,6 +47,93 @@ func TestRandInit(t *testing.T) {
 	assert.Error(err)
 }
 
+func TestMakeXCoords(t *testing.T) {
+	assert := assert.New(t)
+
+	testCases := []struct {
+		mUnits   int
+		xDim     int
+		expected []float64
+	}{
+		{6, 3, []float64{0.0, 0.0, 1.0, 1.0, 2.0, 2.0}},
+		{6, 2, []float64{0.0, 0.0, 0.0, 1.0, 1.0, 1.0}},
+	}
+
+	for _, tc := range testCases {
+		xCoords := makeXCoords(tc.mUnits, tc.xDim)
+		assert.EqualValues(xCoords, tc.expected)
+	}
+}
+
+func TestMakeYCoords(t *testing.T) {
+	assert := assert.New(t)
+
+	testCases := []struct {
+		mUnits   int
+		yDim     int
+		expected []float64
+	}{
+
+		{6, 2, []float64{0.0, 1.0, 0.0, 1.0, 0.0, 1.0}},
+		{6, 3, []float64{0.0, 1.0, 2.0, 0.0, 1.0, 2.0}},
+	}
+
+	for _, tc := range testCases {
+		yCoords := makeYCoords(tc.mUnits, tc.yDim)
+		assert.EqualValues(yCoords, tc.expected)
+	}
+}
+
+func TestPlaneGridCoords(t *testing.T) {
+	assert := assert.New(t)
+
+	// incorrect units shape
+	coords, err := PlaneGridCoords("fooshape", []int{1, 2})
+	assert.Nil(coords)
+	assert.Error(err)
+	// incprrect dimensions
+	coords, err = PlaneGridCoords("hexagon", nil)
+	assert.Nil(coords)
+	assert.Error(err)
+	coords, err = PlaneGridCoords("hexagon", []int{1, 2, 3})
+	assert.Nil(coords)
+	assert.Error(err)
+	// incorrect number of units
+	coords, err = PlaneGridCoords("hexagon", []int{-1, 2})
+	assert.Nil(coords)
+	assert.Error(err)
+	// hexagon shape
+	dims := []int{3, 2}
+	mUnits := dims[0] * dims[1]
+	mDims := len(dims)
+	expMx := mat64.NewDense(mUnits, mDims, []float64{
+		0.0, 0.0,
+		0.5, 0.8660,
+		1.0, 0.0,
+		1.5, 0.8660,
+		2.0, 0.0,
+		2.5, 0.8660})
+	coords, err = PlaneGridCoords("hexagon", dims)
+	assert.NotNil(coords)
+	assert.NoError(err)
+	assert.True(mat64.EqualApprox(coords, expMx, 0.01))
+	// rectangle shape
+	dims = []int{2, 3}
+	mUnits = dims[0] * dims[1]
+	mDims = len(dims)
+	expMx = mat64.NewDense(mUnits, mDims, []float64{
+		0.0, 0.0,
+		0.0, 1.0,
+		0.0, 2.0,
+		1.0, 0.0,
+		1.0, 1.0,
+		1.0, 2.0})
+	coords, err = PlaneGridCoords("rectangle", dims)
+	assert.NotNil(coords)
+	assert.NoError(err)
+	assert.True(mat64.EqualApprox(coords, expMx, 0.01))
+}
+
 func TestLinInit(t *testing.T) {
 	assert := assert.New(t)
 

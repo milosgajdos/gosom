@@ -126,18 +126,19 @@ func PlaneGridCoords(uShape string, dims []int) (*mat64.Dense, error) {
 	if dims == nil || mDims != 2 {
 		return nil, fmt.Errorf("Invalid plane dimensions supplied: %v\n", dims)
 	}
-	mUnits := utils.IntProduct(dims)
-	coords := mat64.NewDense(mUnits, mDims, nil)
 	// we need coordinates pairs [x,y] to populate coords matrix
+	mUnits := utils.IntProduct(dims)
+	if mUnits <= 0 {
+		return nil, fmt.Errorf("Invalid number of units: %d\n", mUnits)
+	}
 	xDim, yDim := dims[0], dims[1]
 	xCoords := makeXCoords(mUnits, xDim)
 	yCoords := makeYCoords(mUnits, yDim)
 	// if hexagon this will make distances of a unit to all its six neighbors equal
 	if strings.EqualFold(uShape, "hexagon") {
 		// offset x-coordinates of every other row by 0.5
-		seq := mUnits / xDim
-		for i := 0; i < seq; i++ {
-			for j := 1 + i*xDim; j < (i+1)*xDim; j += 2 {
+		for i := 0; i < xDim; i++ {
+			for j := i*yDim + 1; j < (i+1)*yDim; j += 2 {
 				xCoords[j] += 0.5
 			}
 		}
@@ -146,7 +147,8 @@ func PlaneGridCoords(uShape string, dims []int) (*mat64.Dense, error) {
 			yCoords[i] *= math.Sqrt(0.75)
 		}
 	}
-	// populate coords matrix with coordinates
+	// init and populate coords matrix with new coordinates
+	coords := mat64.NewDense(mUnits, mDims, nil)
 	coords.SetCol(0, xCoords)
 	coords.SetCol(1, yCoords)
 	return coords, nil
@@ -154,12 +156,14 @@ func PlaneGridCoords(uShape string, dims []int) (*mat64.Dense, error) {
 
 // makeXCoords generates X-coords and returns them in a slice
 // X coordinats look like this: 0 0 0 1 1 1 2 2 2
-func makeXCoords(mUnits, dim int) []float64 {
+func makeXCoords(mUnits, xDim int) []float64 {
 	// allocate coords array
 	x := make([]float64, mUnits)
+	yDim := mUnits / xDim
+	// generate Y-coords
 	val := 0.0
 	for i := 0; i < mUnits; i++ {
-		if i != 0 && i%dim == 0 {
+		if i != 0 && i%yDim == 0 {
 			val += 1.0
 		}
 		x[i] = val
@@ -169,12 +173,13 @@ func makeXCoords(mUnits, dim int) []float64 {
 
 // makeYCoords generates Y-coords and returns them in a slice
 // Y coordinats look like this: 0 1 2 0 1 2 0 1 2
-func makeYCoords(mUnits, dim int) []float64 {
+func makeYCoords(mUnits, yDim int) []float64 {
+	// allocate coords array
 	y := make([]float64, mUnits)
 	// generate Y-coords
 	val := 0.0
 	for i := 0; i < mUnits; i++ {
-		if i != 0 && i%dim == 0 {
+		if i != 0 && i%yDim == 0 {
 			val = 0.0
 		}
 		y[i] = val
