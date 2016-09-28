@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 	os.Exit(retCode)
 }
 
-func mockInit(d *mat64.Dense, mUnits int) (*mat64.Dense, error) {
+func mockInit(d *mat64.Dense, mUnits int, dims []int) (*mat64.Dense, error) {
 	return nil, errors.New("Test error")
 }
 
@@ -75,8 +75,8 @@ func TestNewMap(t *testing.T) {
 	origDims := cSom.Dims
 	cSom.Dims = []int{0, 0}
 	m, err = NewMap(cSom, RandInit, dataMx)
-	assert.NotNil(m)
-	assert.NoError(err)
+	assert.Nil(m)
+	assert.Error(err)
 	cSom.Dims = origDims
 	// init func that always returns error
 	m, err = NewMap(cSom, mockInit, dataMx)
@@ -106,12 +106,12 @@ func TestGridDims(t *testing.T) {
 	uShape := "hexagon"
 	// 1D data with more than one sample
 	data := mat64.NewDense(2, 1, []float64{2, 3})
-	dims, err := gridDims(data, uShape)
+	dims, err := GridDims(data, uShape)
 	assert.NoError(err)
 	assert.EqualValues(dims, []int{1, 8})
 	// 2D data with one sample
 	data = mat64.NewDense(1, 2, []float64{2, 3})
-	dims, err = gridDims(data, uShape)
+	dims, err = GridDims(data, uShape)
 	assert.NoError(err)
 	assert.EqualValues(dims, []int{2, 2})
 	// 2D+ data with more than one sample
@@ -123,7 +123,7 @@ func TestGridDims(t *testing.T) {
 		5.0, 3.6, 1.4, 0.2,
 		5.4, 3.9, 1.7, 0.4,
 	})
-	dims, err = gridDims(data, uShape)
+	dims, err = GridDims(data, uShape)
 	assert.NoError(err)
 	assert.EqualValues(dims, []int{4, 3})
 }

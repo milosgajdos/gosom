@@ -19,7 +19,7 @@ func TestRandInit(t *testing.T) {
 	_, cols := inMx.Dims()
 	rows := 4
 	// initialize random matrix
-	randMx, err := RandInit(inMx, rows)
+	randMx, err := RandInit(inMx, rows, nil)
 	assert.NotNil(randMx)
 	assert.NoError(err)
 	r, c := randMx.Dims()
@@ -33,16 +33,36 @@ func TestRandInit(t *testing.T) {
 	}
 
 	// nil input matrix
-	randMx, err = RandInit(nil, rows)
+	randMx, err = RandInit(nil, rows, nil)
 	assert.Nil(randMx)
 	assert.Error(err)
 	// negative number of rows
-	randMx, err = RandInit(inMx, -9)
+	randMx, err = RandInit(inMx, -9, nil)
 	assert.Nil(randMx)
 	assert.Error(err)
 	// empty matrix
 	emptyMx := mat64.NewDense(0, 0, nil)
-	randMx, err = RandInit(emptyMx, 10)
+	randMx, err = RandInit(emptyMx, 10, nil)
 	assert.Nil(randMx)
+	assert.Error(err)
+}
+
+func TestLinInit(t *testing.T) {
+	assert := assert.New(t)
+
+	//inMx := mat64.NewDense(3, 4, []float64{
+	//	5.1, 3.5, 1.4, 0.2,
+	//	4.9, 3.0, 1.4, 0.2,
+	//	4.7, 3.2, 1.3, 0.2,
+	//})
+	//rows, cols := inMx.Dims()
+
+	linMx, err := LinInit(nil, 10, nil)
+	assert.Nil(linMx)
+	assert.Error(err)
+	// insufficient number of samples
+	inMx := mat64.NewDense(1, 2, []float64{1, 1})
+	linMx, err = LinInit(inMx, 10, nil)
+	assert.Nil(linMx)
 	assert.Error(err)
 }
