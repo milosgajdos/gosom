@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/gonum/matrix/mat64"
-	"github.com/milosgajdos83/gosom/pkg/utils"
+	"github.com/esemsch/gosom/pkg/utils"
 	"github.com/stretchr/testify/assert"
 )
 

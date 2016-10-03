@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/milosgajdos83/gosom/pkg/dataset"
-	"github.com/milosgajdos83/gosom/pkg/utils"
-	"github.com/milosgajdos83/gosom/som"
+	"github.com/esemsch/gosom/pkg/dataset"
+	"github.com/esemsch/gosom/pkg/utils"
+	"github.com/esemsch/gosom/som"
 )
 
 var (

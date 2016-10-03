@@ -8,7 +8,7 @@ import (
 	"github.com/gonum/floats"
 	"github.com/gonum/matrix/mat64"
 	"github.com/gonum/stat"
-	"github.com/milosgajdos83/gosom/pkg/utils"
+	"github.com/esemsch/gosom/pkg/utils"
 )
 
 // CodebookInitFunc defines SOM codebook initialization function

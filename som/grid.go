@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gonum/matrix/mat64"
-	"github.com/milosgajdos83/gosom/pkg/matrix"
+	"github.com/esemsch/gosom/pkg/matrix"
 )
 
 // RandInit returns a matrix initialized to uniformly distributed random values
