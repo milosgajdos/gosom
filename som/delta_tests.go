@@ -1,9 +1,32 @@
 package som
 
 import "fmt"
+import "github.com/gonum/matrix/mat64"
 
 func RunDeltaTests() {
 	configDeltaTests()
+	gridDeltaTests()
+}
+
+func gridDeltaTests() {
+	min1, max1 := 1.2, 4.5
+	min2, max2 := 3.4, 6.7
+	data := []float64{min1, min2, max1, max2}
+	inMx := mat64.NewDense(2, 2, data)
+	rows := 4
+	fmt.Println(inMx)
+
+	// initialize random matrix
+	fmt.Println(RandInit(inMx, rows))
+
+	// nil input matrix
+	fmt.Println(RandInit(nil, rows))
+	// negative number of rows
+	fmt.Println(RandInit(inMx, -9))
+	// empty matrix
+	emptyMx := mat64.NewDense(0, 0, nil)
+	fmt.Println(RandInit(emptyMx, 10))
+
 }
 
 func defaultConfig() *Config {
