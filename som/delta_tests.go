@@ -1,11 +1,49 @@
 package som
 
 import "fmt"
+
+import "errors"
+
+//import "os"
+
 import "github.com/gonum/matrix/mat64"
+
+//import "github.com/esemsch/gosom/pkg/utils"
 
 func RunDeltaTests() {
 	configDeltaTests()
 	gridDeltaTests()
+	somDeltaTests()
+}
+
+func somDeltaTests() {
+	// default config should not throw any errors
+	fmt.Println(NewMap(defaultConfig(), RandInit, inputData()))
+	// incorrect config
+	origLcool := defaultConfig().LCool
+	defaultConfig().LCool = "foobar"
+	fmt.Println(NewMap(defaultConfig(), RandInit, inputData()))
+	defaultConfig().LCool = origLcool
+	// when nil init function, use RandInit
+	fmt.Println(NewMap(defaultConfig(), nil, inputData()))
+	// incorrect init matrix
+	fmt.Println(NewMap(defaultConfig(), RandInit, nil))
+	// incorrect number of map units
+	origDims := defaultConfig().Dims
+	defaultConfig().Dims = []int{0, 0}
+	fmt.Println(NewMap(defaultConfig(), RandInit, inputData()))
+	defaultConfig().Dims = origDims
+	// init func that always returns error
+	fmt.Println(NewMap(defaultConfig(), func(inMx *mat64.Dense, rows int) (*mat64.Dense, error) { return nil, errors.New("Failed") }, inputData()))
+}
+
+func inputData() *mat64.Dense {
+	data := []float64{5.1, 3.5, 1.4, 0.1,
+		4.9, 3.0, 1.4, 0.2,
+		4.7, 3.2, 1.3, 0.3,
+		4.6, 3.1, 1.5, 0.4,
+		5.0, 3.6, 1.4, 0.5}
+	return mat64.NewDense(5, 4, data)
 }
 
 func gridDeltaTests() {
