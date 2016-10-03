@@ -5,7 +5,115 @@ import (
 	"math/rand"
 
 	"github.com/gonum/matrix/mat64"
+	"github.com/gonum/stat"
 )
+
+// ColsMax returns a slice of max values of first cols number of matrix columns
+// It returns error if passed in matrix is nil, has zero size or requested number
+// of columns exceeds the number of columns in the matrix passed in as parameter.
+func ColsMax(cols int, m *mat64.Dense) ([]float64, error) {
+	return withValidCols(cols, m, mat64.Max)
+}
+
+// ColsMin returns a slice of min values of first cols number of matrix columns
+// It returns error if passed in matrix is nil, has zero size or requested number
+// of columns exceeds the number of columns in the matrix passed in as parameter.
+func ColsMin(cols int, m *mat64.Dense) ([]float64, error) {
+	return withValidCols(cols, m, mat64.Min)
+}
+
+// ColsMean returns a slice of mean values of first cols number of matrix columns
+// It returns error if passed in matrix is nil, has zero size or requested number
+// of columns exceeds the number of columns in the matrix passed in as parameter.
+func ColsMean(cols int, m *mat64.Dense) ([]float64, error) {
+	return withValidCols(cols, m, mean)
+}
+
+// ColsStdev returns a slice of standard deviatioasn of first cols number of matrix columns
+// It returns error if passed in matrix is nil, has zero size or requested number
+// of columns exceeds the number of columns in the matrix passed in as parameter.
+func ColsStdev(cols int, m *mat64.Dense) ([]float64, error) {
+	return withValidCols(cols, m, stdev)
+}
+
+// RowsMax returns a slice of max values of first rows number of matrix rows.
+// It returns error if passed in matrix is nil, has zero size or requested number
+// of rows exceeds the number of rows in the matrix passed in as parameter.
+func RowsMax(rows int, m *mat64.Dense) ([]float64, error) {
+	return withValidRows(rows, m, mat64.Max)
+}
+
+// RowsMin returns a slice of min values of first rows number of matrix rows.
+// It returns error if passed in matrix is nil, has zero size or requested number
+// of rows exceeds the number of rows in the matrix passed in as parameter.
+func RowsMin(rows int, m *mat64.Dense) ([]float64, error) {
+	return withValidRows(rows, m, mat64.Min)
+}
+
+// MakeRandom creates a new matrix rows x cols matrix which is initialized
+// to random numbers uniformly distributed in interval [min, max].
+// MakeRandom fails if invalid matrix dimensions are requested.
+func MakeRandom(rows, cols int, min, max float64) (*mat64.Dense, error) {
+	return withValidDims(rows, cols, func() (*mat64.Dense, error) {
+		// set random seed
+		rand.Seed(55)
+		// allocate data slice
+		randVals := make([]float64, rows*cols)
+		for i := range randVals {
+			// we need value between 0 and 1.0
+			randVals[i] = rand.Float64()*(max-min) + min
+		}
+		return mat64.NewDense(rows, cols, randVals), nil
+	})
+}
+
+// MakeConstant returns a matrix of rows x cols whose each element is set to val.
+// MakeConstant fails if invalid matrix dimensions are requested.
+func MakeConstant(rows, cols int, val float64) (*mat64.Dense, error) {
+	return withValidDims(rows, cols, func() (*mat64.Dense, error) {
+		// allocate zero matrix and set every element to val
+		constMx := mat64.NewDense(rows, cols, nil)
+		for i := 0; i < rows; i++ {
+			for j := 0; j < cols; j++ {
+				constMx.Set(i, j, val)
+			}
+		}
+		return constMx, nil
+	})
+}
+
+// AddConst adds a constant value to every element of matrix
+// It modifies the matrix passed in.
+// AddConstant fails with error if empty matrix is supplied
+func AddConst(val float64, m *mat64.Dense) (*mat64.Dense, error) {
+	if m == nil {
+		return nil, fmt.Errorf("Invalid matrix supplied: %v\n", m)
+	}
+	rows, cols := m.Dims()
+	return withValidDims(rows, cols, func() (*mat64.Dense, error) {
+		// allocate zero matrix and set every element to val
+		for i := 0; i < rows; i++ {
+			for j := 0; j < cols; j++ {
+				m.Set(i, j, m.At(i, j)+val)
+			}
+		}
+		return m, nil
+	})
+}
+
+// returns a mean valur for a given matrix
+func mean(m mat64.Matrix) float64 {
+	r, c := m.Dims()
+	return mat64.Sum(m) / (float64(r) * float64(c))
+}
+
+// returns a mean valur for a given matrix
+func stdev(m mat64.Matrix) float64 {
+	r, _ := m.Dims()
+	col := make([]float64, r)
+	mat64.Col(col, 0, m)
+	return stat.StdDev(col, nil)
+}
 
 // colsFn applies function fn on each column, collects the results into slice and returns it
 func colsFn(cols int, m *mat64.Dense, fn func(mat64.Matrix) float64) []float64 {
@@ -74,64 +182,4 @@ func withValidDims(rows, cols int, fn func() (*mat64.Dense, error)) (*mat64.Dens
 		return nil, fmt.Errorf("Invalid number of columns: %d\n", cols)
 	}
 	return fn()
-}
-
-// ColsMax returns a slice of max values of first cols number of matrix columns
-// It returns error if passed in matrix is nil, has zero size or requested number
-// of columns exceeds the number of columns in the matrix passed in as parameter.
-func ColsMax(cols int, m *mat64.Dense) ([]float64, error) {
-	return withValidCols(cols, m, mat64.Max)
-}
-
-// ColsMin returns a slice of min values of first cols number of matrix olumns
-// It returns error if passed in matrix is nil, has zero size or requested number
-// of columns exceeds the number of columns in the matrix passed in as parameter.
-func ColsMin(cols int, m *mat64.Dense) ([]float64, error) {
-	return withValidCols(cols, m, mat64.Min)
-}
-
-// RowsMax returns a slice of max values of first rows number of matrix rows.
-// It returns error if passed in matrix is nil, has zero size or requested number
-// of rows exceeds the number of rows in the matrix passed in as parameter.
-func RowsMax(rows int, m *mat64.Dense) ([]float64, error) {
-	return withValidRows(rows, m, mat64.Max)
-}
-
-// RowsMin returns a slice of min values of first rows number of matrix rows.
-// It returns error if passed in matrix is nil, has zero size or requested number
-// of rows exceeds the number of rows in the matrix passed in as parameter.
-func RowsMin(rows int, m *mat64.Dense) ([]float64, error) {
-	return withValidRows(rows, m, mat64.Min)
-}
-
-// MakeRandom creates a new matrix rows x cols matrix which is initialized
-// to random numbers uniformly distributed in interval [min, max].
-// MakeRandom fails if invalid matrix dimensions are requested.
-func MakeRandom(rows, cols int, min, max float64) (*mat64.Dense, error) {
-	return withValidDims(rows, cols, func() (*mat64.Dense, error) {
-		// set random seed
-		rand.Seed(55)
-		// allocate data slice
-		randVals := make([]float64, rows*cols)
-		for i := range randVals {
-			// we need value between 0 and 1.0
-			randVals[i] = rand.Float64()*(max-min) + min
-		}
-		return mat64.NewDense(rows, cols, randVals), nil
-	})
-}
-
-// MakeConstant returns a matrix of rows x cols whose each element is set to val.
-// MakeConstant fails if invalid matrix dimensions are requested.
-func MakeConstant(rows, cols int, val float64) (*mat64.Dense, error) {
-	return withValidDims(rows, cols, func() (*mat64.Dense, error) {
-		// allocate zero matrix and set every element to val
-		constMx := mat64.NewDense(rows, cols, nil)
-		for i := 0; i < rows; i++ {
-			for j := 0; j < cols; j++ {
-				constMx.Set(i, j, val)
-			}
-		}
-		return constMx, nil
-	})
 }

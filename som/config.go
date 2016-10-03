@@ -16,7 +16,7 @@ var UShape = map[string]bool{
 
 // CoordsInit maps supported grid coordinates function types to their implementations
 var CoordsInit = map[string]CoordsInitFunc{
-	"planar": PlaneGridCoords,
+	"planar": GridCoords,
 }
 
 // Neighb maps supported neighbourhood functions to their implementations

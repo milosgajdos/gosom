@@ -8,7 +8,7 @@ import (
 )
 
 // CodebookInitFunc defines SOM codebook initialization function
-type CodebookInitFunc func(*mat64.Dense, int, []int) (*mat64.Dense, error)
+type CodebookInitFunc func(*mat64.Dense, []int) (*mat64.Dense, error)
 
 // CoordsInitFunc defines SOM grid coordinates initialization function
 type CoordsInitFunc func(string, []int) (*mat64.Dense, error)
@@ -56,15 +56,9 @@ func NewMap(c *Config, initFunc CodebookInitFunc, data *mat64.Dense) (*Map, erro
 		return nil, fmt.Errorf("Incorrect map size dimensions: %v\n", c.Dims)
 	}
 	// initialize codebook
-	codebook, err := initFunc(data, mUnits, c.Dims)
+	codebook, err := initFunc(data, c.Dims)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to initialize codebook: %s\n", err)
-	}
-	// codebook vectors must have same number of dimensions as data
-	_, dataDim := data.Dims()
-	_, cbCols := codebook.Dims()
-	if cbCols != dataDim {
-		return nil, fmt.Errorf("")
 	}
 	// return pointer to new map
 	return &Map{
