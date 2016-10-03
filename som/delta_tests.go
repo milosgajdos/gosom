@@ -18,23 +18,23 @@ func RunDeltaTests() {
 
 func somDeltaTests() {
 	// default config should not throw any errors
-	fmt.Println(NewMap(defaultConfig(), RandInit, inputData()))
+	printD(NewMap(defaultConfig(), RandInit, inputData()))
 	// incorrect config
 	origLcool := defaultConfig().LCool
 	defaultConfig().LCool = "foobar"
-	fmt.Println(NewMap(defaultConfig(), RandInit, inputData()))
+	printD(NewMap(defaultConfig(), RandInit, inputData()))
 	defaultConfig().LCool = origLcool
 	// when nil init function, use RandInit
-	fmt.Println(NewMap(defaultConfig(), nil, inputData()))
+	printD(NewMap(defaultConfig(), nil, inputData()))
 	// incorrect init matrix
-	fmt.Println(NewMap(defaultConfig(), RandInit, nil))
+	printD(NewMap(defaultConfig(), RandInit, nil))
 	// incorrect number of map units
 	origDims := defaultConfig().Dims
 	defaultConfig().Dims = []int{0, 0}
-	fmt.Println(NewMap(defaultConfig(), RandInit, inputData()))
+	printD(NewMap(defaultConfig(), RandInit, inputData()))
 	defaultConfig().Dims = origDims
 	// init func that always returns error
-	fmt.Println(NewMap(defaultConfig(), func(inMx *mat64.Dense, rows int) (*mat64.Dense, error) { return nil, errors.New("Failed") }, inputData()))
+	printD(NewMap(defaultConfig(), func(inMx *mat64.Dense, rows int) (*mat64.Dense, error) { return nil, errors.New("Failed") }, inputData()))
 }
 
 func inputData() *mat64.Dense {
@@ -52,18 +52,18 @@ func gridDeltaTests() {
 	data := []float64{min1, min2, max1, max2}
 	inMx := mat64.NewDense(2, 2, data)
 	rows := 4
-	fmt.Println(inMx)
+	printD(inMx)
 
 	// initialize random matrix
-	fmt.Println(RandInit(inMx, rows))
+	printD(RandInit(inMx, rows))
 
 	// nil input matrix
-	fmt.Println(RandInit(nil, rows))
+	printD(RandInit(nil, rows))
 	// negative number of rows
-	fmt.Println(RandInit(inMx, -9))
+	printD(RandInit(inMx, -9))
 	// empty matrix
 	emptyMx := mat64.NewDense(0, 0, nil)
-	fmt.Println(RandInit(emptyMx, 10))
+	printD(RandInit(emptyMx, 10))
 
 }
 
@@ -81,10 +81,10 @@ func defaultConfig() *Config {
 }
 
 func configDeltaTests() {
-	fmt.Println("Default config")
-	fmt.Println(validateConfig(defaultConfig()))
+	printD("Default config")
+	printD(validateConfig(defaultConfig()))
 
-	fmt.Println("Dims")
+	printD("Dims")
 	for _, t := range [][]int{
 		[]int{1},
 		[]int{},
@@ -93,20 +93,20 @@ func configDeltaTests() {
 	} {
 		c := defaultConfig()
 		c.Dims = t
-		fmt.Println(validateConfig(c))
+		printD(validateConfig(c))
 	}
 
-	fmt.Println("Grid")
+	printD("Grid")
 	for _, t := range []string{
 		"planar",
 		"foobar",
 	} {
 		c := defaultConfig()
 		c.Grid = t
-		fmt.Println(validateConfig(c))
+		printD(validateConfig(c))
 	}
 
-	fmt.Println("UShape")
+	printD("UShape")
 	for _, t := range []string{
 		"hexagon",
 		"foobar",
@@ -114,10 +114,10 @@ func configDeltaTests() {
 	} {
 		c := defaultConfig()
 		c.UShape = t
-		fmt.Println(validateConfig(c))
+		printD(validateConfig(c))
 	}
 
-	fmt.Println("Radius")
+	printD("Radius")
 	for _, t := range []int{
 		1,
 		-10,
@@ -125,10 +125,10 @@ func configDeltaTests() {
 	} {
 		c := defaultConfig()
 		c.Radius = t
-		fmt.Println(validateConfig(c))
+		printD(validateConfig(c))
 	}
 
-	fmt.Println("RCool")
+	printD("RCool")
 	for _, t := range []string{
 		"lin",
 		"foobar",
@@ -137,10 +137,10 @@ func configDeltaTests() {
 	} {
 		c := defaultConfig()
 		c.RCool = t
-		fmt.Println(validateConfig(c))
+		printD(validateConfig(c))
 	}
 
-	fmt.Println("NeighbFn")
+	printD("NeighbFn")
 	for _, t := range []string{
 		"gaussian",
 		"foobar",
@@ -149,10 +149,10 @@ func configDeltaTests() {
 	} {
 		c := defaultConfig()
 		c.NeighbFn = t
-		fmt.Println(validateConfig(c))
+		printD(validateConfig(c))
 	}
 
-	fmt.Println("LRate")
+	printD("LRate")
 	for _, t := range []int{
 		1,
 		-10,
@@ -160,10 +160,10 @@ func configDeltaTests() {
 	} {
 		c := defaultConfig()
 		c.LRate = t
-		fmt.Println(validateConfig(c))
+		printD(validateConfig(c))
 	}
 
-	fmt.Println("LCool")
+	printD("LCool")
 	for _, t := range []string{
 		"lin",
 		"exp",
@@ -172,6 +172,10 @@ func configDeltaTests() {
 	} {
 		c := defaultConfig()
 		c.LCool = t
-		fmt.Println(validateConfig(c))
+		printD(validateConfig(c))
 	}
+}
+
+func printD(args ...interface{}) {
+	fmt.Printf("%s\n", args...)
 }
