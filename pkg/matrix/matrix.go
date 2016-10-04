@@ -5,108 +5,54 @@ import (
 	"math/rand"
 
 	"github.com/gonum/matrix/mat64"
+	"github.com/gonum/stat"
 )
-
-// colsFn applies function fn on each column, collects the results into slice and returns it
-func colsFn(cols int, m *mat64.Dense, fn func(mat64.Matrix) float64) []float64 {
-	res := make([]float64, cols)
-	for i := 0; i < cols; i++ {
-		res[i] = fn(m.ColView(i))
-	}
-	return res
-}
-
-// rowsFn applies function fn on each row, collects the results into slice and returns it
-func rowsFn(rows int, m *mat64.Dense, fn func(mat64.Matrix) float64) []float64 {
-	res := make([]float64, rows)
-	for i := 0; i < rows; i++ {
-		res[i] = fn(m.RowView(i))
-	}
-	return res
-}
-
-// withValidCols validates that the passed in matrix is non-nil, has non-zero number of columns
-// and executes the fn function on count number of matrix columns. It collects the results of
-// each calculation and returns it in a slice.
-// It returns error if either the passed in matrix is nil, has zero size or requested number of
-// columns is larger than the number of matrix columns.
-func withValidCols(count int, m *mat64.Dense, fn func(mat64.Matrix) float64) ([]float64, error) {
-	if m == nil {
-		return nil, fmt.Errorf("Invalid matrix supplied: %v\n", m)
-	}
-	_, cols := m.Dims()
-	if cols == 0 {
-		return nil, fmt.Errorf("Invalid number of columns supplied: %v\n", m)
-	}
-	if count > cols {
-		return nil, fmt.Errorf("Column count exceeds matrix dimensions: %d\n", count)
-	}
-	return colsFn(count, m, fn), nil
-}
-
-// withValidRows validates that the passed in matrix is non-nil, has non-zero number of rows
-// and executes the fn function on count number of matrix rows. It collects the results of
-// each calculation and returns it in a slice.
-// It returns error if either the passed in matrix is nil, has zero size or requested number of
-// rows is larger than the number of matrix rows.
-func withValidRows(count int, m *mat64.Dense, fn func(mat64.Matrix) float64) ([]float64, error) {
-	if m == nil {
-		return nil, fmt.Errorf("Invalid matrix supplied: %v\n", m)
-	}
-	rows, _ := m.Dims()
-	if rows == 0 {
-		return nil, fmt.Errorf("Invalid number of rows supplied: %v\n", m)
-	}
-	if count > rows {
-		return nil, fmt.Errorf("Row count exceeds matrix dimensions: %d\n", count)
-	}
-	return rowsFn(count, m, fn), nil
-}
-
-// withValidDims validates the requested rows and cols matrix dimensions
-// It treturns error if either rows or cols are non-positive integers
-func withValidDims(rows, cols int, fn func() (*mat64.Dense, error)) (*mat64.Dense, error) {
-	// can not create matrix with negative dimensions
-	if rows <= 0 {
-		return nil, fmt.Errorf("Invalid number of rows: %d\n", rows)
-	}
-	if cols <= 0 {
-		return nil, fmt.Errorf("Invalid number of columns: %d\n", cols)
-	}
-	return fn()
-}
 
 // ColsMax returns a slice of max values of first cols number of matrix columns
 // It returns error if passed in matrix is nil, has zero size or requested number
 // of columns exceeds the number of columns in the matrix passed in as parameter.
 func ColsMax(cols int, m *mat64.Dense) ([]float64, error) {
-	return withValidCols(cols, m, mat64.Max)
+	return withValidDim("cols", cols, m, mat64.Max)
 }
 
-// ColsMin returns a slice of min values of first cols number of matrix olumns
+// ColsMin returns a slice of min values of first cols number of matrix columns
 // It returns error if passed in matrix is nil, has zero size or requested number
 // of columns exceeds the number of columns in the matrix passed in as parameter.
 func ColsMin(cols int, m *mat64.Dense) ([]float64, error) {
-	return withValidCols(cols, m, mat64.Min)
+	return withValidDim("cols", cols, m, mat64.Min)
 }
 
-// RowsMax returns a slice of max values of first rows number of matrix rows.
-// It returns error if passed in matrix is nil, has zero size or requested number
-// of rows exceeds the number of rows in the matrix passed in as parameter.
+// ColsMean returns a slice of mean values of first cols matrix columns
+// It returns error if passed in matrix is nil or has zero size or requested number
+// of columns exceeds the number of columns in matrix m.
+func ColsMean(cols int, m *mat64.Dense) ([]float64, error) {
+	return withValidDim("cols", cols, m, mean)
+}
+
+// ColsStdev returns a slice of standard deviations of first cols matrix columns
+// It returns error if passed in matrix is nil or has zero size or requested number
+// of columns exceeds the number of columns in matrix m.
+func ColsStdev(cols int, m *mat64.Dense) ([]float64, error) {
+	return withValidDim("cols", cols, m, stdev)
+}
+
+// RowsMax returns a slice of max values of first rows matrix rows.
+// It returns error if passed in matrix is nil or has zero size or requested number
+// of rows exceeds the number of rows in matrix m.
 func RowsMax(rows int, m *mat64.Dense) ([]float64, error) {
-	return withValidRows(rows, m, mat64.Max)
+	return withValidDim("rows", rows, m, mat64.Max)
 }
 
-// RowsMin returns a slice of min values of first rows number of matrix rows.
-// It returns error if passed in matrix is nil, has zero size or requested number
-// of rows exceeds the number of rows in the matrix passed in as parameter.
+// RowsMin returns a slice of min values of first rows matrix rows.
+// It returns error if passed in matrix is nil or has zero size or requested number
+// of rows exceeds the number of rows in matrix m.
 func RowsMin(rows int, m *mat64.Dense) ([]float64, error) {
-	return withValidRows(rows, m, mat64.Min)
+	return withValidDim("rows", rows, m, mat64.Min)
 }
 
-// MakeRandom creates a new matrix rows x cols matrix which is initialized
-// to random numbers uniformly distributed in interval [min, max].
-// MakeRandom fails if invalid matrix dimensions are requested.
+// MakeRandom creates a new matrix with provided number of rows and columns
+// which is initialized to random numbers uniformly distributed in interval [min, max].
+// MakeRandom fails if non-positive matrix dimensions are requested.
 func MakeRandom(rows, cols int, min, max float64) (*mat64.Dense, error) {
 	return withValidDims(rows, cols, func() (*mat64.Dense, error) {
 		// set random seed
@@ -134,4 +80,101 @@ func MakeConstant(rows, cols int, val float64) (*mat64.Dense, error) {
 		}
 		return constMx, nil
 	})
+}
+
+// AddConst adds a constant value to every element of matrix
+// It modifies the matrix m passed in as a paramter.
+// AddConstant fails with error if empty matrix is supplied
+func AddConst(val float64, m *mat64.Dense) (*mat64.Dense, error) {
+	if m == nil {
+		return nil, fmt.Errorf("Invalid matrix supplied: %v\n", m)
+	}
+	rows, cols := m.Dims()
+	return withValidDims(rows, cols, func() (*mat64.Dense, error) {
+		// allocate zero matrix and set every element to val
+		for i := 0; i < rows; i++ {
+			for j := 0; j < cols; j++ {
+				m.Set(i, j, m.At(i, j)+val)
+			}
+		}
+		return m, nil
+	})
+}
+
+// viewFunc defines matrix dimension view function
+type viewFunc func(int) *mat64.Vector
+
+// dimFn applies function fn to first count matrix rows or columns.
+// dim can be either set to rows or cols.
+// dimFn collects the results into a slice and returns it
+func dimFn(dim string, count int, m *mat64.Dense, fn func(mat64.Matrix) float64) []float64 {
+	res := make([]float64, count)
+	var viewFn viewFunc
+	switch dim {
+	case "rows":
+		viewFn = m.RowView
+	case "cols":
+		viewFn = m.ColView
+	}
+	for i := 0; i < count; i++ {
+		res[i] = fn(viewFn(i))
+	}
+	return res
+}
+
+// withValidDim executes function fn on first count of matrix columns or rows.
+// It collects the results of each calculation and returns it in a slice.
+// It returns error if either matrix m is nil, has zero size or requested number of
+// particular dimension is larger than the matrix m dimensions.
+func withValidDim(dim string, count int, m *mat64.Dense,
+	fn func(mat64.Matrix) float64) ([]float64, error) {
+	// matrix can't be nil
+	if m == nil {
+		return nil, fmt.Errorf("Invalid matrix supplied: %v\n", m)
+	}
+	rows, cols := m.Dims()
+	switch dim {
+	case "rows":
+		if rows == 0 {
+			return nil, fmt.Errorf("Invalid number of rows supplied: %v\n", m)
+		}
+		if count > rows {
+			return nil, fmt.Errorf("Row count exceeds matrix rows: %d\n", count)
+		}
+	case "cols":
+		if cols == 0 {
+			return nil, fmt.Errorf("Invalid number of columns supplied: %v\n", m)
+		}
+		if count > cols {
+			return nil, fmt.Errorf("Column count exceeds matrix columns: %d\n", count)
+		}
+	}
+	return dimFn(dim, count, m, fn), nil
+}
+
+// withValidDims validates if the rows and cols are valid matrix dimensions
+// It returns error if either rows or cols are invalid i.e. non-positive integers
+func withValidDims(rows, cols int, fn func() (*mat64.Dense, error)) (*mat64.Dense, error) {
+	// can not create matrix with negative dimensions
+	if rows <= 0 {
+		return nil, fmt.Errorf("Invalid number of rows: %d\n", rows)
+	}
+	if cols <= 0 {
+		return nil, fmt.Errorf("Invalid number of columns: %d\n", cols)
+	}
+	return fn()
+}
+
+// returns a mean valur for a given matrix
+func mean(m mat64.Matrix) float64 {
+	r, c := m.Dims()
+	return mat64.Sum(m) / (float64(r) * float64(c))
+}
+
+// returns a mean valur for a given matrix
+func stdev(m mat64.Matrix) float64 {
+	r, _ := m.Dims()
+	col := make([]float64, r)
+	mat64.Col(col, 0, m)
+	return stat.StdDev(col, nil)
 }
