@@ -34,7 +34,7 @@ func somDeltaTests() {
 	printD(NewMap(defaultConfig(), RandInit, inputData()))
 	defaultConfig().Dims = origDims
 	// init func that always returns error
-	printD(NewMap(defaultConfig(), func(inMx *mat64.Dense, rows int) (*mat64.Dense, error) { return nil, errors.New("Failed") }, inputData()))
+	printD(NewMap(defaultConfig(), func(inMx *mat64.Dense, dims []int) (*mat64.Dense, error) { return nil, errors.New("Failed") }, inputData()))
 }
 
 func inputData() *mat64.Dense {
@@ -47,11 +47,13 @@ func inputData() *mat64.Dense {
 }
 
 func gridDeltaTests() {
+	printD("RandInit")
+
 	min1, max1 := 1.2, 4.5
 	min2, max2 := 3.4, 6.7
 	data := []float64{min1, min2, max1, max2}
 	inMx := mat64.NewDense(2, 2, data)
-	rows := 4
+	rows := []int{2, 2}
 	printD(inMx)
 
 	// initialize random matrix
@@ -60,10 +62,10 @@ func gridDeltaTests() {
 	// nil input matrix
 	printD(RandInit(nil, rows))
 	// negative number of rows
-	printD(RandInit(inMx, -9))
+	printD(RandInit(inMx, []int{-2, 2}))
 	// empty matrix
 	emptyMx := mat64.NewDense(0, 0, nil)
-	printD(RandInit(emptyMx, 10))
+	printD(RandInit(emptyMx, []int{2, 3}))
 
 }
 

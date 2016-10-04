@@ -2,20 +2,16 @@ package som
 
 import (
 	"fmt"
-	"math"
-	"strings"
 
-	"github.com/gonum/floats"
-	"github.com/gonum/matrix/mat64"
-	"github.com/gonum/stat"
 	"github.com/esemsch/gosom/pkg/utils"
+	"github.com/gonum/matrix/mat64"
 )
 
 // CodebookInitFunc defines SOM codebook initialization function
-type CodebookInitFunc func(*mat64.Dense, int) (*mat64.Dense, error)
+type CodebookInitFunc func(*mat64.Dense, []int) (*mat64.Dense, error)
 
 // CoordsInitFunc defines SOM grid coordinates initialization function
-type CoordsInitFunc func(string) (*mat64.Dense, error)
+type CoordsInitFunc func(string, []int) (*mat64.Dense, error)
 
 // NeighbFunc defines SOM neighbourhood function
 type NeighbFunc func(float64, float64) float64
@@ -55,18 +51,12 @@ func NewMap(c *Config, initFunc CodebookInitFunc, data *mat64.Dense) (*Map, erro
 		return nil, fmt.Errorf("Invalid input data: %v\n", data)
 	}
 	// compute the number of map units
-	mapUnits := utils.IntProduct(c.Dims)
-	if mapUnits <= 1 {
-		dims, err := gridDims(data, c.UShape)
-		if err != nil {
-			return nil, err
-		}
-		mapUnits = utils.IntProduct(dims)
-		// set map dims to newl calculated dims
-		c.Dims = dims
+	mUnits := utils.IntProduct(c.Dims)
+	if mUnits <= 1 {
+		return nil, fmt.Errorf("Incorrect map size dimensions: %v\n", c.Dims)
 	}
 	// initialize codebook
-	codebook, err := initFunc(data, mapUnits)
+	codebook, err := initFunc(data, c.Dims)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to initialize codebook: %s\n", err)
 	}
@@ -94,49 +84,4 @@ func (m Map) UCoords() *mat64.Dense {
 // Bmus returns a matrix which contains SOM indices of Best Match Units (BMUs)
 func (m Map) Bmus() []int {
 	return m.bmus
-}
-
-// gridDims tries to estimate the best dimensions of map from data matrix and given unit shape.
-// It determines the grid size from eigenvectors of input data: the grid dimensions are
-// calculated from the ratio of two highest input eigenvalues.
-// It returns error if the map dimensions could not be calculated.
-func gridDims(data *mat64.Dense, uShape string) ([]int, error) {
-	dataLen, dataDim := data.Dims()
-	// this is a simple heuristic - you can pick the scale > 5
-	mapUnits := math.Ceil(5 * math.Sqrt(float64(dataLen)))
-	// if the data is 1D - we return [1 x mapUnits] map dimensions
-	if dataDim == 1 && dataLen > 1 {
-		return []int{1, int(mapUnits)}, nil
-	}
-	// Not enough data to calculate eigenvectors
-	// We will use heuristic: number of mapUnits = square area of SOM
-	if dataLen < 2 {
-		gDim := math.Sqrt(mapUnits)
-		return []int{int(gDim), int(gDim)}, nil
-	}
-	// We have more than 2 samples and more than 1D data
-	// Calculate eigenvalue ie. SVD singular values
-	_, eigVals, ok := stat.PrincipalComponents(data, nil)
-	if !ok {
-		return nil, fmt.Errorf("Could not determine Principal Components")
-	}
-	// by default we use 1:1 ratio of the map
-	ratio := 1.0
-	// pick first two components: we only support 2D data maps
-	// length check here is redundant, but let's make sure just in case
-	if len(eigVals) >= 2 {
-		if eigVals[0] != 0 && eigVals[1]*mapUnits >= eigVals[0] {
-			ratio = math.Sqrt(eigVals[0] / eigVals[1])
-		}
-	}
-	// If the unit shape is hexagon, the ratio is modified a bit to take it into account
-	// Remember when using hexagon we don't get rectangle so the area != dimA * dimB
-	tmpDim := math.Sqrt(mapUnits / ratio)
-	if strings.EqualFold(uShape, "hexagon") {
-		tmpDim = math.Sqrt(mapUnits / ratio * math.Sqrt(0.75))
-	}
-	yDim := int(floats.Min([]float64{mapUnits, tmpDim}))
-	xDim := int(mapUnits / float64(yDim))
-	// Return map dimensions
-	return []int{xDim, yDim}, nil
 }

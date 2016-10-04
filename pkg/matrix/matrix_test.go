@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/gonum/floats"
 	"github.com/gonum/matrix/mat64"
 	"github.com/stretchr/testify/assert"
 )
@@ -12,8 +13,8 @@ var (
 	errInvMx     = "Invalid matrix supplied: %v\n"
 	errInvColsMx = "Invalid number of columns supplied: %v\n"
 	errInvRowsMx = "Invalid number of rows supplied: %v\n"
-	errExcCols   = "Column count exceeds matrix dimensions: %d\n"
-	errExcRows   = "Row count exceeds matrix dimensions: %d\n"
+	errExcCols   = "Column count exceeds matrix columns: %d\n"
+	errExcRows   = "Row count exceeds matrix rows: %d\n"
 )
 
 func TestRowsColsMax(t *testing.T) {
@@ -112,6 +113,38 @@ func TestColsMin(t *testing.T) {
 	assert.EqualError(err, fmt.Sprintf(errInvRowsMx, mx))
 }
 
+func TestColsMean(t *testing.T) {
+	assert := assert.New(t)
+
+	data := []float64{1.2, 3.4, 4.5, 6.7, 8.9, 10.0}
+	mx := mat64.NewDense(3, 2, data)
+	assert.NotNil(mx)
+	colsMean := []float64{4.8667, 6.7000}
+
+	_, cols := mx.Dims()
+	// check cols
+	me, err := ColsMean(cols, mx)
+	assert.NotNil(me)
+	assert.NoError(err)
+	assert.True(floats.EqualApprox(colsMean, me, 0.01))
+}
+
+func TestColsStdev(t *testing.T) {
+	assert := assert.New(t)
+
+	data := []float64{1.2, 3.4, 4.5, 6.7, 8.9, 10.0}
+	mx := mat64.NewDense(3, 2, data)
+	assert.NotNil(mx)
+	colsStdev := []float64{3.8631, 3.3000}
+
+	_, cols := mx.Dims()
+	// check cols
+	sd, err := ColsStdev(cols, mx)
+	assert.NotNil(sd)
+	assert.NoError(err)
+	assert.True(floats.EqualApprox(colsStdev, sd, 0.01))
+}
+
 func TestMakeRandom(t *testing.T) {
 	assert := assert.New(t)
 
@@ -139,7 +172,7 @@ func TestMakeRandom(t *testing.T) {
 	assert.Error(err)
 }
 
-func TestConstant(t *testing.T) {
+func TestMakeConstant(t *testing.T) {
 	assert := assert.New(t)
 
 	// all elements must be equal to 1.0
@@ -155,5 +188,23 @@ func TestConstant(t *testing.T) {
 	// Can't create new matrix
 	constMx, err = MakeConstant(-3, 10, 1.0)
 	assert.Nil(constMx)
+	assert.Error(err)
+}
+
+func TestAddConstant(t *testing.T) {
+	assert := assert.New(t)
+
+	// all elements must be equal to 1.0
+	val := 0.5
+	mx := mat64.NewDense(2, 2, []float64{1.0, 2.0, 2.5, 2.5})
+	mc := mat64.NewDense(2, 2, []float64{1.5, 2.5, 3.0, 3.0})
+
+	mx, err := AddConst(val, mx)
+	assert.NotNil(mx)
+	assert.NoError(err)
+	assert.True(mat64.EqualApprox(mx, mc, 0.01))
+	// incorrect matrix passed in
+	mx, err = AddConst(val, nil)
+	assert.Nil(mx)
 	assert.Error(err)
 }
