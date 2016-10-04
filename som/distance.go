@@ -1,8 +1,9 @@
 package som
 
 import (
-	"github.com/gonum/matrix/mat64"
 	"math"
+
+	"github.com/gonum/matrix/mat64"
 )
 
 func DistanceMatrix(method string, matrix *mat64.Dense) *mat64.Dense {

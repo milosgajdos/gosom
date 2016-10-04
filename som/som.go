@@ -3,8 +3,8 @@ package som
 import (
 	"fmt"
 
-	"github.com/milosgajdos83/gosom/pkg/utils"
 	"github.com/gonum/matrix/mat64"
+	"github.com/milosgajdos83/gosom/pkg/utils"
 )
 
 // CodebookInitFunc defines SOM codebook initialization function

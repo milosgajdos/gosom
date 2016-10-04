@@ -5,11 +5,11 @@ import (
 	"math"
 	"strings"
 
-	"github.com/milosgajdos83/gosom/pkg/matrix"
-	"github.com/milosgajdos83/gosom/pkg/utils"
 	"github.com/gonum/floats"
 	"github.com/gonum/matrix/mat64"
 	"github.com/gonum/stat"
+	"github.com/milosgajdos83/gosom/pkg/matrix"
+	"github.com/milosgajdos83/gosom/pkg/utils"
 )
 
 // GridDims tries to estimate the best dimensions of map from data matrix and given unit shape.
