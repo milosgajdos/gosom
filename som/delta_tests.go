@@ -1,7 +1,6 @@
 package som
 
 import "fmt"
-import "errors"
 import "github.com/gonum/matrix/mat64"
 
 func RunDeltaTests() {
@@ -16,27 +15,23 @@ func RunDeltaTests() {
 func somDeltaTests() {
 	printSection("New Map")
 	// default config should not throw any errors
-	printD(NewMap(defaultConfig(), RandInit, inputData()))
+	printD(NewMap(defaultConfig(), inputData()))
 	// incorrect config
 	origLcool := defaultConfig().LCool
 	defaultConfig().LCool = "foobar"
-	printD(NewMap(defaultConfig(), RandInit, inputData()))
+	printD(NewMap(defaultConfig(), inputData()))
 	defaultConfig().LCool = origLcool
-	// when nil init function, use RandInit
-	printD(NewMap(defaultConfig(), nil, inputData()))
 	// incorrect init matrix
-	printD(NewMap(defaultConfig(), RandInit, nil))
+	printD(NewMap(defaultConfig(), nil))
 	// incorrect number of map units
 	origDims := defaultConfig().Dims
 	defaultConfig().Dims = []int{0, 0}
-	printD(NewMap(defaultConfig(), RandInit, inputData()))
+	printD(NewMap(defaultConfig(), inputData()))
 	defaultConfig().Dims = origDims
-	// init func that always returns error
-	printD(NewMap(defaultConfig(), func(inMx *mat64.Dense, dims []int) (*mat64.Dense, error) { return nil, errors.New("Failed") }, inputData()))
 
 	printSection("Codebook")
 	// default config should not throw any errors
-	m, err := NewMap(defaultConfig(), RandInit, inputData())
+	m, err := NewMap(defaultConfig(), inputData())
 	printD(m, err)
 	printD(m.Codebook())
 	printD(m.Codebook().Dims())
