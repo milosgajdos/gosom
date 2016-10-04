@@ -23,10 +23,10 @@ func setup() {
 		InitFunc: RandInit,
 		UShape:   "hexagon",
 		Radius:   0,
-		RCool:    "lin",
+		RDecay:   "lin",
 		NeighbFn: "gaussian",
 		LRate:    0,
-		LCool:    "lin",
+		LDecay:   "lin",
 	}
 	// Create input data matrix
 	data := []float64{5.1, 3.5, 1.4, 0.1,
@@ -58,12 +58,12 @@ func TestNewMap(t *testing.T) {
 	assert.NotNil(m)
 	assert.NoError(err)
 	// incorrect config
-	origLcool := cSom.LCool
-	cSom.LCool = "foobar"
+	origLcool := cSom.LDecay
+	cSom.LDecay = "foobar"
 	m, err = NewMap(cSom, dataMx)
 	assert.Nil(m)
 	assert.Error(err)
-	cSom.LCool = origLcool
+	cSom.LDecay = origLcool
 	// when nil init function, use RandInit
 	origInitFunc := cSom.InitFunc
 	cSom.InitFunc = nil

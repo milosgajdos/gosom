@@ -23,14 +23,14 @@ var (
 	ushape string
 	// initial SOM unit neihbourhood radius
 	radius int
-	// radius cooling strategy: lin, exp
-	rcool string
+	// radius decay strategy: lin, exp
+	rdecay string
 	// neighbourhood func: gaussian, bubble, mexican
 	neighb string
 	// initial SOM learning rate
 	lrate int
-	// learning rate cooling strategy: lin, exp
-	lcool string
+	// learning rate decay strategy: lin, exp
+	ldecay string
 )
 
 func init() {
@@ -40,10 +40,10 @@ func init() {
 	flag.StringVar(&grid, "grid", "planar", "SOM grid")
 	flag.StringVar(&ushape, "ushape", "hexagon", "SOM map unit shape")
 	flag.IntVar(&radius, "radius", 0, "SOM neihbourhood starting radius")
-	flag.StringVar(&rcool, "rcool", "lin", "Radius cooling strategy")
+	flag.StringVar(&rdecay, "rdecay", "lin", "Radius decay strategy")
 	flag.StringVar(&neighb, "neighb", "gaussian", "SOM neighbourhood function")
 	flag.IntVar(&lrate, "lrate", 0, "SOM initial learning rate")
-	flag.StringVar(&lcool, "lcool", "lin", "Learning rate cooling strategy")
+	flag.StringVar(&ldecay, "ldecay", "lin", "Learning rate decay strategy")
 }
 
 func parseCliFlags() error {
@@ -86,10 +86,10 @@ func main() {
 		Grid:     grid,
 		UShape:   ushape,
 		Radius:   radius,
-		RCool:    rcool,
+		RDecay:   rdecay,
 		NeighbFn: neighb,
 		LRate:    lrate,
-		LCool:    lcool,
+		LDecay:   ldecay,
 	}
 	// create new SOM map
 	smap, err := som.NewMap(config, data)

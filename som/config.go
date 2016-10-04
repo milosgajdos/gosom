@@ -20,7 +20,7 @@ var Neighb = map[string]NeighbFunc{
 	"mexican":  Mexican,
 }
 
-// Cool maps supported cooling strategies
+// Cool maps supported decay strategies
 var Cool = map[string]bool{
 	"lin": true,
 	"exp": true,
@@ -39,14 +39,14 @@ type Config struct {
 	UShape string
 	// Radius specifies initial SOM units radius
 	Radius int
-	// RCool specifies radius cooling strategy: lin, exp
-	RCool string
+	// RDecay specifies radius decay strategy: lin, exp
+	RDecay string
 	// NeighbFn specifies SOM neighbourhood function: gaussian, bubble, mexican
 	NeighbFn string
 	// LRate specifies initial SOM learning rate
 	LRate int
-	// LCool specifies learning rate cooling strategy: lin, exp
-	LCool string
+	// LDecay specifies learning rate decay strategy: lin, exp
+	LDecay string
 }
 
 // validateConfig validates SOM configuration.
@@ -75,9 +75,9 @@ func validateConfig(c *Config) error {
 	if c.Radius < 0 {
 		return fmt.Errorf("Invalid SOM unit radius: %d\n", c.Radius)
 	}
-	// check Radius cooling strategy
-	if _, ok := Cool[c.RCool]; !ok {
-		return fmt.Errorf("Unsupported Radius cooling strategy: %s\n", c.RCool)
+	// check Radius decay strategy
+	if _, ok := Cool[c.RDecay]; !ok {
+		return fmt.Errorf("Unsupported Radius decay strategy: %s\n", c.RDecay)
 	}
 	// hcheck the supplied neighbourhood function
 	if _, ok := Neighb[c.NeighbFn]; !ok {
@@ -87,9 +87,9 @@ func validateConfig(c *Config) error {
 	if c.LRate < 0 {
 		return fmt.Errorf("Invalid SOM learning rate: %d\n", c.LRate)
 	}
-	// check Learning rate cooling strategy
-	if _, ok := Cool[c.LCool]; !ok {
-		return fmt.Errorf("Unsupported Learning rate cooling strategy: %s\n", c.LCool)
+	// check Learning rate decay strategy
+	if _, ok := Cool[c.LDecay]; !ok {
+		return fmt.Errorf("Unsupported Learning rate decay strategy: %s\n", c.LDecay)
 	}
 	return nil
 }

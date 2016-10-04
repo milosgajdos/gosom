@@ -14,10 +14,10 @@ var (
 		Grid:     "planar",
 		UShape:   "hexagon",
 		Radius:   0,
-		RCool:    "lin",
+		RDecay:   "lin",
 		NeighbFn: "gaussian",
 		LRate:    0,
-		LCool:    "lin",
+		LDecay:   "lin",
 	}
 )
 
@@ -128,10 +128,10 @@ func TestValidateRadius(t *testing.T) {
 	c.Radius = origRadius
 }
 
-func TestValidateRCool(t *testing.T) {
+func TestValidateRDecay(t *testing.T) {
 	assert := assert.New(t)
 
-	errString := "Unsupported Radius cooling strategy: %s\n"
+	errString := "Unsupported Radius decay strategy: %s\n"
 	testCases := []struct {
 		rcool  string
 		expErr bool
@@ -142,17 +142,17 @@ func TestValidateRCool(t *testing.T) {
 		{"inv", false},
 	}
 
-	origRCool := c.RCool
+	origRDecay := c.RDecay
 	for _, tc := range testCases {
-		c.RCool = tc.rcool
+		c.RDecay = tc.rcool
 		err := validateConfig(c)
 		if tc.expErr {
-			assert.EqualError(err, fmt.Sprintf(errString, c.RCool))
+			assert.EqualError(err, fmt.Sprintf(errString, c.RDecay))
 		} else {
 			assert.NoError(err)
 		}
 	}
-	c.RCool = origRCool
+	c.RDecay = origRDecay
 }
 
 func TestValidateNeighbFn(t *testing.T) {
@@ -208,10 +208,10 @@ func TestValidateLRate(t *testing.T) {
 	c.LRate = origLRate
 }
 
-func TestValidateLCool(t *testing.T) {
+func TestValidateLDecay(t *testing.T) {
 	assert := assert.New(t)
 
-	errString := "Unsupported Learning rate cooling strategy: %s\n"
+	errString := "Unsupported Learning rate decay strategy: %s\n"
 	testCases := []struct {
 		lcool  string
 		expErr bool
@@ -222,15 +222,15 @@ func TestValidateLCool(t *testing.T) {
 		{"inv", false},
 	}
 
-	origLCool := c.LCool
+	origLDecay := c.LDecay
 	for _, tc := range testCases {
-		c.LCool = tc.lcool
+		c.LDecay = tc.lcool
 		err := validateConfig(c)
 		if tc.expErr {
-			assert.EqualError(err, fmt.Sprintf(errString, c.LCool))
+			assert.EqualError(err, fmt.Sprintf(errString, c.LDecay))
 		} else {
 			assert.NoError(err)
 		}
 	}
-	c.LCool = origLCool
+	c.LDecay = origLDecay
 }
