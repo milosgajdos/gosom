@@ -2,12 +2,6 @@ package som
 
 import "fmt"
 
-// CodebookInit maps SOM init function types to itheir actual implementations
-var CodebookInit = map[string]CodebookInitFunc{
-	"linear": LinInit,
-	"random": RandInit,
-}
-
 // UShape contains supported SOM unit shapes
 var UShape = map[string]bool{
 	"hexagon":   true,
@@ -39,6 +33,8 @@ type Config struct {
 	Dims []int
 	// Grid specifies the type of SOM grid: planar
 	Grid string
+	// InitFunc specifies codebook initialization function
+	InitFunc CodebookInitFunc
 	// UShape specifies SOM unit shape: hexagon, rectangle
 	UShape string
 	// Radius specifies initial SOM units radius

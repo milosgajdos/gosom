@@ -17,6 +17,7 @@ builddir:
 	mkdir -p $(BUILDPATH)
 test:
 	for pkg in ${PACKAGES}; do \
+		go vet $$pkg ; \
 		go test -coverprofile="../../../$$pkg/coverage.txt" -covermode=atomic $$pkg || exit; \
 	done
 
