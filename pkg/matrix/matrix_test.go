@@ -13,8 +13,8 @@ var (
 	errInvMx     = "Invalid matrix supplied: %v\n"
 	errInvColsMx = "Invalid number of columns supplied: %v\n"
 	errInvRowsMx = "Invalid number of rows supplied: %v\n"
-	errExcCols   = "Column count exceeds matrix dimensions: %d\n"
-	errExcRows   = "Row count exceeds matrix dimensions: %d\n"
+	errExcCols   = "Column count exceeds matrix columns: %d\n"
+	errExcRows   = "Row count exceeds matrix rows: %d\n"
 )
 
 func TestRowsColsMax(t *testing.T) {
