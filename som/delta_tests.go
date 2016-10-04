@@ -1,22 +1,20 @@
 package som
 
 import "fmt"
-
 import "errors"
-
-//import "os"
-
 import "github.com/gonum/matrix/mat64"
 
-//import "github.com/esemsch/gosom/pkg/utils"
-
 func RunDeltaTests() {
+	printSection("Config")
 	configDeltaTests()
+	printSection("Grid")
 	gridDeltaTests()
+	printSection("SOM")
 	somDeltaTests()
 }
 
 func somDeltaTests() {
+	printSection("New Map")
 	// default config should not throw any errors
 	printD(NewMap(defaultConfig(), RandInit, inputData()))
 	// incorrect config
@@ -35,6 +33,14 @@ func somDeltaTests() {
 	defaultConfig().Dims = origDims
 	// init func that always returns error
 	printD(NewMap(defaultConfig(), func(inMx *mat64.Dense, dims []int) (*mat64.Dense, error) { return nil, errors.New("Failed") }, inputData()))
+
+	printSection("Codebook")
+	// default config should not throw any errors
+	m, err := NewMap(defaultConfig(), RandInit, inputData())
+	printD(m, err)
+	printD(m.Codebook())
+	printD(m.Codebook().Dims())
+
 }
 
 func inputData() *mat64.Dense {
@@ -47,12 +53,11 @@ func inputData() *mat64.Dense {
 }
 
 func gridDeltaTests() {
-	printD("RandInit")
+	printSection("RandInit")
 
 	min1, max1 := 1.2, 4.5
 	min2, max2 := 3.4, 6.7
-	data := []float64{min1, min2, max1, max2}
-	inMx := mat64.NewDense(2, 2, data)
+	inMx := mat64.NewDense(2, 2, []float64{min1, min2, max1, max2})
 	rows := []int{2, 2}
 	printD(inMx)
 
@@ -66,6 +71,70 @@ func gridDeltaTests() {
 	// empty matrix
 	emptyMx := mat64.NewDense(0, 0, nil)
 	printD(RandInit(emptyMx, []int{2, 3}))
+
+	printSection("GridDims")
+
+	uShape := "hexagon"
+	// 1D data with more than one sample
+	data := mat64.NewDense(2, 1, []float64{2, 3})
+	printD(GridDims(data, uShape))
+	// 2D data with one sample
+	data = mat64.NewDense(1, 2, []float64{2, 3})
+	printD(GridDims(data, uShape))
+	// 2D+ data with more than one sample
+	data = mat64.NewDense(6, 4, []float64{
+		5.1, 3.5, 1.4, 0.2,
+		4.9, 3.0, 1.4, 0.2,
+		4.7, 3.2, 1.3, 0.2,
+		4.6, 3.1, 1.5, 0.2,
+		5.0, 3.6, 1.4, 0.2,
+		5.4, 3.9, 1.7, 0.4,
+	})
+	printD(GridDims(data, uShape))
+	// data matrix can't be nil
+	printD(GridDims(nil, uShape))
+
+	printSection("LinInit")
+	inMx = mat64.NewDense(6, 4, []float64{
+		5.1, 3.5, 1.4, 0.2,
+		4.9, 3.0, 1.4, 0.2,
+		4.7, 3.2, 1.3, 0.2,
+		4.6, 3.1, 1.5, 0.2,
+		5.0, 3.6, 1.4, 0.2,
+		5.4, 3.9, 1.7, 0.4,
+	})
+
+	xDim, yDim := 5, 2
+	linMx, err := LinInit(inMx, []int{xDim, yDim})
+	printD(linMx, err)
+	// check if the dimensions are correct munits x datadim
+	printD(linMx.Dims())
+	// data is nil
+	printD(LinInit(nil, []int{1, 2}))
+	// nil dimensions
+	printD(LinInit(inMx, nil))
+	// non positive dimensions supplied
+	printD(LinInit(inMx, []int{-1, 2}))
+	// insufficient number of samples
+	inMx = mat64.NewDense(1, 2, []float64{1, 1})
+	printD(LinInit(inMx, []int{5, 2}))
+
+	printSection("GridCoords")
+
+	// hexagon shape
+	dims := []int{4, 2}
+	printD(GridCoords("hexagon", dims))
+	// rectangle shape
+	dims = []int{3, 2}
+	printD(GridCoords("rectangle", dims))
+	// incorrect units shape
+	printD(GridCoords("fooshape", []int{2, 2}))
+	// nil dimensions
+	printD(GridCoords("hexagon", nil))
+	// unsupported number of dimensions
+	printD(GridCoords("hexagon", []int{1, 2, 3, 4}))
+	// negative plane dimensions
+	printD(GridCoords("hexagon", []int{-1, 2}))
 
 }
 
@@ -83,10 +152,10 @@ func defaultConfig() *Config {
 }
 
 func configDeltaTests() {
-	printD("Default config")
+	printSection("Default config")
 	printD(validateConfig(defaultConfig()))
 
-	printD("Dims")
+	printSection("Dims")
 	for _, t := range [][]int{
 		[]int{1},
 		[]int{},
@@ -98,7 +167,7 @@ func configDeltaTests() {
 		printD(validateConfig(c))
 	}
 
-	printD("Grid")
+	printSection("Grid")
 	for _, t := range []string{
 		"planar",
 		"foobar",
@@ -108,7 +177,7 @@ func configDeltaTests() {
 		printD(validateConfig(c))
 	}
 
-	printD("UShape")
+	printSection("UShape")
 	for _, t := range []string{
 		"hexagon",
 		"foobar",
@@ -119,7 +188,7 @@ func configDeltaTests() {
 		printD(validateConfig(c))
 	}
 
-	printD("Radius")
+	printSection("Radius")
 	for _, t := range []int{
 		1,
 		-10,
@@ -130,7 +199,7 @@ func configDeltaTests() {
 		printD(validateConfig(c))
 	}
 
-	printD("RCool")
+	printSection("RCool")
 	for _, t := range []string{
 		"lin",
 		"foobar",
@@ -142,7 +211,7 @@ func configDeltaTests() {
 		printD(validateConfig(c))
 	}
 
-	printD("NeighbFn")
+	printSection("NeighbFn")
 	for _, t := range []string{
 		"gaussian",
 		"foobar",
@@ -154,7 +223,7 @@ func configDeltaTests() {
 		printD(validateConfig(c))
 	}
 
-	printD("LRate")
+	printSection("LRate")
 	for _, t := range []int{
 		1,
 		-10,
@@ -165,7 +234,7 @@ func configDeltaTests() {
 		printD(validateConfig(c))
 	}
 
-	printD("LCool")
+	printSection("LCool")
 	for _, t := range []string{
 		"lin",
 		"exp",
@@ -176,6 +245,10 @@ func configDeltaTests() {
 		c.LCool = t
 		printD(validateConfig(c))
 	}
+}
+
+func printSection(section string) {
+	fmt.Printf("\n====== %s ======\n", section)
 }
 
 func printD(args ...interface{}) {
