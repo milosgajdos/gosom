@@ -5,8 +5,8 @@ import (
 	"math"
 	"strings"
 
-	"github.com/esemsch/gosom/pkg/matrix"
-	"github.com/esemsch/gosom/pkg/utils"
+	"github.com/milosgajdos83/gosom/pkg/matrix"
+	"github.com/milosgajdos83/gosom/pkg/utils"
 	"github.com/gonum/floats"
 	"github.com/gonum/matrix/mat64"
 	"github.com/gonum/stat"

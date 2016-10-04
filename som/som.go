@@ -3,7 +3,7 @@ package som
 import (
 	"fmt"
 
-	"github.com/esemsch/gosom/pkg/utils"
+	"github.com/milosgajdos83/gosom/pkg/utils"
 	"github.com/gonum/matrix/mat64"
 )
 
