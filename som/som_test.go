@@ -20,6 +20,7 @@ func setup() {
 	cSom = &Config{
 		Dims:     []int{2, 3},
 		Grid:     "planar",
+		InitFunc: RandInit,
 		UShape:   "hexagon",
 		Radius:   0,
 		RCool:    "lin",
@@ -53,44 +54,49 @@ func TestNewMap(t *testing.T) {
 	assert := assert.New(t)
 
 	// default config should not throw any errors
-	m, err := NewMap(cSom, RandInit, dataMx)
+	m, err := NewMap(cSom, dataMx)
 	assert.NotNil(m)
 	assert.NoError(err)
 	// incorrect config
 	origLcool := cSom.LCool
 	cSom.LCool = "foobar"
-	m, err = NewMap(cSom, RandInit, dataMx)
+	m, err = NewMap(cSom, dataMx)
 	assert.Nil(m)
 	assert.Error(err)
 	cSom.LCool = origLcool
 	// when nil init function, use RandInit
-	m, err = NewMap(cSom, nil, dataMx)
+	origInitFunc := cSom.InitFunc
+	cSom.InitFunc = nil
+	m, err = NewMap(cSom, dataMx)
 	assert.NotNil(m)
 	assert.NoError(err)
+	cSom.InitFunc = origInitFunc
 	// incorrect init matrix
-	m, err = NewMap(cSom, RandInit, nil)
+	m, err = NewMap(cSom, nil)
 	assert.Nil(m)
 	assert.Error(err)
 	// incorrect number of map units
 	origDims := cSom.Dims
 	cSom.Dims = []int{0, 0}
-	m, err = NewMap(cSom, RandInit, dataMx)
+	m, err = NewMap(cSom, dataMx)
 	assert.Nil(m)
 	assert.Error(err)
 	cSom.Dims = origDims
 	// init func that always returns error
-	m, err = NewMap(cSom, mockInit, dataMx)
+	cSom.InitFunc = mockInit
+	m, err = NewMap(cSom, dataMx)
 	assert.Nil(m)
 	assert.Error(err)
+	cSom.InitFunc = RandInit
 }
 
 func TestCodebook(t *testing.T) {
 	assert := assert.New(t)
 
-	mapUnits := utils.IntProduct(c.Dims)
+	mapUnits := utils.IntProduct(cSom.Dims)
 	_, cols := dataMx.Dims()
 	// default config should not throw any errors
-	m, err := NewMap(cSom, RandInit, dataMx)
+	m, err := NewMap(cSom, dataMx)
 	assert.NotNil(m)
 	assert.NoError(err)
 	codebook := m.Codebook()

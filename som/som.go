@@ -34,17 +34,17 @@ type Map struct {
 
 // NewMap creates new SOM based on the provided configuration and input data
 // NewMap allows you to pass in SOM codebook init function that is used to initialize
-// SOM codebook vectors to initial values. If initFunc is nil, random initializatio is used.
-// It returns error if the provided configuration is not valid or if the data matrix
-// passed in as a parameter is empty or if the codebook could not be initialized.
-func NewMap(c *Config, initFunc CodebookInitFunc, data *mat64.Dense) (*Map, error) {
+// SOM codebook vectors to initial values. If codebook InitFunc is nil, random initialization
+// is used. NewMap returns error if the provided configuration is not valid or if the data matrix
+// is nil or if the codebook matrix could not be initialized.
+func NewMap(c *Config, data *mat64.Dense) (*Map, error) {
 	// validate the map configuration
 	if err := validateConfig(c); err != nil {
 		return nil, err
 	}
 	// if nil codebook init function is passed in, use random init
-	if initFunc == nil {
-		initFunc = RandInit
+	if c.InitFunc == nil {
+		c.InitFunc = RandInit
 	}
 	// if input data is empty throw error
 	if data == nil {
@@ -56,7 +56,7 @@ func NewMap(c *Config, initFunc CodebookInitFunc, data *mat64.Dense) (*Map, erro
 		return nil, fmt.Errorf("Incorrect map size dimensions: %v\n", c.Dims)
 	}
 	// initialize codebook
-	codebook, err := initFunc(data, c.Dims)
+	codebook, err := c.InitFunc(data, c.Dims)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to initialize codebook: %s\n", err)
 	}

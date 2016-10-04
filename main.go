@@ -15,8 +15,6 @@ var (
 	input string
 	// feature scaling flag
 	scale bool
-	// map codebook init type: random, linear
-	minit string
 	// map dimensions: 2D only [for now]
 	dims string
 	// map grid type: planar
@@ -38,7 +36,6 @@ var (
 func init() {
 	flag.StringVar(&input, "input", "", "Path to input data set")
 	flag.BoolVar(&scale, "scale", false, "Request data scaling")
-	flag.StringVar(&minit, "minit", "random", "SOM initialization type")
 	flag.StringVar(&dims, "dims", "", "comma-separated SOM dimensions")
 	flag.StringVar(&grid, "grid", "planar", "SOM grid")
 	flag.StringVar(&ushape, "ushape", "hexagon", "SOM map unit shape")
@@ -71,12 +68,6 @@ func main() {
 		fmt.Printf("Error parsing grid dimensions: %s\n", err)
 		os.Exit(1)
 	}
-	// check if the codebook init is supported
-	cbInitFunc, ok := som.CodebookInit[minit]
-	if !ok {
-		fmt.Printf("Incorrect codebook init requested: %s\n", minit)
-		os.Exit(1)
-	}
 	// load data set from a file in provided path
 	ds, err := dataset.New(input)
 	if err != nil {
@@ -91,6 +82,7 @@ func main() {
 	// SOM configuration
 	config := &som.Config{
 		Dims:     mdims,
+		InitFunc: som.RandInit,
 		Grid:     grid,
 		UShape:   ushape,
 		Radius:   radius,
@@ -100,7 +92,7 @@ func main() {
 		LCool:    lcool,
 	}
 	// create new SOM map
-	smap, err := som.NewMap(config, cbInitFunc, data)
+	smap, err := som.NewMap(config, data)
 	if err != nil {
 		fmt.Printf("Failed to create new SOM: %s\n", err)
 		os.Exit(1)
