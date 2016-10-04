@@ -6,6 +6,8 @@ import (
 	"github.com/gonum/matrix/mat64"
 )
 
+// DistanceMatrix calculates a distance matrix for the given matrix using the given method.  The returned distance
+// matrix is a hollow symmetrical matrix where an item x_ij contains the distance between rows i and j.
 func DistanceMatrix(method string, matrix *mat64.Dense) *mat64.Dense {
 	switch method {
 	case "euclidean":
