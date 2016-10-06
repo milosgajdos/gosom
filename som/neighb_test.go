@@ -46,3 +46,12 @@ func TestMexican(t *testing.T) {
 	}
 
 }
+
+func TestBubble(t *testing.T) {
+	radius := 1.0
+	diff := radius / 10.0
+
+	assert.Equal(t, 1.0, Bubble(radius-diff, radius))
+	assert.Equal(t, 0.0, Bubble(radius+diff, radius))
+	assert.Equal(t, 1.0, Bubble(radius, radius))
+}
