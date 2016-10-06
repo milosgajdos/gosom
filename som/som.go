@@ -21,12 +21,9 @@ type Map struct {
 	// codebook is a matrix which contains SOM codebook vectors
 	// codebook dimensions: SOM units x data features
 	codebook *mat64.Dense
-	// uDist is a matrix that maps distances between SOM units
-	// uDist dimesions: SOM units x SOM units
-	uDist *mat64.Dense
-	// uCoords is a matrix that holds SOM units coordinates
-	// uCoords: SOM units x 2
-	uCoords *mat64.Dense
+	// gridDist is a symmetric hollow matrix that maps distances between SOM units
+	// gridDist dimesions: SOM units x SOM units
+	gridDist *mat64.Dense
 	// bmus stores codebook row indices of Best Match Units (BMU) for each data sample
 	// bmus length is equal to the number of the input data samples
 	bmus []int
@@ -58,11 +55,25 @@ func NewMap(c *Config, data *mat64.Dense) (*Map, error) {
 	// initialize codebook
 	codebook, err := c.InitFunc(data, c.Dims)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to initialize codebook: %s\n", err)
+		return nil, err
 	}
+	// grid coordinates matrix
+	gridCoords, err := GridCoords(c.UShape, c.Dims)
+	if err != nil {
+		return nil, err
+	}
+	// grid distance matrix
+	gridDist, err := DistanceMx("euclidean", gridCoords)
+	if err != nil {
+		return nil, err
+	}
+	rows, _ := data.Dims()
+	bmus := make([]int, rows)
 	// return pointer to new map
 	return &Map{
 		codebook: codebook,
+		gridDist: gridDist,
+		bmus:     bmus,
 	}, nil
 }
 
@@ -71,17 +82,12 @@ func (m Map) Codebook() *mat64.Dense {
 	return m.codebook
 }
 
-// UDist returns a matrix which contains Euclidean distances between SOM units
-func (m Map) UDist() *mat64.Dense {
-	return m.uDist
+// GridDist returns a matrix which contains Euclidean distances between SOM units
+func (m Map) GridDist() *mat64.Dense {
+	return m.gridDist
 }
 
-// UCoords returns a matrix which contains SOM unit coordinates on the map
-func (m Map) UCoords() *mat64.Dense {
-	return m.uCoords
-}
-
-// Bmus returns a matrix which contains SOM indices of Best Match Units (BMUs)
-func (m Map) Bmus() []int {
+// BMUs returns a slice which contains indices of Best Match Units (BMUs) of each input vector
+func (m Map) BMUs() []int {
 	return m.bmus
 }

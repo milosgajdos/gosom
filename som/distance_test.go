@@ -7,7 +7,40 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDistanceMatrix(t *testing.T) {
+func TestDistance(t *testing.T) {
+	assert := assert.New(t)
+
+	testCases := []struct {
+		a        []float64
+		b        []float64
+		expected float64
+	}{
+		{[]float64{0.0, 0.0}, []float64{0.0, 1.0}, 1.0},
+		{[]float64{0.0, 0.0}, []float64{0.0, 0.0}, 0.0},
+		{[]float64{3.0, 1.0}, []float64{1.0, 3.0}, 2.828},
+	}
+
+	for _, tc := range testCases {
+		a := mat64.NewVector(len(tc.a), tc.a)
+		b := mat64.NewVector(len(tc.b), tc.b)
+		dist, err := Distance("euclidean", a, b)
+		assert.NoError(err)
+		assert.InDelta(tc.expected, dist, 0.01)
+	}
+
+	// nil vectors
+	d, err := Distance("euclidean", nil, nil)
+	assert.Error(err)
+	assert.Equal(0.0, d)
+	// different vector dimensions
+	a := mat64.NewVector(2, []float64{0.0, 0.0})
+	b := mat64.NewVector(1, []float64{1.0})
+	d, err = Distance("euclidean", a, b)
+	assert.Error(err)
+	assert.Equal(0.0, d)
+}
+
+func TestDistanceMx(t *testing.T) {
 	assert := assert.New(t)
 
 	one := mat64.NewDense(2, 2, []float64{
@@ -21,8 +54,9 @@ func TestDistanceMatrix(t *testing.T) {
 		1.0, 0.0,
 	})
 
-	oneOut := DistanceMatrix("euclidean", one)
+	oneOut, err := DistanceMx("euclidean", one)
 
+	assert.NoError(err)
 	assert.True(mat64.EqualApprox(oneOutExpected, oneOut, 0.01))
 
 	zero := mat64.NewDense(2, 3, []float64{
@@ -36,8 +70,9 @@ func TestDistanceMatrix(t *testing.T) {
 		0.0, 0.0,
 	})
 
-	zeroOut := DistanceMatrix("euclidean", zero)
+	zeroOut, err := DistanceMx("euclidean", zero)
 
+	assert.NoError(err)
 	assert.True(mat64.EqualApprox(zeroOutExpected, zeroOut, 0.01))
 
 	negative := mat64.NewDense(2, 3, []float64{
@@ -51,8 +86,13 @@ func TestDistanceMatrix(t *testing.T) {
 		100.0, 0.0,
 	})
 
-	negativeOut := DistanceMatrix("euclidean", negative)
+	negativeOut, err := DistanceMx("euclidean", negative)
 
+	assert.NoError(err)
 	assert.True(mat64.EqualApprox(negativeOutExpected, negativeOut, 0.01))
 
+	nilMatrix, err := DistanceMx("euclidean", nil)
+
+	assert.Error(err)
+	assert.Nil(nilMatrix)
 }
