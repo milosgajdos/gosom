@@ -1,8 +1,10 @@
 package som
 
+import "math"
+
 // Gaussian calculates gaussian neghbourhood
 func Gaussian(distance float64, radius float64) float64 {
-	return 0.0
+	return math.Exp(-(distance * distance) / (2 * radius * radius))
 }
 
 // Bubble calculates bubble neghbourhood
