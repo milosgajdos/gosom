@@ -2,6 +2,9 @@ package som
 
 import "math"
 
+// Radius is a decay function for the radius parameter.  The supported strategies
+// are "exp" and "lin".  "exp" is an exponential decay function, "lin" is linear.
+// At iteration 0 the function returns the radius0, at totalIterations it returns 1.0
 func Radius(iteration, totalIterations int, strategy string, radius0 float64) float64 {
 	switch strategy {
 	case "exp":
@@ -19,5 +22,5 @@ func expRadius(iteration, totalIterations int, radius0 float64) float64 {
 }
 
 func linRadius(iteration, totalIterations int, radius0 float64) float64 {
-	return radius0 - float64(iteration)/float64(totalIteration)*(radius0-1)
+	return radius0 - float64(iteration)/float64(totalIterations)*(radius0-1)
 }
