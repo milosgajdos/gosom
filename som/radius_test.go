@@ -25,6 +25,6 @@ func testRadius(t *testing.T, strategy string) {
 	totalIterations := 100
 
 	assert.Equal(radius0, Radius(0, totalIterations, strategy, radius0))
-	assert.InDelta(1.0, Radius(totalIterations, totalIterations, strategy, radius0), 0.01)
+	assert.InDelta(SmallestRadius, Radius(totalIterations-1, totalIterations, strategy, radius0), 0.01)
 
 }
