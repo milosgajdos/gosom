@@ -38,6 +38,6 @@ func testLR(t *testing.T, strategy string) {
 	assert.NoError(err)
 
 	lr, err = LearningRate(totalIterations-1, totalIterations, strategy, learningRate0)
-	assert.InDelta(SmallestRate, lr, 0.01)
+	assert.InDelta(SmallestLearningRate, lr, 0.01)
 	assert.NoError(err)
 }
