@@ -42,15 +42,10 @@ func euclideanVec(a, b *mat64.Vector) (float64, error) {
 		return 0.0, fmt.Errorf("Incorrect vector dims. a: %d, b: %d\n", a.Len(), b.Len())
 	}
 
-	d := new(mat64.Dense)
-	d.Scale(-1.0, b)
-	d.Add(a, d)
-
-	// power function to be applied to each matrix element
-	powFn := func(i, j int, x float64) float64 {
-		return math.Pow(x, 2.0)
-	}
-	d.Apply(powFn, d)
+	d := mat64.NewVector(a.Len(), nil)
+	d.ScaleVec(-1.0, b)
+	d.AddVec(a, d)
+	d.MulElemVec(d, d)
 
 	return math.Sqrt(mat64.Sum(d)), nil
 }
