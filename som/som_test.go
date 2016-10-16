@@ -2,6 +2,7 @@ package som
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 
@@ -11,17 +12,21 @@ import (
 )
 
 var (
-	cSom   *Config
+	mSom   *MapConfig
+	tSom   *TrainConfig
 	dataMx *mat64.Dense
 )
 
 func setup() {
 	// Init to default config
-	cSom = &Config{
+	mSom = &MapConfig{
 		Dims:     []int{2, 3},
 		Grid:     "planar",
 		InitFunc: RandInit,
 		UShape:   "hexagon",
+	}
+	tSom = &TrainConfig{
+		Method:   "seq",
 		Radius:   0,
 		RDecay:   "lin",
 		NeighbFn: "gaussian",
@@ -54,49 +59,42 @@ func TestNewMap(t *testing.T) {
 	assert := assert.New(t)
 
 	// default config should not throw any errors
-	m, err := NewMap(cSom, dataMx)
+	m, err := NewMap(mSom, dataMx)
 	assert.NotNil(m)
 	assert.NoError(err)
-	// incorrect config
-	origLcool := cSom.LDecay
-	cSom.LDecay = "foobar"
-	m, err = NewMap(cSom, dataMx)
-	assert.Nil(m)
-	assert.Error(err)
-	cSom.LDecay = origLcool
 	// when nil init function, use RandInit
-	origInitFunc := cSom.InitFunc
-	cSom.InitFunc = nil
-	m, err = NewMap(cSom, dataMx)
+	origInitFunc := mSom.InitFunc
+	mSom.InitFunc = nil
+	m, err = NewMap(mSom, dataMx)
 	assert.NotNil(m)
 	assert.NoError(err)
-	cSom.InitFunc = origInitFunc
+	mSom.InitFunc = origInitFunc
 	// incorrect init matrix
-	m, err = NewMap(cSom, nil)
+	m, err = NewMap(mSom, nil)
 	assert.Nil(m)
 	assert.Error(err)
 	// incorrect number of map units
-	origDims := cSom.Dims
-	cSom.Dims = []int{0, 0}
-	m, err = NewMap(cSom, dataMx)
+	origDims := mSom.Dims
+	mSom.Dims = []int{0, 0}
+	m, err = NewMap(mSom, dataMx)
 	assert.Nil(m)
 	assert.Error(err)
-	cSom.Dims = origDims
+	mSom.Dims = origDims
 	// init func that always returns error
-	cSom.InitFunc = mockInit
-	m, err = NewMap(cSom, dataMx)
+	mSom.InitFunc = mockInit
+	m, err = NewMap(mSom, dataMx)
 	assert.Nil(m)
 	assert.Error(err)
-	cSom.InitFunc = RandInit
+	mSom.InitFunc = RandInit
 }
 
 func TestCodebook(t *testing.T) {
 	assert := assert.New(t)
 
-	mapUnits := utils.IntProduct(cSom.Dims)
+	mapUnits := utils.IntProduct(mSom.Dims)
 	_, cols := dataMx.Dims()
 	// default config should not throw any errors
-	m, err := NewMap(cSom, dataMx)
+	m, err := NewMap(mSom, dataMx)
 	assert.NotNil(m)
 	assert.NoError(err)
 	codebook := m.Codebook()
@@ -104,4 +102,57 @@ func TestCodebook(t *testing.T) {
 	cbRows, cbCols := codebook.Dims()
 	assert.Equal(mapUnits, cbRows)
 	assert.Equal(cols, cbCols)
+}
+
+func TestGridDist(t *testing.T) {
+	assert := assert.New(t)
+
+	mapUnits := utils.IntProduct(mSom.Dims)
+	// default config should not throw any errors
+	m, err := NewMap(mSom, dataMx)
+	assert.NotNil(m)
+	assert.NoError(err)
+	gridDist := m.GridDist()
+	assert.NotNil(gridDist)
+	cbRows, cbCols := gridDist.Dims()
+	assert.Equal(mapUnits, cbRows)
+	assert.Equal(mapUnits, cbCols)
+}
+
+func TestBmus(t *testing.T) {
+	assert := assert.New(t)
+
+	rows, _ := dataMx.Dims()
+	// default config should not throw any errors
+	m, err := NewMap(mSom, dataMx)
+	assert.NotNil(m)
+	assert.NoError(err)
+	bmus := m.BMUs()
+	assert.NotNil(bmus)
+	assert.Equal(rows, len(bmus))
+}
+
+func TestTrain(t *testing.T) {
+	assert := assert.New(t)
+
+	iters := 100
+	// default config should not throw any errors
+	m, err := NewMap(mSom, dataMx)
+	assert.NotNil(m)
+	assert.NoError(err)
+	// incorrect number of iterations
+	errString := "Invalid number of iterations: %d\n"
+	iters = -100
+	err = m.Train(tSom, dataMx, iters)
+	assert.EqualError(err, fmt.Sprintf(errString, iters))
+	iters = 100
+	// throw in incorrect training config
+	origRadius := tSom.Radius
+	tSom.Radius = -10
+	err = m.Train(tSom, dataMx, iters)
+	assert.Error(err)
+	tSom.Radius = origRadius
+	// default config should not throw any errrors
+	err = m.Train(tSom, dataMx, iters)
+	assert.NoError(err)
 }

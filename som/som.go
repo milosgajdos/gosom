@@ -34,9 +34,9 @@ type Map struct {
 // SOM codebook vectors to initial values. If codebook InitFunc is nil, random initialization
 // is used. NewMap returns error if the provided configuration is not valid or if the data matrix
 // is nil or if the codebook matrix could not be initialized.
-func NewMap(c *Config, data *mat64.Dense) (*Map, error) {
+func NewMap(c *MapConfig, data *mat64.Dense) (*Map, error) {
 	// validate the map configuration
-	if err := validateConfig(c); err != nil {
+	if err := validateMapConfig(c); err != nil {
 		return nil, err
 	}
 	// if nil codebook init function is passed in, use random init
@@ -90,4 +90,19 @@ func (m Map) GridDist() *mat64.Dense {
 // BMUs returns a slice which contains indices of Best Match Units (BMUs) of each input vector
 func (m Map) BMUs() []int {
 	return m.bmus
+}
+
+// Train runs a SOM training for a given data set and training configuration parameters
+// Train modifies the SOM codebook vectors according to the chosen training method.
+// It returns error if the supplied training configuration is invalid
+func (m *Map) Train(tc *TrainConfig, data *mat64.Dense, iters int) error {
+	// number of iterations must be a positive integer
+	if iters <= 0 {
+		return fmt.Errorf("Invalid number of iterations: %d\n", iters)
+	}
+	// validate the training configuration
+	if err := validateTrainConfig(tc); err != nil {
+		return err
+	}
+	return nil
 }

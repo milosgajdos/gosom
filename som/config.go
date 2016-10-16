@@ -20,15 +20,21 @@ var Neighb = map[string]NeighbFunc{
 	"mexican":  Mexican,
 }
 
-// Cool maps supported decay strategies
-var Cool = map[string]bool{
+// Decay maps supported decay strategies
+var Decay = map[string]bool{
 	"lin": true,
 	"exp": true,
 	"inv": true,
 }
 
-// Config holds SOM configuration
-type Config struct {
+// Training maps supported training methods
+var Training = map[string]bool{
+	"seq":   true,
+	"batch": true,
+}
+
+// MapConfig holds SOM configuration
+type MapConfig struct {
 	// Dims specifies SOM dimensions
 	Dims []int
 	// Grid specifies the type of SOM grid: planar
@@ -37,6 +43,12 @@ type Config struct {
 	InitFunc CodebookInitFunc
 	// UShape specifies SOM unit shape: hexagon, rectangle
 	UShape string
+}
+
+// TrainConfig holds SOM training configuration
+type TrainConfig struct {
+	// Method specifies training method: seq or batch
+	Method string
 	// Radius specifies initial SOM units radius
 	Radius int
 	// RDecay specifies radius decay strategy: lin, exp
@@ -49,9 +61,9 @@ type Config struct {
 	LDecay string
 }
 
-// validateConfig validates SOM configuration.
+// validateMapConfig validates SOM configuration.
 // It returns error if any of the config parameters are invalid
-func validateConfig(c *Config) error {
+func validateMapConfig(c *MapConfig) error {
 	// SOM must have 2 dimensions
 	// TODO: figure out 3D maps
 	if dimLen := len(c.Dims); dimLen != 2 {
@@ -71,12 +83,22 @@ func validateConfig(c *Config) error {
 	if _, ok := UShape[c.UShape]; !ok {
 		return fmt.Errorf("Unsupported SOM unit shape: %s\n", c.UShape)
 	}
+	return nil
+}
+
+// validateTrainConfig validtes SOM training configuration
+// It returns error if any of the training config parameters are invalid
+func validateTrainConfig(c *TrainConfig) error {
+	// training method must be supported
+	if _, ok := Training[c.Method]; !ok {
+		return fmt.Errorf("Invalid SOM training method: %s\n", c.Method)
+	}
 	// initial SOM unit radius must be greater than zero
 	if c.Radius < 0 {
 		return fmt.Errorf("Invalid SOM unit radius: %d\n", c.Radius)
 	}
 	// check Radius decay strategy
-	if _, ok := Cool[c.RDecay]; !ok {
+	if _, ok := Decay[c.RDecay]; !ok {
 		return fmt.Errorf("Unsupported Radius decay strategy: %s\n", c.RDecay)
 	}
 	// hcheck the supplied neighbourhood function
@@ -88,7 +110,7 @@ func validateConfig(c *Config) error {
 		return fmt.Errorf("Invalid SOM learning rate: %d\n", c.LRate)
 	}
 	// check Learning rate decay strategy
-	if _, ok := Cool[c.LDecay]; !ok {
+	if _, ok := Decay[c.LDecay]; !ok {
 		return fmt.Errorf("Unsupported Learning rate decay strategy: %s\n", c.LDecay)
 	}
 	return nil

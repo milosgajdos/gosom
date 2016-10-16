@@ -19,6 +19,8 @@ var (
 	dims string
 	// map grid type: planar
 	grid string
+	// training method: seq, batch
+	training string
 	// map unit shape type: hexagon, rectangle
 	ushape string
 	// initial SOM unit neihbourhood radius
@@ -39,6 +41,7 @@ func init() {
 	flag.StringVar(&dims, "dims", "", "comma-separated SOM dimensions")
 	flag.StringVar(&grid, "grid", "planar", "SOM grid")
 	flag.StringVar(&ushape, "ushape", "hexagon", "SOM map unit shape")
+	flag.StringVar(&training, "training", "seq", "SOM training method")
 	flag.IntVar(&radius, "radius", 0, "SOM neihbourhood starting radius")
 	flag.StringVar(&rdecay, "rdecay", "lin", "Radius decay strategy")
 	flag.StringVar(&neighb, "neighb", "gaussian", "SOM neighbourhood function")
@@ -80,19 +83,14 @@ func main() {
 		data = ds.Scale()
 	}
 	// SOM configuration
-	config := &som.Config{
+	mConfig := &som.MapConfig{
 		Dims:     mdims,
 		InitFunc: som.RandInit,
 		Grid:     grid,
 		UShape:   ushape,
-		Radius:   radius,
-		RDecay:   rdecay,
-		NeighbFn: neighb,
-		LRate:    lrate,
-		LDecay:   ldecay,
 	}
 	// create new SOM map
-	smap, err := som.NewMap(config, data)
+	smap, err := som.NewMap(mConfig, data)
 	if err != nil {
 		fmt.Printf("Failed to create new SOM: %s\n", err)
 		os.Exit(1)

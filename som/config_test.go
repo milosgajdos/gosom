@@ -8,11 +8,15 @@ import (
 )
 
 var (
-	// Init to default config
-	c = &Config{
-		Dims:     []int{2, 3},
-		Grid:     "planar",
-		UShape:   "hexagon",
+	// Init map to default config
+	mc = &MapConfig{
+		Dims:   []int{2, 3},
+		Grid:   "planar",
+		UShape: "hexagon",
+	}
+	// default training configuration
+	tr = &TrainConfig{
+		Method:   "seq",
 		Radius:   0,
 		RDecay:   "lin",
 		NeighbFn: "gaussian",
@@ -38,17 +42,17 @@ func TestValidateDims(t *testing.T) {
 		{wrongDims, true, fmt.Sprintf(errDimVal, wrongDims)},
 	}
 
-	origDims := c.Dims
+	origDims := mc.Dims
 	for _, tc := range testCases {
-		c.Dims = tc.dims
-		err := validateConfig(c)
+		mc.Dims = tc.dims
+		err := validateMapConfig(mc)
 		if tc.expErr {
 			assert.EqualError(err, tc.errStr)
 		} else {
 			assert.NoError(err)
 		}
 	}
-	c.Dims = origDims
+	mc.Dims = origDims
 }
 
 func TestValidateGrid(t *testing.T) {
@@ -63,17 +67,17 @@ func TestValidateGrid(t *testing.T) {
 		{"foobar", true},
 	}
 
-	origGrid := c.Grid
+	origGrid := mc.Grid
 	for _, tc := range testCases {
-		c.Grid = tc.grid
-		err := validateConfig(c)
+		mc.Grid = tc.grid
+		err := validateMapConfig(mc)
 		if tc.expErr {
-			assert.EqualError(err, fmt.Sprintf(errString, c.Grid))
+			assert.EqualError(err, fmt.Sprintf(errString, mc.Grid))
 		} else {
 			assert.NoError(err)
 		}
 	}
-	c.Grid = origGrid
+	mc.Grid = origGrid
 }
 
 func TestValidateUshape(t *testing.T) {
@@ -89,17 +93,43 @@ func TestValidateUshape(t *testing.T) {
 		{"rectangle", false},
 	}
 
-	origUShape := c.UShape
+	origUShape := mc.UShape
 	for _, tc := range testCases {
-		c.UShape = tc.ushape
-		err := validateConfig(c)
+		mc.UShape = tc.ushape
+		err := validateMapConfig(mc)
 		if tc.expErr {
-			assert.EqualError(err, fmt.Sprintf(errString, c.UShape))
+			assert.EqualError(err, fmt.Sprintf(errString, mc.UShape))
 		} else {
 			assert.NoError(err)
 		}
 	}
-	c.UShape = origUShape
+	mc.UShape = origUShape
+}
+
+func TestValidateMethod(t *testing.T) {
+	assert := assert.New(t)
+
+	errString := "Invalid SOM training method: %s\n"
+	testCases := []struct {
+		method string
+		expErr bool
+	}{
+		{"seq", false},
+		{"foobar", true},
+		{"batch", false},
+	}
+
+	origMethod := tr.Method
+	for _, tc := range testCases {
+		tr.Method = tc.method
+		err := validateTrainConfig(tr)
+		if tc.expErr {
+			assert.EqualError(err, fmt.Sprintf(errString, tr.Method))
+		} else {
+			assert.NoError(err)
+		}
+	}
+	tr.Method = origMethod
 }
 
 func TestValidateRadius(t *testing.T) {
@@ -115,17 +145,17 @@ func TestValidateRadius(t *testing.T) {
 		{0, false},
 	}
 
-	origRadius := c.Radius
+	origRadius := tr.Radius
 	for _, tc := range testCases {
-		c.Radius = tc.radius
-		err := validateConfig(c)
+		tr.Radius = tc.radius
+		err := validateTrainConfig(tr)
 		if tc.expErr {
-			assert.EqualError(err, fmt.Sprintf(errString, c.Radius))
+			assert.EqualError(err, fmt.Sprintf(errString, tr.Radius))
 		} else {
 			assert.NoError(err)
 		}
 	}
-	c.Radius = origRadius
+	tr.Radius = origRadius
 }
 
 func TestValidateRDecay(t *testing.T) {
@@ -133,7 +163,7 @@ func TestValidateRDecay(t *testing.T) {
 
 	errString := "Unsupported Radius decay strategy: %s\n"
 	testCases := []struct {
-		rcool  string
+		decay  string
 		expErr bool
 	}{
 		{"lin", false},
@@ -142,17 +172,17 @@ func TestValidateRDecay(t *testing.T) {
 		{"inv", false},
 	}
 
-	origRDecay := c.RDecay
+	origRDecay := tr.RDecay
 	for _, tc := range testCases {
-		c.RDecay = tc.rcool
-		err := validateConfig(c)
+		tr.RDecay = tc.decay
+		err := validateTrainConfig(tr)
 		if tc.expErr {
-			assert.EqualError(err, fmt.Sprintf(errString, c.RDecay))
+			assert.EqualError(err, fmt.Sprintf(errString, tr.RDecay))
 		} else {
 			assert.NoError(err)
 		}
 	}
-	c.RDecay = origRDecay
+	tr.RDecay = origRDecay
 }
 
 func TestValidateNeighbFn(t *testing.T) {
@@ -169,17 +199,17 @@ func TestValidateNeighbFn(t *testing.T) {
 		{"bubble", false},
 	}
 
-	origNeighbFn := c.NeighbFn
+	origNeighbFn := tr.NeighbFn
 	for _, tc := range testCases {
-		c.NeighbFn = tc.neighbFn
-		err := validateConfig(c)
+		tr.NeighbFn = tc.neighbFn
+		err := validateTrainConfig(tr)
 		if tc.expErr {
-			assert.EqualError(err, fmt.Sprintf(errString, c.NeighbFn))
+			assert.EqualError(err, fmt.Sprintf(errString, tr.NeighbFn))
 		} else {
 			assert.NoError(err)
 		}
 	}
-	c.NeighbFn = origNeighbFn
+	tr.NeighbFn = origNeighbFn
 }
 
 func TestValidateLRate(t *testing.T) {
@@ -195,17 +225,17 @@ func TestValidateLRate(t *testing.T) {
 		{0, false},
 	}
 
-	origLRate := c.LRate
+	origLRate := tr.LRate
 	for _, tc := range testCases {
-		c.LRate = tc.lrate
-		err := validateConfig(c)
+		tr.LRate = tc.lrate
+		err := validateTrainConfig(tr)
 		if tc.expErr {
-			assert.EqualError(err, fmt.Sprintf(errString, c.LRate))
+			assert.EqualError(err, fmt.Sprintf(errString, tr.LRate))
 		} else {
 			assert.NoError(err)
 		}
 	}
-	c.LRate = origLRate
+	tr.LRate = origLRate
 }
 
 func TestValidateLDecay(t *testing.T) {
@@ -213,7 +243,7 @@ func TestValidateLDecay(t *testing.T) {
 
 	errString := "Unsupported Learning rate decay strategy: %s\n"
 	testCases := []struct {
-		lcool  string
+		decay  string
 		expErr bool
 	}{
 		{"lin", false},
@@ -222,15 +252,15 @@ func TestValidateLDecay(t *testing.T) {
 		{"inv", false},
 	}
 
-	origLDecay := c.LDecay
+	origLDecay := tr.LDecay
 	for _, tc := range testCases {
-		c.LDecay = tc.lcool
-		err := validateConfig(c)
+		tr.LDecay = tc.decay
+		err := validateTrainConfig(tr)
 		if tc.expErr {
-			assert.EqualError(err, fmt.Sprintf(errString, c.LDecay))
+			assert.EqualError(err, fmt.Sprintf(errString, tr.LDecay))
 		} else {
 			assert.NoError(err)
 		}
 	}
-	c.LDecay = origLDecay
+	tr.LDecay = origLDecay
 }
