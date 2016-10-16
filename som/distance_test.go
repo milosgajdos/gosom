@@ -96,3 +96,38 @@ func TestDistanceMx(t *testing.T) {
 	assert.Error(err)
 	assert.Nil(nilMatrix)
 }
+
+func TestClosestVec(t *testing.T) {
+	assert := assert.New(t)
+
+	metric := "euclidean"
+	testCases := []struct {
+		v        []float64
+		m        []float64
+		metric   string
+		expected int
+	}{
+		{[]float64{0.0, 0.0}, []float64{0.0, 1.0, 0.0, 0.1}, metric, 1},
+		{[]float64{0.0, 0.0}, []float64{0.0, 0.0, 0.0, 0.1}, metric, 0},
+		{[]float64{3.0, 1.0}, []float64{1.0, 3.0, 1.0, 0.0}, metric, 1},
+	}
+
+	for _, tc := range testCases {
+		v := mat64.NewVector(len(tc.v), tc.v)
+		m := mat64.NewDense(2, len(tc.v), tc.m)
+		closest, err := ClosestVec(tc.metric, v, m)
+		assert.NoError(err)
+		assert.Equal(tc.expected, closest)
+	}
+
+	// nil matrix returns error
+	v := new(mat64.Vector)
+	m := new(mat64.Dense)
+	closest, err := ClosestVec(metric, v, nil)
+	assert.Error(err)
+	assert.Equal(-1, closest)
+	// nil vector returns error
+	closest, err = ClosestVec(metric, nil, m)
+	assert.Error(err)
+	assert.Equal(-1, closest)
+}

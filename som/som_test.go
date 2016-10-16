@@ -27,10 +27,10 @@ func setup() {
 	}
 	tSom = &TrainConfig{
 		Method:   "seq",
-		Radius:   0,
+		Radius:   10.0,
 		RDecay:   "lin",
 		NeighbFn: "gaussian",
-		LRate:    0,
+		LRate:    0.5,
 		LDecay:   "lin",
 	}
 	// Create input data matrix
@@ -66,8 +66,8 @@ func TestNewMap(t *testing.T) {
 	origInitFunc := mSom.InitFunc
 	mSom.InitFunc = nil
 	m, err = NewMap(mSom, dataMx)
-	assert.NotNil(m)
-	assert.NoError(err)
+	assert.Nil(m)
+	assert.Error(err)
 	mSom.InitFunc = origInitFunc
 	// incorrect init matrix
 	m, err = NewMap(mSom, nil)
@@ -104,7 +104,7 @@ func TestCodebook(t *testing.T) {
 	assert.Equal(cols, cbCols)
 }
 
-func TestGridDist(t *testing.T) {
+func TestUnitDist(t *testing.T) {
 	assert := assert.New(t)
 
 	mapUnits := utils.IntProduct(mSom.Dims)
@@ -112,9 +112,9 @@ func TestGridDist(t *testing.T) {
 	m, err := NewMap(mSom, dataMx)
 	assert.NotNil(m)
 	assert.NoError(err)
-	gridDist := m.GridDist()
-	assert.NotNil(gridDist)
-	cbRows, cbCols := gridDist.Dims()
+	unitDist := m.UnitDist()
+	assert.NotNil(unitDist)
+	cbRows, cbCols := unitDist.Dims()
 	assert.Equal(mapUnits, cbRows)
 	assert.Equal(mapUnits, cbCols)
 }
@@ -122,14 +122,12 @@ func TestGridDist(t *testing.T) {
 func TestBmus(t *testing.T) {
 	assert := assert.New(t)
 
-	rows, _ := dataMx.Dims()
 	// default config should not throw any errors
 	m, err := NewMap(mSom, dataMx)
 	assert.NotNil(m)
 	assert.NoError(err)
 	bmus := m.BMUs()
 	assert.NotNil(bmus)
-	assert.Equal(rows, len(bmus))
 }
 
 func TestTrain(t *testing.T) {
@@ -146,6 +144,10 @@ func TestTrain(t *testing.T) {
 	err = m.Train(tSom, dataMx, iters)
 	assert.EqualError(err, fmt.Sprintf(errString, iters))
 	iters = 100
+	// incorrect number of iterations
+	errString = "Invalid data supplied: %v\n"
+	err = m.Train(tSom, nil, iters)
+	assert.EqualError(err, fmt.Sprintf(errString, nil))
 	// throw in incorrect training config
 	origRadius := tSom.Radius
 	tSom.Radius = -10

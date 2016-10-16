@@ -18,6 +18,7 @@ builddir:
 test:
 	for pkg in ${PACKAGES}; do \
 		go vet $$pkg ; \
+		golint $$pkg ; \
 		go test -coverprofile="../../../$$pkg/coverage.txt" -covermode=atomic $$pkg || exit; \
 	done
 

@@ -11,9 +11,8 @@ func Gaussian(distance float64, radius float64) float64 {
 func Bubble(distance float64, radius float64) float64 {
 	if distance <= radius {
 		return 1.0
-	} else {
-		return 0.0
 	}
+	return 0.0
 }
 
 // Mexican calculates mexican hat neghbourhood
