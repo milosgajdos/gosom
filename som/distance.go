@@ -42,12 +42,13 @@ func euclideanVec(a, b *mat64.Vector) (float64, error) {
 		return 0.0, fmt.Errorf("Incorrect vector dims. a: %d, b: %d\n", a.Len(), b.Len())
 	}
 
-	d := mat64.NewVector(a.Len(), nil)
-	d.ScaleVec(-1.0, b)
-	d.AddVec(a, d)
-	d.MulElemVec(d, d)
-
-	return math.Sqrt(mat64.Sum(d)), nil
+	aData := a.RawVector().Data
+	bData := b.RawVector().Data
+	d := 0.0
+	for i := 0; i < a.Len(); i++ {
+		d += (aData[i] - bData[i]) * (aData[i] - bData[i])
+	}
+	return math.Sqrt(d), nil
 }
 
 func euclideanMx(in *mat64.Dense) (*mat64.Dense, error) {
