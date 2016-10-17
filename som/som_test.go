@@ -157,4 +157,10 @@ func TestTrain(t *testing.T) {
 	// default config should not throw any errrors
 	err = m.Train(tSom, dataMx, iters)
 	assert.NoError(err)
+	// batch training with default settings
+	origMethod := tSom.Method
+	tSom.Method = "batch"
+	err = m.Train(tSom, dataMx, iters)
+	assert.NoError(err)
+	tSom.Method = origMethod
 }

@@ -159,7 +159,11 @@ func (m *Map) updateCodebook(cbVec, vec *mat64.Vector, l, r, d float64, nFn Neig
 	// pick codebook vector that should be updated
 	diff := mat64.NewVector(cbVec.Len(), nil)
 	diff.AddScaledVec(vec, -1.0, cbVec)
-	mul := l * nFn(d, r)
+	mul := l
+	// nFn returns 1 for d == 0; skipping this will save us some CPU time
+	if d > 0.0 {
+		mul *= nFn(d, r)
+	}
 	cbVec.AddScaledVec(cbVec, mul, diff)
 }
 
