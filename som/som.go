@@ -118,12 +118,14 @@ func (m *Map) Train(c *TrainConfig, data *mat64.Dense, iters int) error {
 // seqTrain runs sequential SOM training on a given data set
 func (m *Map) seqTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 	rows, _ := data.Dims()
-	// random number generator
+	// create random number generator
 	rSrc := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(rSrc)
+	// retrieve Neighbourhood function
+	nFn := Neighb[tc.NeighbFn]
 	// perform iters number of learning iterations
 	for i := 0; i < iters; i++ {
-		// pick random sample from dataset
+		// pick a random sample from dataset
 		sample := data.RowView(r.Intn(rows))
 		// no need to check for error here:
 		// sample and codebook are not nil and are of the same dimension
@@ -131,13 +133,37 @@ func (m *Map) seqTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 		if _, ok := m.bmus[bmu]; !ok {
 			m.bmus[bmu] = 1
 		}
+		// TODO: not thread safe!
 		m.bmus[bmu]++
 		// no need to check for errors:
 		// LRate and Radius are checked by config validation
-		//lRate, _ := LRate(i, iters, tc.LDecay, tc.LRate)
-		//radius, _ := Radius(i, iters, tc.RDecay, tc.Radius)
+		lRate, _ := LRate(i, iters, tc.LDecay, tc.LRate)
+		radius, _ := Radius(i, iters, tc.RDecay, tc.Radius)
+		// pick the bmu distance row
+		bmuDists := m.unitDist.RowView(bmu)
+		for i := 0; i < bmuDists.Len(); i++ {
+			// bmu distance to i-th map unit
+			dist := bmuDists.At(i, 0)
+			// skipt the BMU itself
+			if dist > 0.0 {
+				// we are within BMU radius
+				if dist < radius {
+					cbVec := m.codebook.RowView(i)
+					m.updateCodebook(cbVec, sample, lRate, radius, dist, nFn)
+				}
+			}
+		}
 	}
 	return nil
+}
+
+// updateCodebook updates codebook vectors given the radius and learning rate
+func (m *Map) updateCodebook(cbVec, vec *mat64.Vector, l, r, d float64, nFn NeighbFunc) {
+	// pick codebook vector that should be updated
+	diff := mat64.NewVector(cbVec.Len(), nil)
+	diff.AddScaledVec(vec, -1.0, cbVec)
+	mul := l * nFn(d, r)
+	cbVec.AddScaledVec(cbVec, mul, diff)
 }
 
 // batchTrain runs batch SOM training on a given data set
