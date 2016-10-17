@@ -144,13 +144,10 @@ func (m *Map) seqTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 		for i := 0; i < bmuDists.Len(); i++ {
 			// bmu distance to i-th map unit
 			dist := bmuDists.At(i, 0)
-			// skipt the BMU itself
-			if dist > 0.0 {
-				// we are within BMU radius
-				if dist < radius {
-					cbVec := m.codebook.RowView(i)
-					m.updateCodebook(cbVec, sample, lRate, radius, dist, nFn)
-				}
+			// we are within BMU radius
+			if dist < radius {
+				cbVec := m.codebook.RowView(i)
+				m.updateCodebook(cbVec, sample, lRate, radius, dist, nFn)
 			}
 		}
 	}
