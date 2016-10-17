@@ -38,7 +38,7 @@ func testRadius(t *testing.T, strategy string) {
 	assert.NoError(err)
 
 	r, err = Radius(totalIterations-1, totalIterations, strategy, radius0)
-	assert.InDelta(SmallestRadius, r, 0.01)
+	assert.InDelta(MinRadius, r, 0.01)
 	assert.NoError(err)
 
 }

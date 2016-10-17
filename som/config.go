@@ -50,13 +50,13 @@ type TrainConfig struct {
 	// Method specifies training method: seq or batch
 	Method string
 	// Radius specifies initial SOM units radius
-	Radius int
+	Radius float64
 	// RDecay specifies radius decay strategy: lin, exp
 	RDecay string
 	// NeighbFn specifies SOM neighbourhood function: gaussian, bubble, mexican
 	NeighbFn string
 	// LRate specifies initial SOM learning rate
-	LRate int
+	LRate float64
 	// LDecay specifies learning rate decay strategy: lin, exp
 	LDecay string
 }
@@ -79,6 +79,10 @@ func validateMapConfig(c *MapConfig) error {
 	if _, ok := CoordsInit[c.Grid]; !ok {
 		return fmt.Errorf("Unsupported SOM grid type: %s\n", c.Grid)
 	}
+	// check if the codebook init func is not nil
+	if c.InitFunc == nil {
+		return fmt.Errorf("Invalid InitFunc: %v", c.InitFunc)
+	}
 	// check if the supplied unit shape type is supported
 	if _, ok := UShape[c.UShape]; !ok {
 		return fmt.Errorf("Unsupported SOM unit shape: %s\n", c.UShape)
@@ -95,19 +99,19 @@ func validateTrainConfig(c *TrainConfig) error {
 	}
 	// initial SOM unit radius must be greater than zero
 	if c.Radius < 0 {
-		return fmt.Errorf("Invalid SOM unit radius: %d\n", c.Radius)
+		return fmt.Errorf("Invalid SOM unit radius: %f\n", c.Radius)
 	}
 	// check Radius decay strategy
 	if _, ok := Decay[c.RDecay]; !ok {
 		return fmt.Errorf("Unsupported Radius decay strategy: %s\n", c.RDecay)
 	}
-	// hcheck the supplied neighbourhood function
+	// check the supplied neighbourhood function
 	if _, ok := Neighb[c.NeighbFn]; !ok {
 		return fmt.Errorf("Unsupported Neighbourhood function: %s\n", c.NeighbFn)
 	}
 	// initial SOM learning rate must be greater than zero
 	if c.LRate < 0 {
-		return fmt.Errorf("Invalid SOM learning rate: %d\n", c.LRate)
+		return fmt.Errorf("Invalid SOM learning rate: %f\n", c.LRate)
 	}
 	// check Learning rate decay strategy
 	if _, ok := Decay[c.LDecay]; !ok {

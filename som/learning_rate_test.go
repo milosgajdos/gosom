@@ -22,7 +22,7 @@ func TestDefaultLR(t *testing.T) {
 func TestNegativeLR(t *testing.T) {
 	assert := assert.New(t)
 
-	r, err := LearningRate(0, 1, "exp", -1.0)
+	r, err := LRate(0, 1, "exp", -1.0)
 	assert.True(math.IsNaN(r))
 	assert.NotEmpty(err)
 }
@@ -33,11 +33,11 @@ func testLR(t *testing.T, strategy string) {
 	learningRate0 := 100.0
 	totalIterations := 100
 
-	lr, err := LearningRate(0, totalIterations, strategy, learningRate0)
+	lr, err := LRate(0, totalIterations, strategy, learningRate0)
 	assert.Equal(learningRate0, lr)
 	assert.NoError(err)
 
-	lr, err = LearningRate(totalIterations-1, totalIterations, strategy, learningRate0)
-	assert.InDelta(SmallestLearningRate, lr, 0.01)
+	lr, err = LRate(totalIterations-1, totalIterations, strategy, learningRate0)
+	assert.InDelta(MinLRate, lr, 0.01)
 	assert.NoError(err)
 }

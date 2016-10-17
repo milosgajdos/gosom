@@ -10,17 +10,18 @@ import (
 var (
 	// Init map to default config
 	mc = &MapConfig{
-		Dims:   []int{2, 3},
-		Grid:   "planar",
-		UShape: "hexagon",
+		Dims:     []int{2, 3},
+		Grid:     "planar",
+		InitFunc: RandInit,
+		UShape:   "hexagon",
 	}
 	// default training configuration
 	tr = &TrainConfig{
 		Method:   "seq",
-		Radius:   0,
+		Radius:   10.0,
 		RDecay:   "lin",
 		NeighbFn: "gaussian",
-		LRate:    0,
+		LRate:    0.5,
 		LDecay:   "lin",
 	}
 )
@@ -80,6 +81,32 @@ func TestValidateGrid(t *testing.T) {
 	mc.Grid = origGrid
 }
 
+func TestValidateInitFunc(t *testing.T) {
+	assert := assert.New(t)
+
+	errString := "Invalid InitFunc: %v"
+	testCases := []struct {
+		initFunc CodebookInitFunc
+		expErr   bool
+	}{
+		{RandInit, false},
+		{nil, true},
+		{LinInit, false},
+	}
+
+	origInitFunc := mc.InitFunc
+	for _, tc := range testCases {
+		mc.InitFunc = tc.initFunc
+		err := validateMapConfig(mc)
+		if tc.expErr {
+			assert.EqualError(err, fmt.Sprintf(errString, mc.InitFunc))
+		} else {
+			assert.NoError(err)
+		}
+	}
+	mc.InitFunc = origInitFunc
+}
+
 func TestValidateUshape(t *testing.T) {
 	assert := assert.New(t)
 
@@ -135,14 +162,14 @@ func TestValidateMethod(t *testing.T) {
 func TestValidateRadius(t *testing.T) {
 	assert := assert.New(t)
 
-	errString := "Invalid SOM unit radius: %d\n"
+	errString := "Invalid SOM unit radius: %f\n"
 	testCases := []struct {
-		radius int
+		radius float64
 		expErr bool
 	}{
-		{1, false},
-		{-10, true},
-		{0, false},
+		{1.0, false},
+		{-10.0, true},
+		{0.0, false},
 	}
 
 	origRadius := tr.Radius
@@ -215,14 +242,14 @@ func TestValidateNeighbFn(t *testing.T) {
 func TestValidateLRate(t *testing.T) {
 	assert := assert.New(t)
 
-	errString := "Invalid SOM learning rate: %d\n"
+	errString := "Invalid SOM learning rate: %f\n"
 	testCases := []struct {
-		lrate  int
+		lrate  float64
 		expErr bool
 	}{
-		{1, false},
-		{-10, true},
-		{0, false},
+		{1.0, false},
+		{-10.0, true},
+		{0.0, false},
 	}
 
 	origLRate := tr.LRate
