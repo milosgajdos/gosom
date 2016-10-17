@@ -24,13 +24,13 @@ var (
 	// map unit shape type: hexagon, rectangle
 	ushape string
 	// initial SOM unit neihbourhood radius
-	radius int
+	radius float64
 	// radius decay strategy: lin, exp
 	rdecay string
 	// neighbourhood func: gaussian, bubble, mexican
 	neighb string
 	// initial SOM learning rate
-	lrate int
+	lrate float64
 	// learning rate decay strategy: lin, exp
 	ldecay string
 )
@@ -42,10 +42,10 @@ func init() {
 	flag.StringVar(&grid, "grid", "planar", "SOM grid")
 	flag.StringVar(&ushape, "ushape", "hexagon", "SOM map unit shape")
 	flag.StringVar(&training, "training", "seq", "SOM training method")
-	flag.IntVar(&radius, "radius", 0, "SOM neihbourhood starting radius")
+	flag.Float64Var(&radius, "radius", 0.0, "SOM neihbourhood starting radius")
 	flag.StringVar(&rdecay, "rdecay", "lin", "Radius decay strategy")
 	flag.StringVar(&neighb, "neighb", "gaussian", "SOM neighbourhood function")
-	flag.IntVar(&lrate, "lrate", 0, "SOM initial learning rate")
+	flag.Float64Var(&lrate, "lrate", 0.0, "SOM initial learning rate")
 	flag.StringVar(&ldecay, "ldecay", "lin", "Learning rate decay strategy")
 }
 
