@@ -9,6 +9,29 @@ import (
 	"github.com/gonum/matrix/mat64"
 )
 
+type rowWithDist struct {
+	Row  int
+	Dist float64
+}
+
+type h1 struct {
+	XMLName xml.Name `xml:"h1"`
+	Title   string   `xml:",innerxml"`
+}
+
+type polygon struct {
+	XMLName xml.Name `xml:"polygon"`
+	Points  []byte   `xml:"points,attr"`
+	Style   string   `xml:"style,attr"`
+}
+
+type svgElement struct {
+	XMLName  xml.Name `xml:"svg"`
+	Width    float64  `xml:"width,attr"`
+	Height   float64  `xml:"height,attr"`
+	Polygons []polygon
+}
+
 // Creates an SVG representation of the U-Matrix of the given codebook.
 // codebook is the codebook we're displaying the U-Matrix for,
 // coordsDims are the dimensions of the grid,
@@ -21,27 +44,33 @@ func UMatrixSVG(codebook *mat64.Dense, coordsDims []int, uShape string, title st
 	elems := []interface{}{h1{Title: title}}
 
 	rows, _ := codebook.Dims()
-	distMat, _ := DistanceMx("euclidean", codebook)
-	distMatRows, distMatCols := distMat.Dims()
-	coords, _ := GridCoords(uShape, coordsDims)
-	coordsDistMat, _ := DistanceMx("euclidean", coords)
+	distMat, err := DistanceMx("euclidean", codebook)
+	if err != nil {
+		return err
+	}
+	coords, err := GridCoords(uShape, coordsDims)
+	if err != nil {
+		return err
+	}
+	coordsDistMat, err := DistanceMx("euclidean", coords)
+	if err != nil {
+		return err
+	}
 
 	// get maximum distance between codebook vectors
 	// maximum distance will be rgb(0,0,0)
-	MAX := 0.0
-	for i := 0; i < distMatRows; i++ {
-		for j := i; j < distMatCols; j++ {
-			if distMat.At(i, j) > MAX {
-				MAX = distMat.At(i, j)
-			}
-		}
-	}
-	MUL := 20.0
-	OFF := 10.0
+	maxDistance := mat64.Max(distMat)
+
 	// function to scale the coord grid to something visible
+	const MUL = 20.0
+	const OFF = 10.0
 	scale := func(x float64) float64 { return MUL*x + OFF }
 
-	svgElem := svgElement{Width: float64(coordsDims[1])*MUL + 2*OFF, Height: float64(coordsDims[0])*MUL + 2*OFF, Polygons: make([]polygon, rows)}
+	svgElem := svgElement{
+		Width:    float64(coordsDims[1])*MUL + 2*OFF,
+		Height:   float64(coordsDims[0])*MUL + 2*OFF,
+		Polygons: make([]polygon, rows),
+	}
 	elems = append(elems, svgElem)
 	for row := 0; row < rows; row++ {
 		coord := coords.RowView(row)
@@ -52,12 +81,16 @@ func UMatrixSVG(codebook *mat64.Dense, coordsDims []int, uShape string, title st
 		for _, rwd := range allRowsInRadius {
 			if rwd.Dist > 0.0 {
 				otherMu := codebook.RowView(rwd.Row)
-				cbvDist, _ := Distance("euclidean", cbVec, otherMu)
+				cbvDist, err := Distance("euclidean", cbVec, otherMu)
+				if err != nil {
+					return err
+				}
+
 				avgDistance += cbvDist
 			}
 		}
 		avgDistance /= float64(len(allRowsInRadius) - 1)
-		color := int((1.0 - avgDistance/MAX) * 255.0)
+		color := int((1.0 - avgDistance/maxDistance) * 255.0)
 		polygonCoords := ""
 		x := scale(coord.At(0, 0))
 		y := scale(coord.At(1, 0))
@@ -86,11 +119,6 @@ func UMatrixSVG(codebook *mat64.Dense, coordsDims []int, uShape string, title st
 	return nil
 }
 
-type rowWithDist struct {
-	Row  int
-	Dist float64
-}
-
 func allRowsInRadius(selectedRow int, radius float64, distMatrix *mat64.Dense) []rowWithDist {
 	rowsInRadius := []rowWithDist{}
 	for i, dist := range distMatrix.RowView(selectedRow).RawVector().Data {
@@ -99,22 +127,4 @@ func allRowsInRadius(selectedRow int, radius float64, distMatrix *mat64.Dense) [
 		}
 	}
 	return rowsInRadius
-}
-
-type h1 struct {
-	XMLName xml.Name `xml:"h1"`
-	Title   string   `xml:",innerxml"`
-}
-
-type polygon struct {
-	XMLName xml.Name `xml:"polygon"`
-	Points  []byte   `xml:"points,attr"`
-	Style   string   `xml:"style,attr"`
-}
-
-type svgElement struct {
-	XMLName  xml.Name `xml:"svg"`
-	Width    float64  `xml:"width,attr"`
-	Height   float64  `xml:"height,attr"`
-	Polygons []polygon
 }
