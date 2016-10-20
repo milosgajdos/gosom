@@ -101,5 +101,23 @@ func main() {
 		fmt.Printf("Failed to create new SOM: %s\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Hello Go SOM: %v\n", smap)
+	// training configuration
+	tConfig := &som.TrainConfig{
+		Method:   training,
+		Radius:   radius,
+		RDecay:   rdecay,
+		NeighbFn: neighb,
+		LRate:    lrate,
+		LDecay:   ldecay,
+	}
+	// run SOM training
+	if err := smap.Train(tConfig, data, 1000); err != nil {
+		fmt.Printf("Training failed: %s\n", err)
+		os.Exit(1)
+	}
+	// save the model
+	if err := smap.Save(output, "gonum"); err != nil {
+		fmt.Printf("Failed to save model: %s\n", err)
+		os.Exit(1)
+	}
 }

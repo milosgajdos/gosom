@@ -3,6 +3,7 @@ package som
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"runtime"
 	"time"
 
@@ -90,6 +91,22 @@ func (m Map) BMUs() map[int]int {
 	return m.bmus
 }
 
+// Save serializes SOM map data to hard drive. So far only the native gonum format is supported
+func (m *Map) Save(path, format string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	// marshal binary to file path
+	_, err = m.codebook.MarshalBinaryTo(file)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Train runs a SOM training for a given data set and training configuration parameters
 // Train modifies the SOM codebook vectors according to the chosen training method.
 // If batch method is used, iters is ignored and set to the number of data samples.
@@ -114,6 +131,7 @@ func (m *Map) Train(c *TrainConfig, data *mat64.Dense, iters int) error {
 	case "batch":
 		return m.batchTrain(c, data, iters)
 	}
+
 	return nil
 }
 
@@ -153,6 +171,7 @@ func (m *Map) seqTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -235,6 +254,7 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 			}
 		}
 	}
+
 	return nil
 }
 
