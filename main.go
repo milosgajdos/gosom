@@ -33,6 +33,10 @@ var (
 	lrate float64
 	// learning rate decay strategy: lin, exp
 	ldecay string
+	// path to umatrix visualization
+	umxout string
+	// path to saved SOM model
+	output string
 )
 
 func init() {
@@ -47,6 +51,8 @@ func init() {
 	flag.StringVar(&neighb, "neighb", "gaussian", "SOM neighbourhood function")
 	flag.Float64Var(&lrate, "lrate", 0.0, "SOM initial learning rate")
 	flag.StringVar(&ldecay, "ldecay", "lin", "Learning rate decay strategy")
+	flag.StringVar(&umxout, "umxout", "", "Path to u-matrix output visualization")
+	flag.StringVar(&output, "output", "", "Path to serialize the learnt SOM model")
 }
 
 func parseCliFlags() error {
