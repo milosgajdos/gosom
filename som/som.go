@@ -223,8 +223,7 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 	}
 	// number of worker goroutines
 	workers := runtime.NumCPU()
-	// upper and lower bounds of batch submatrix
-	var rUpper, rLower int
+	var bound int
 	// iters is now set to number of data samples
 	for i := 0; i < rows; i += batchSize {
 		// make data channel a buffered channel
@@ -232,15 +231,14 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 		// batch results channel
 		resChan := make(chan *batchResult, workers)
 		// upper and lower bounds of batch submatrix
-		rUpper = i * batchSize
-		rLower = rUpper + batchSize
-		if rLower > rows {
-			rLower = rows - 1
+		bound = i + batchSize
+		if bound >= rows {
+			bound = rows - 1
 		}
 		// batch submatrix
-		batch := data.View(rUpper, 0, rLower, cbCols)
+		batch := data.View(i, 0, bound-i+1, cbCols)
 		// go routine which will feed worker goroutines
-		go readDataRows(batch, i, rUpper, rowChan)
+		go readDataRows(batch, i, rowChan)
 		// batchConfig: training config, codebook and unit dist matrix
 		bc := &batchConfig{tc: tc, cbMx: m.codebook, distMx: m.unitDist}
 		for j := 0; j < workers; j++ {
@@ -271,14 +269,14 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 }
 
 // readDataRows reads data rows and sends them down rowChan channel
-func readDataRows(batch mat64.Matrix, iter, dataIdx int, rowChan chan<- *dataRow) {
+func readDataRows(batch mat64.Matrix, iter int, rowChan chan<- *dataRow) {
 	// create batches of data
 	rows, _ := batch.Dims()
 	for i := 0; i < rows; i++ {
 		rowChan <- &dataRow{
 			iter: iter,
 			vec:  (batch.(*mat64.Dense)).RowView(i),
-			idx:  i + dataIdx,
+			idx:  i + iter,
 		}
 	}
 	// close channel when done
