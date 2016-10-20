@@ -2,7 +2,10 @@ package som
 
 import (
 	"fmt"
+	"io"
 	"math/rand"
+	"runtime"
+	"sync"
 	"time"
 
 	"github.com/gonum/matrix/mat64"
@@ -89,9 +92,28 @@ func (m Map) BMUs() map[int]int {
 	return m.bmus
 }
 
-// Train runs a SOM training for a given data set and training configuration parameters
-// Train modifies the SOM codebook vectors according to the chosen training method.
-// It returns error if the supplied training configuration is invalid
+// MarshalTo serializes SOM codebook in a given format to writer w.
+// At the moment only the native gonum binary format is supported.
+// It returns the number of bytes written to w or fails with error.
+func (m *Map) MarshalTo(format string, w io.Writer) (int, error) {
+	switch format {
+	case "gonum":
+		return m.codebook.MarshalBinaryTo(w)
+	}
+	// marshal binary to file path
+	return 0, fmt.Errorf("Unsupported format: %s\n", format)
+}
+
+// UMatrixOut generates SOM u-matrix in a given format and writes the output to w.
+// At the moment only SVG format is supported. It fails with error if the write to w fails.
+func (m Map) UMatrixOut(format, title string, w io.Writer) error {
+	// TODO: needs some UMatrixSVG modifications first
+	return nil
+}
+
+// Train runs a SOM training for a given data set and training configuration parameters.
+// It modifies the map codebook vectors based on the chosen training algorithm.
+// It returns error if the supplied training configuration is invalid or training fails
 func (m *Map) Train(c *TrainConfig, data *mat64.Dense, iters int) error {
 	// number of iterations must be a positive integer
 	if iters <= 0 {
@@ -112,62 +134,199 @@ func (m *Map) Train(c *TrainConfig, data *mat64.Dense, iters int) error {
 	case "batch":
 		return m.batchTrain(c, data, iters)
 	}
+
 	return nil
 }
 
-// seqTrain runs sequential SOM training on a given data set
+// seqTrain runs sequential SOM training algorithm on a given data set
 func (m *Map) seqTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 	rows, _ := data.Dims()
 	// create random number generator
 	rSrc := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(rSrc)
 	// retrieve Neighbourhood function
-	nFn := Neighb[tc.NeighbFn]
+	neighbFn := Neighb[tc.NeighbFn]
 	// perform iters number of learning iterations
 	for i := 0; i < iters; i++ {
 		// pick a random sample from dataset
 		sample := data.RowView(r.Intn(rows))
 		// no need to check for error here:
-		// sample and codebook are not nil and are of the same dimension
+		// sample and codebook are not nil and have the same dimension
 		bmu, _ := ClosestVec("euclidean", sample, m.codebook)
-		if _, ok := m.bmus[bmu]; !ok {
-			m.bmus[bmu] = 1
-		}
-		// TODO: not thread safe!
-		m.bmus[bmu]++
 		// no need to check for errors:
 		// LRate and Radius are checked by config validation
 		lRate, _ := LRate(i, iters, tc.LDecay, tc.LRate)
 		radius, _ := Radius(i, iters, tc.RDecay, tc.Radius)
-		// pick the bmu distance row
+		// pick the bmu unit distance row
 		bmuDists := m.unitDist.RowView(bmu)
+		// find units which are within the radius
 		for i := 0; i < bmuDists.Len(); i++ {
 			// bmu distance to i-th map unit
 			dist := bmuDists.At(i, 0)
 			// we are within BMU radius
 			if dist < radius {
-				cbVec := m.codebook.RowView(i)
-				m.updateCodebook(cbVec, sample, lRate, radius, dist, nFn)
+				// update particular codebook vector
+				m.seqUpdateCbVec(i, sample, lRate, radius, dist, neighbFn)
 			}
 		}
 	}
+
 	return nil
 }
 
-// updateCodebook updates codebook vectors given the radius and learning rate
-func (m *Map) updateCodebook(cbVec, vec *mat64.Vector, l, r, d float64, nFn NeighbFunc) {
+// seqUpdateCbVec updates codebook vector on row cbIdx given the learning rate l,
+// radius r, distance d and neihgbourhood function nFn
+func (m *Map) seqUpdateCbVec(cbIdx int, vec *mat64.Vector, l, r, d float64, nFn NeighbFunc) {
 	// pick codebook vector that should be updated
+	cbVec := m.codebook.RowView(cbIdx)
+	// update codebook vector according to the algorithm
 	diff := mat64.NewVector(cbVec.Len(), nil)
 	diff.AddScaledVec(vec, -1.0, cbVec)
 	mul := l
-	// nFn returns 1 for d == 0; skipping this will save us some CPU time
+	// nFn returns 1 for d == 0; skipping this case will save us some CPU time
 	if d > 0.0 {
 		mul *= nFn(d, r)
 	}
 	cbVec.AddScaledVec(cbVec, mul, diff)
 }
 
+// batchConfig holds batch training configuration
+type batchConfig struct {
+	// tc is a training configuration
+	tc *TrainConfig
+	// iters is a number of training iterations
+	iters int
+}
+
+// batchRow holds data vectoar, ts position in data matri and current training iteration
+type batchRow struct {
+	// vec is an input data vector
+	vec *mat64.Vector
+	// idx is index of vec in data matrix
+	idx int
+	// iter is a current training iteration
+	iter int
+}
+
+// batchResult holds scaled data vector, neighbourhood of data input and index of codebook vector
+type batchResult struct {
+	// vec is a scaled data vector
+	vec *mat64.Vector
+	// nghb is particular input neighbourhood
+	nghb float64
+	// idx is an index of codebook vector to be updated
+	idx int
+}
+
 // batchTrain runs batch SOM training on a given data set
 func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
+	cbRows, _ := m.codebook.Dims()
+	rows, cols := data.Dims()
+	// batchSize set to min(cbRows,rows)
+	batchSize := cbRows
+	if rows < cbRows {
+		batchSize = rows
+	}
+	// batchConfig: training config, iterations, codebook and unitdist matrix
+	bc := &batchConfig{
+		tc:    tc,
+		iters: iters,
+	}
+	// number of worker goroutines
+	workers := runtime.NumCPU()
+	// train for a number of iterations
+	for i := 0; i < iters; i++ {
+		// Iterate over the input data in batchSize batches
+		for j := 0; j < rows; j += batchSize {
+			// data and results channels are buffered
+			rowChan := make(chan *batchRow, workers*4)
+			resChan := make(chan *batchResult, workers*4)
+			// adjust batchSize in case it goes over rows
+			if j+batchSize > rows {
+				batchSize = j + batchSize - rows
+			}
+			// batch matrix is a submatrix of data matrix
+			batch := data.View(j, 0, batchSize, cols)
+			// goroutine which feeds worker goroutines
+			go readDataRows(batch, i, j, rowChan)
+			// start worker goroutines
+			wg := &sync.WaitGroup{}
+			for j := 0; j < workers; j++ {
+				wg.Add(1)
+				go m.processRow(resChan, wg, bc, rowChan)
+			}
+			// wait for workers to finish and close the result channel
+			go func() {
+				wg.Wait()
+				close(resChan)
+			}()
+			// collect batch results from all workers
+			cbVecs := make([]*mat64.Vector, cbRows)
+			nghbs := make([]float64, cbRows)
+			for res := range resChan {
+				if cbVecs[res.idx] != nil {
+					cbVecs[res.idx].AddVec(cbVecs[res.idx], res.vec)
+				} else {
+					cbVecs[res.idx] = res.vec
+				}
+				nghbs[res.idx] += res.nghb
+			}
+			// update codebook vectors
+			for i := 0; i < cbRows; i++ {
+				if cbVecs[i] != nil {
+					cbVecs[i].ScaleVec(1.0/nghbs[i], cbVecs[i])
+					m.codebook.SetRow(i, cbVecs[i].RawVector().Data)
+				}
+			}
+		}
+	}
+
 	return nil
+}
+
+// processRow processes data rows and sends tehm down the results channel
+func (m Map) processRow(res chan<- *batchResult, wg *sync.WaitGroup, bc *batchConfig,
+	rows <-chan *batchRow) {
+	// retrieve Neighbourhood function
+	neighbFn := Neighb[bc.tc.NeighbFn]
+	for row := range rows {
+		// find codebook BMU for this data row
+		bmu, _ := ClosestVec("euclidean", row.vec, m.codebook)
+		// calculate radius for this iteration
+		radius, _ := Radius(row.iter, bc.iters, bc.tc.RDecay, bc.tc.Radius)
+		// pick the BMU's distance row
+		bmuDists := m.unitDist.RowView(bmu)
+		for i := 0; i < bmuDists.Len(); i++ {
+			// bmu distance to i-th map unit
+			dist := bmuDists.At(i, 0)
+			// when in BMU radius, scale and add to all neighbourhood vecs
+			if dist < radius {
+				// calculate neighbourhood function
+				nghb := neighbFn(dist, radius)
+				// allocate new vector
+				vec := new(mat64.Vector)
+				vec.CloneVec(row.vec)
+				vec.ScaleVec(nghb, vec)
+				// send batchResult down results channel
+				res <- &batchResult{vec: vec, nghb: nghb, idx: i}
+			}
+		}
+	}
+	wg.Done()
+}
+
+// readDataRows reads data rows and sends them down rowChan channel
+func readDataRows(batch mat64.Matrix, iter, idx int, rowChan chan<- *batchRow) {
+	// create batches of data
+	rows, _ := batch.Dims()
+	// iterate through all batch rows
+	for i := 0; i < rows; i++ {
+		rowChan <- &batchRow{
+			iter: iter,
+			vec:  (batch.(*mat64.Dense)).RowView(i),
+			idx:  i + idx,
+		}
+	}
+	// close channel when done
+	close(rowChan)
 }

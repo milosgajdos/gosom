@@ -32,12 +32,11 @@ type svgElement struct {
 	Polygons []polygon
 }
 
-// Creates an SVG representation of the U-Matrix of the given codebook.
-// codebook is the codebook we're displaying the U-Matrix for,
-// coordsDims are the dimensions of the grid,
-// uShape is the shape of the grid,
-// title is the title of the output SVG,
-// and writer is the io.Writter to write the output SVG to.
+// UMatrixSVG creates SVG representation of the U-Matrix of the given codebook.
+// codebook is the SOM codebook we're rendering the U-Matrix for,
+// coordsDims are the dimensions of the grid, uShape is the shape of the grid unit,
+// title is the title of the output SVG, and writer is the io.Writter to write the output SVG to.
+// UMatrixSVG returns error when the SVG could not be generated.
 func UMatrixSVG(codebook *mat64.Dense, coordsDims []int, uShape string, title string, writer io.Writer) error {
 	xmlEncoder := xml.NewEncoder(writer)
 	// array to hold the xml elements
