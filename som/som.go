@@ -91,7 +91,8 @@ func (m Map) BMUs() map[int]int {
 	return m.bmus
 }
 
-// Save serializes SOM map data to hard drive. So far only the native gonum format is supported
+// Save serializes SOM codebook to file in given path and format.
+// At the moment only the native gonum binary format is supported
 func (m *Map) Save(path, format string) error {
 	file, err := os.Open(path)
 	if err != nil {
@@ -104,6 +105,18 @@ func (m *Map) Save(path, format string) error {
 		return err
 	}
 
+	return nil
+}
+
+// UMatrix generates SOM u-matrix in a given format
+// At the moment only SVG format is supported
+func (m Map) UMatrix(path, format, uShape, title string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	// TODO: needs some UMatrixSVG modifications first
 	return nil
 }
 
@@ -214,6 +227,11 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 	// number of iterations is set to number of data samples
 	cbRows, _ := m.codebook.Dims()
 	rows, _ := data.Dims()
+	// batchSize set to min(cbRows,rows)
+	batchSize := cbRows
+	if rows < cbRows {
+		batchSize = rows
+	}
 	iters = rows
 	// number of worker goroutines
 	workers := runtime.NumCPU()
@@ -230,7 +248,7 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 			distMx: m.unitDist,
 		}
 		// go routine which will feed worker goroutines
-		go readDataRows(data, i, rowChan)
+		go readDataRows(data, i, batchSize, rowChan)
 		for j := 0; j < workers; j++ {
 			go processRow(resChan, iters, bc, rowChan)
 		}
@@ -259,10 +277,30 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 }
 
 // readDataRows reads data rows and sends them down rowChan channel
-func readDataRows(data *mat64.Dense, iter int, rowChan chan<- *dataRow) {
-	rows, _ := data.Dims()
+func readDataRows(data *mat64.Dense, iter, batchSize int, rowChan chan<- *dataRow) {
+	var rUpper, rLower int
+	// create batches of data
+	rows, cols := data.Dims()
 	for i := 0; i < rows; i++ {
-		rowChan <- &dataRow{iter: iter, vec: data.RowView(i), idx: i}
+		// upper and lower bounds of batch submatrix
+		rUpper = i * batchSize
+		if rUpper > rows-1 {
+			break
+		}
+		rLower = rUpper + batchSize
+		if rLower > rows {
+			rLower = rows - 1
+		}
+		// batch submatrix
+		batch := data.View(rUpper, 0, rLower, cols)
+		bRows, _ := batch.Dims()
+		for j := 0; j < bRows; j++ {
+			rowChan <- &dataRow{
+				iter: iter,
+				vec:  (batch.(*mat64.Dense)).RowView(j),
+				idx:  rUpper + j,
+			}
+		}
 	}
 	// close channel when done
 	close(rowChan)
