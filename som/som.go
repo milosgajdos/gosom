@@ -2,8 +2,8 @@ package som
 
 import (
 	"fmt"
+	"io"
 	"math/rand"
-	"os"
 	"runtime"
 	"time"
 
@@ -91,31 +91,20 @@ func (m Map) BMUs() map[int]int {
 	return m.bmus
 }
 
-// Save serializes SOM codebook to file in given path and format.
+// MarshalTo serializes SOM codebook in a given format.
 // At the moment only the native gonum binary format is supported
-func (m *Map) Save(path, format string) error {
-	file, err := os.Open(path)
-	if err != nil {
-		return err
+func (m *Map) MarshalTo(format string, w io.Writer) (int, error) {
+	switch format {
+	case "gonum":
+		return m.codebook.MarshalBinaryTo(w)
 	}
-	defer file.Close()
 	// marshal binary to file path
-	_, err = m.codebook.MarshalBinaryTo(file)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return 0, fmt.Errorf("Unsupported format: %s\n", format)
 }
 
-// UMatrix generates SOM u-matrix in a given format
+// UMatrixOut generates SOM u-matrix in a given format
 // At the moment only SVG format is supported
-func (m Map) UMatrix(path, format, uShape, title string) error {
-	file, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+func (m Map) UMatrixOut(format, uShape, title string, w io.Writer) error {
 	// TODO: needs some UMatrixSVG modifications first
 	return nil
 }
@@ -225,30 +214,35 @@ type batchResult struct {
 // batchTrain runs batch SOM training on a given data set
 func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 	// number of iterations is set to number of data samples
-	cbRows, _ := m.codebook.Dims()
+	cbRows, cbCols := m.codebook.Dims()
 	rows, _ := data.Dims()
 	// batchSize set to min(cbRows,rows)
 	batchSize := cbRows
 	if rows < cbRows {
 		batchSize = rows
 	}
-	iters = rows
 	// number of worker goroutines
 	workers := runtime.NumCPU()
-	// perform iters number of learning iterations
-	for i := 0; i < iters; i++ {
+	// upper and lower bounds of batch submatrix
+	var rUpper, rLower int
+	// iters is now set to number of data samples
+	for i := 0; i < rows; i += batchSize {
 		// make data channel a buffered channel
 		rowChan := make(chan *dataRow, workers*4)
 		// batch results channel
 		resChan := make(chan *batchResult, workers)
-		// batchConfig: training config, codebook and unit dist matrix
-		bc := &batchConfig{
-			tc:     tc,
-			cbMx:   m.codebook,
-			distMx: m.unitDist,
+		// upper and lower bounds of batch submatrix
+		rUpper = i * batchSize
+		rLower = rUpper + batchSize
+		if rLower > rows {
+			rLower = rows - 1
 		}
+		// batch submatrix
+		batch := data.View(rUpper, 0, rLower, cbCols)
 		// go routine which will feed worker goroutines
-		go readDataRows(data, i, batchSize, rowChan)
+		go readDataRows(batch, i, rUpper, rowChan)
+		// batchConfig: training config, codebook and unit dist matrix
+		bc := &batchConfig{tc: tc, cbMx: m.codebook, distMx: m.unitDist}
 		for j := 0; j < workers; j++ {
 			go processRow(resChan, iters, bc, rowChan)
 		}
@@ -277,29 +271,14 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 }
 
 // readDataRows reads data rows and sends them down rowChan channel
-func readDataRows(data *mat64.Dense, iter, batchSize int, rowChan chan<- *dataRow) {
-	var rUpper, rLower int
+func readDataRows(batch mat64.Matrix, iter, dataIdx int, rowChan chan<- *dataRow) {
 	// create batches of data
-	rows, cols := data.Dims()
+	rows, _ := batch.Dims()
 	for i := 0; i < rows; i++ {
-		// upper and lower bounds of batch submatrix
-		rUpper = i * batchSize
-		if rUpper > rows-1 {
-			break
-		}
-		rLower = rUpper + batchSize
-		if rLower > rows {
-			rLower = rows - 1
-		}
-		// batch submatrix
-		batch := data.View(rUpper, 0, rLower, cols)
-		bRows, _ := batch.Dims()
-		for j := 0; j < bRows; j++ {
-			rowChan <- &dataRow{
-				iter: iter,
-				vec:  (batch.(*mat64.Dense)).RowView(j),
-				idx:  rUpper + j,
-			}
+		rowChan <- &dataRow{
+			iter: iter,
+			vec:  (batch.(*mat64.Dense)).RowView(i),
+			idx:  i + dataIdx,
 		}
 	}
 	// close channel when done

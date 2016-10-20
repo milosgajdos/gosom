@@ -115,9 +115,18 @@ func main() {
 		fmt.Printf("Training failed: %s\n", err)
 		os.Exit(1)
 	}
-	// save the model
-	if err := smap.Save(output, "gonum"); err != nil {
-		fmt.Printf("Failed to save model: %s\n", err)
-		os.Exit(1)
+	// if output is not empty save map to a file
+	if output != "" {
+		file, err := os.Open(output)
+		if err != nil {
+			fmt.Printf("Output file error: %s\n", err)
+			os.Exit(1)
+		}
+		defer file.Close()
+		// save the model
+		if _, err := smap.MarshalTo("gonum", file); err != nil {
+			fmt.Printf("Failed to save model: %s\n", err)
+			os.Exit(1)
+		}
 	}
 }
