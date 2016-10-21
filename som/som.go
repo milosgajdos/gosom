@@ -206,16 +206,15 @@ type batchConfig struct {
 
 // batchResult holds vector and neighbourhood batch result
 type batchResult struct {
-	vec *mat64.Vector
-	ngh float64
-	idx int
+	vec  *mat64.Vector
+	nghb float64
+	idx  int
 }
 
 // batchTrain runs batch SOM training on a given data set
 func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
-	// number of iterations is set to number of data samples
-	cbRows, cbCols := m.codebook.Dims()
-	rows, _ := data.Dims()
+	cbRows, _ := m.codebook.Dims()
+	rows, cols := data.Dims()
 	// batchSize set to min(cbRows,rows)
 	batchSize := cbRows
 	if rows < cbRows {
@@ -223,44 +222,49 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 	}
 	// number of worker goroutines
 	workers := runtime.NumCPU()
+	// number of samples in the batch
 	var bound int
-	// iters is now set to number of data samples
-	for i := 0; i < rows; i += batchSize {
-		// make data channel a buffered channel
-		rowChan := make(chan *dataRow, workers*4)
-		// batch results channel
-		resChan := make(chan *batchResult, workers)
-		// upper and lower bounds of batch submatrix
-		bound = i + batchSize
-		if bound >= rows {
-			bound = rows - 1
-		}
-		// batch submatrix
-		batch := data.View(i, 0, bound-i+1, cbCols)
-		// go routine which will feed worker goroutines
-		go readDataRows(batch, i, rowChan)
-		// batchConfig: training config, codebook and unit dist matrix
-		bc := &batchConfig{tc: tc, cbMx: m.codebook, distMx: m.unitDist}
-		for j := 0; j < workers; j++ {
-			go processRow(resChan, iters, bc, rowChan)
-		}
-		// collect batch results from all workers
-		cbVecs := make([]*mat64.Vector, cbRows)
-		cbNghs := make([]float64, cbRows)
-		for i := 0; i < workers; i++ {
-			res := <-resChan
-			if cbVecs[res.idx] != nil {
-				cbVecs[res.idx].AddVec(cbVecs[res.idx], res.vec)
-			} else {
-				cbVecs[res.idx] = res.vec
+	// train for a number of iterations
+	for i := 0; i < iters; i++ {
+		for j := 0; j < rows; j += batchSize {
+			// make data channel a buffered channel
+			rowChan := make(chan *dataRow, workers*4)
+			// batch results channel
+			resChan := make(chan *batchResult, workers)
+			// upper bound of batch submatrix
+			bound = j + batchSize
+			if bound > rows {
+				bound = rows
 			}
-			cbNghs[res.idx] += res.ngh
-		}
-		// update codebook vectors
-		for i := 0; i < cbRows; i++ {
-			if cbVecs[i] != nil {
-				cbVecs[i].ScaleVec(1.0/cbNghs[i], cbVecs[i])
-				m.codebook.SetRow(i, cbVecs[i].RawVector().Data)
+			// batch data matrix: submatrix of data matrix
+			batch := data.View(j, 0, bound-j, cols)
+			//fmt.Println("from", j, "to", bound-1)
+			// goroutine which feeds worker goroutines
+			go readDataRows(batch, i, j, rowChan)
+			// batchConfig: training config, codebook and unit dist matrix
+			bc := &batchConfig{tc: tc, cbMx: m.codebook, distMx: m.unitDist}
+			// start worker goroutines
+			for j := 0; j < workers; j++ {
+				go processRow(resChan, iters, bc, rowChan)
+			}
+			// collect batch results from all workers
+			cbVecs := make([]*mat64.Vector, cbRows)
+			cbNghs := make([]float64, cbRows)
+			for i := 0; i < workers; i++ {
+				res := <-resChan
+				if cbVecs[res.idx] != nil {
+					cbVecs[res.idx].AddVec(cbVecs[res.idx], res.vec)
+				} else {
+					cbVecs[res.idx] = res.vec
+				}
+				cbNghs[res.idx] += res.nghb
+			}
+			// update codebook vectors
+			for i := 0; i < cbRows; i++ {
+				if cbVecs[i] != nil {
+					cbVecs[i].ScaleVec(1.0/cbNghs[i], cbVecs[i])
+					m.codebook.SetRow(i, cbVecs[i].RawVector().Data)
+				}
 			}
 		}
 	}
@@ -269,14 +273,16 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 }
 
 // readDataRows reads data rows and sends them down rowChan channel
-func readDataRows(batch mat64.Matrix, iter int, rowChan chan<- *dataRow) {
+func readDataRows(batch mat64.Matrix, iter, idx int, rowChan chan<- *dataRow) {
 	// create batches of data
 	rows, _ := batch.Dims()
+	// iterate through all batch rows
 	for i := 0; i < rows; i++ {
+		//fmt.Println("Data mx position: ", i+idx)
 		rowChan <- &dataRow{
 			iter: iter,
 			vec:  (batch.(*mat64.Dense)).RowView(i),
-			idx:  i + iter,
+			idx:  i + idx,
 		}
 	}
 	// close channel when done
@@ -285,11 +291,8 @@ func readDataRows(batch mat64.Matrix, iter int, rowChan chan<- *dataRow) {
 
 // processRow processes data rows and sends tehm down the results channel
 func processRow(res chan<- *batchResult, iters int, bc *batchConfig, rows <-chan *dataRow) {
-	var ngh float64
-	// create new vector
-	vec := new(mat64.Vector)
 	// retrieve Neighbourhood function
-	nFn := Neighb[bc.tc.NeighbFn]
+	neighbFn := Neighb[bc.tc.NeighbFn]
 	for row := range rows {
 		// find codebook BMU for this data row
 		bmu, _ := ClosestVec("euclidean", row.vec, bc.cbMx)
@@ -303,19 +306,14 @@ func processRow(res chan<- *batchResult, iters int, bc *batchConfig, rows <-chan
 			// when in BMU radius, scale and add to all neighbourhood vecs
 			if dist < radius {
 				// calculate neighbourhood function
-				rowNgh := nFn(dist, radius)
-				// if empty vector, clone data vector
-				if vec.Len() == 0 {
-					vec.CloneVec(row.vec)
-					vec.ScaleVec(rowNgh, vec)
-				} else {
-					// add scaled data row to the sum
-					vec.AddScaledVec(vec, rowNgh, row.vec)
-				}
-				ngh += rowNgh
+				nghb := neighbFn(dist, radius)
+				// allocate new vector
+				vec := new(mat64.Vector)
+				vec.CloneVec(row.vec)
+				vec.ScaleVec(nghb, vec)
+				// send batchResult down results channel
+				res <- &batchResult{vec: vec, nghb: nghb, idx: i}
 			}
 		}
-		// send batchResult down results channel
-		res <- &batchResult{vec: vec, ngh: ngh, idx: bmu}
 	}
 }
