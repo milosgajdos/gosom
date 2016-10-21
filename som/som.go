@@ -5,6 +5,7 @@ import (
 	"io"
 	"math/rand"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/gonum/matrix/mat64"
@@ -220,6 +221,7 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 	if rows < cbRows {
 		batchSize = rows
 	}
+	//fmt.Println("batchSize", batchSize)
 	// number of worker goroutines
 	workers := runtime.NumCPU()
 	// number of samples in the batch
@@ -230,12 +232,13 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 			// make data channel a buffered channel
 			rowChan := make(chan *dataRow, workers*4)
 			// batch results channel
-			resChan := make(chan *batchResult, workers)
+			resChan := make(chan *batchResult, workers*4)
 			// upper bound of batch submatrix
 			bound = j + batchSize
 			if bound > rows {
 				bound = rows
 			}
+			wg := &sync.WaitGroup{}
 			// batch data matrix: submatrix of data matrix
 			batch := data.View(j, 0, bound-j, cols)
 			//fmt.Println("from", j, "to", bound-1)
@@ -245,13 +248,19 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 			bc := &batchConfig{tc: tc, cbMx: m.codebook, distMx: m.unitDist}
 			// start worker goroutines
 			for j := 0; j < workers; j++ {
-				go processRow(resChan, iters, bc, rowChan)
+				//fmt.Println("Starting worker", j)
+				wg.Add(1)
+				go processRow(resChan, wg, iters, bc, rowChan)
 			}
+			go func() {
+				wg.Wait()
+				close(resChan)
+			}()
 			// collect batch results from all workers
 			cbVecs := make([]*mat64.Vector, cbRows)
 			cbNghs := make([]float64, cbRows)
-			for i := 0; i < workers; i++ {
-				res := <-resChan
+			for res := range resChan {
+				//fmt.Println("Res IDX", res.idx)
 				if cbVecs[res.idx] != nil {
 					cbVecs[res.idx].AddVec(cbVecs[res.idx], res.vec)
 				} else {
@@ -276,6 +285,7 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 func readDataRows(batch mat64.Matrix, iter, idx int, rowChan chan<- *dataRow) {
 	// create batches of data
 	rows, _ := batch.Dims()
+	//fmt.Println("Feeder rows", rows)
 	// iterate through all batch rows
 	for i := 0; i < rows; i++ {
 		//fmt.Println("Data mx position: ", i+idx)
@@ -285,14 +295,16 @@ func readDataRows(batch mat64.Matrix, iter, idx int, rowChan chan<- *dataRow) {
 			idx:  i + idx,
 		}
 	}
+	//fmt.Println("Closing row channel")
 	// close channel when done
 	close(rowChan)
 }
 
 // processRow processes data rows and sends tehm down the results channel
-func processRow(res chan<- *batchResult, iters int, bc *batchConfig, rows <-chan *dataRow) {
+func processRow(res chan<- *batchResult, wg *sync.WaitGroup, iters int, bc *batchConfig, rows <-chan *dataRow) {
 	// retrieve Neighbourhood function
 	neighbFn := Neighb[bc.tc.NeighbFn]
+	//fmt.Println("Worker Ready")
 	for row := range rows {
 		// find codebook BMU for this data row
 		bmu, _ := ClosestVec("euclidean", row.vec, bc.cbMx)
@@ -305,6 +317,7 @@ func processRow(res chan<- *batchResult, iters int, bc *batchConfig, rows <-chan
 			dist := bmuDists.At(i, 0)
 			// when in BMU radius, scale and add to all neighbourhood vecs
 			if dist < radius {
+				//fmt.Println("Within radius")
 				// calculate neighbourhood function
 				nghb := neighbFn(dist, radius)
 				// allocate new vector
@@ -316,4 +329,6 @@ func processRow(res chan<- *batchResult, iters int, bc *batchConfig, rows <-chan
 			}
 		}
 	}
+	//fmt.Println("Finished goroutine")
+	wg.Done()
 }
