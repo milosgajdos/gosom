@@ -227,17 +227,23 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 	if rows < cbRows {
 		batchSize = rows
 	}
-	// batchConfig: training config, iterations, codebook and unitdist matrix
+	// number of batchIters in one learning iteration
+	batchIters := rows / batchSize
+	if rows%batchSize != 0 {
+		batchIters++
+	}
+	// batchConfig: training config and number of iterations
 	bc := &batchConfig{
 		tc:    tc,
-		iters: iters,
+		iters: batchIters,
 	}
 	// number of worker goroutines
 	workers := runtime.NumCPU()
 	// train for a number of iterations
 	for i := 0; i < iters; i++ {
 		batchSamples := batchSize
-		// Iterate over the input data in batchSize batches
+		batchIter := 1
+		// Iterate over the input data in batchSize batchIters
 		for j := 0; j < rows; j += batchSize {
 			// data and results channels are buffered
 			rowChan := make(chan *batchRow, workers*4)
@@ -249,7 +255,7 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 			// batch matrix is a submatrix of data matrix
 			batch := data.View(j, 0, batchSamples, cols)
 			// goroutine which feeds worker goroutines
-			go readDataRows(batch, i, j, rowChan)
+			go readDataRows(batch, batchIter, j, rowChan)
 			// start worker goroutines
 			wg := &sync.WaitGroup{}
 			for j := 0; j < workers; j++ {
@@ -279,6 +285,8 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 					m.codebook.SetRow(i, cbVecs[i].RawVector().Data)
 				}
 			}
+			// increment batch iteration
+			batchIter++
 		}
 	}
 
@@ -318,7 +326,7 @@ func (m Map) processRow(res chan<- *batchResult, wg *sync.WaitGroup, bc *batchCo
 
 // readDataRows reads data rows and sends them down rowChan channel
 func readDataRows(batch mat64.Matrix, iter, idx int, rowChan chan<- *batchRow) {
-	// create batches of data
+	// create batchIters of data
 	rows, _ := batch.Dims()
 	// iterate through all batch rows
 	for i := 0; i < rows; i++ {
