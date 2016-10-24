@@ -236,6 +236,7 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 	workers := runtime.NumCPU()
 	// train for a number of iterations
 	for i := 0; i < iters; i++ {
+		batchSamples := batchSize
 		// Iterate over the input data in batchSize batches
 		for j := 0; j < rows; j += batchSize {
 			// data and results channels are buffered
@@ -243,10 +244,10 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 			resChan := make(chan *batchResult, workers*4)
 			// adjust batchSize in case it goes over rows
 			if j+batchSize > rows {
-				batchSize = j + batchSize - rows
+				batchSamples = rows - j
 			}
 			// batch matrix is a submatrix of data matrix
-			batch := data.View(j, 0, batchSize, cols)
+			batch := data.View(j, 0, batchSamples, cols)
 			// goroutine which feeds worker goroutines
 			go readDataRows(batch, i, j, rowChan)
 			// start worker goroutines
