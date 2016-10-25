@@ -163,12 +163,16 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 	for i := 0; i < iters; i++ {
 		count := bSize
 		iter := 0
+		rowsPerWorker := bSize / workers
+		extraRowsForLastWorker := bSize % workers
 		for j := 0; j < rows; j += bSize {
 			results := make(chan *batchResult, workers*4)
 			wg := &sync.WaitGroup{}
-			// Changes here: bSize/workers etc.
 			for k := 0; k < workers; k++ {
-				from := j + k*(bSize/workers)
+				from := j + k*rowsPerWorker
+				if k == workers-1 {
+					from += extraRowsForLastWorker
+				}
 				if from+bSize > rows {
 					count = rows - from
 				}
