@@ -29,15 +29,27 @@ type svgElement struct {
 	XMLName  xml.Name `xml:"svg"`
 	Width    float64  `xml:"width,attr"`
 	Height   float64  `xml:"height,attr"`
-	Polygons []polygon
+	Polygons []interface{}
 }
 
-// UMatrixSVG creates SVG representation of the U-Matrix of the given codebook.
-// codebook is the SOM codebook we're rendering the U-Matrix for,
-// coordsDims are the dimensions of the grid, uShape is the shape of the grid unit,
-// title is the title of the output SVG, and writer is the io.Writter to write the output SVG to.
-// UMatrixSVG returns error when the SVG could not be generated.
-func UMatrixSVG(codebook *mat64.Dense, coordsDims []int, uShape string, title string, writer io.Writer) error {
+type textElement struct {
+	XMLName xml.Name `xml:"text"`
+	X       float64  `xml:"x,attr"`
+	Y       float64  `xml:"y,attr"`
+	Text    string   `xml:",innerxml"`
+}
+
+//var colors = [][]int{{255, 255, 255}}
+
+var colors = [][]int{{255, 0, 0}, {0, 255, 0}, {0, 0, 255}, {255, 255, 0}, {255, 0, 255}, {0, 255, 255}}
+
+// Creates an SVG representation of the U-Matrix of the given codebook.
+// codebook is the codebook we're displaying the U-Matrix for,
+// coordsDims are the dimensions of the grid,
+// uShape is the shape of the grid,
+// title is the title of the output SVG,
+// and writer is the io.Writter to write the output SVG to.
+func UMatrixSVG(codebook *mat64.Dense, coordsDims []int, uShape string, title string, writer io.Writer, clusters map[int]int) error {
 	xmlEncoder := xml.NewEncoder(writer)
 	// array to hold the xml elements
 	elems := []interface{}{h1{Title: title}}
@@ -61,14 +73,14 @@ func UMatrixSVG(codebook *mat64.Dense, coordsDims []int, uShape string, title st
 	maxDistance := mat64.Max(distMat)
 
 	// function to scale the coord grid to something visible
-	const MUL = 20.0
+	const MUL = 50.0
 	const OFF = 10.0
 	scale := func(x float64) float64 { return MUL*x + OFF }
 
 	svgElem := svgElement{
 		Width:    float64(coordsDims[1])*MUL + 2*OFF,
 		Height:   float64(coordsDims[0])*MUL + 2*OFF,
-		Polygons: make([]polygon, rows),
+		Polygons: make([]interface{}, rows*2),
 	}
 	elems = append(elems, svgElem)
 	for row := 0; row < rows; row++ {
@@ -89,7 +101,16 @@ func UMatrixSVG(codebook *mat64.Dense, coordsDims []int, uShape string, title st
 			}
 		}
 		avgDistance /= float64(len(allRowsInRadius) - 1)
-		color := int((1.0 - avgDistance/maxDistance) * 255.0)
+		var colorMask []int
+		if clusters[row] == -1 {
+			colorMask = []int{255, 255, 255}
+		} else {
+			colorMask = colors[clusters[row]%len(colors)]
+		}
+		colorMul := (1.0 - avgDistance/maxDistance)
+		r := int(colorMul * float64(colorMask[0]))
+		g := int(colorMul * float64(colorMask[1]))
+		b := int(colorMul * float64(colorMask[2]))
 		polygonCoords := ""
 		x := scale(coord.At(0, 0))
 		y := scale(coord.At(1, 0))
@@ -106,9 +127,15 @@ func UMatrixSVG(codebook *mat64.Dense, coordsDims []int, uShape string, title st
 		polygonCoords += fmt.Sprintf("%f,%f ", x-xOffset, y+yOffset)
 		polygonCoords += fmt.Sprintf("%f,%f ", x+xOffset, y+yOffset)
 
-		svgElem.Polygons[row] = polygon{
+		svgElem.Polygons[row*2] = polygon{
 			Points: []byte(polygonCoords),
-			Style:  fmt.Sprintf("fill:rgb(%d,%d,%d);stroke:black;stroke-width:1", color, color, color),
+			Style:  fmt.Sprintf("fill:rgb(%d,%d,%d);stroke:black;stroke-width:1", r, g, b),
+		}
+
+		svgElem.Polygons[row*2+1] = textElement{
+			X:    x - 0.25*MUL,
+			Y:    y + 0.25*MUL,
+			Text: fmt.Sprintf("%d", clusters[row]),
 		}
 	}
 
