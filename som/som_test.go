@@ -128,6 +128,8 @@ func TestBmus(t *testing.T) {
 	assert.NoError(err)
 	bmus := m.BMUs()
 	assert.NotNil(bmus)
+	rows, _ := dataMx.Dims()
+	assert.Equal(len(bmus), rows)
 }
 
 func TestTrain(t *testing.T) {

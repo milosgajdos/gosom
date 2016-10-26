@@ -33,11 +33,11 @@ type svgElement struct {
 }
 
 // UMatrixSVG creates SVG representation of the U-Matrix of the given codebook.
-// codebook is the SOM codebook we're rendering the U-Matrix for,
-// coordsDims are the dimensions of the grid, uShape is the shape of the grid unit,
-// title is the title of the output SVG, and writer is the io.Writter to write the output SVG to.
+// codebook is a SOM codebook we're rendering the U-Matrix for,
+// dims are dimensions of the map grid, uShape is the shape of the grid unit,
+// title is the title of the output SVG, and writer is the io.Writter to write the SVG to.
 // UMatrixSVG returns error when the SVG could not be generated.
-func UMatrixSVG(codebook *mat64.Dense, coordsDims []int, uShape string, title string, writer io.Writer) error {
+func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape string, title string, writer io.Writer) error {
 	xmlEncoder := xml.NewEncoder(writer)
 	// array to hold the xml elements
 	elems := []interface{}{h1{Title: title}}
@@ -47,7 +47,7 @@ func UMatrixSVG(codebook *mat64.Dense, coordsDims []int, uShape string, title st
 	if err != nil {
 		return err
 	}
-	coords, err := GridCoords(uShape, coordsDims)
+	coords, err := GridCoords(uShape, dims)
 	if err != nil {
 		return err
 	}
@@ -66,8 +66,8 @@ func UMatrixSVG(codebook *mat64.Dense, coordsDims []int, uShape string, title st
 	scale := func(x float64) float64 { return MUL*x + OFF }
 
 	svgElem := svgElement{
-		Width:    float64(coordsDims[1])*MUL + 2*OFF,
-		Height:   float64(coordsDims[0])*MUL + 2*OFF,
+		Width:    float64(dims[1])*MUL + 2*OFF,
+		Height:   float64(dims[0])*MUL + 2*OFF,
 		Polygons: make([]polygon, rows),
 	}
 	elems = append(elems, svgElem)

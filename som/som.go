@@ -29,9 +29,8 @@ type Map struct {
 	// unitDist is a symmetric hollow matrix that maps distances between SOM units
 	// unitDist dimesions: SOM units x SOM units
 	unitDist *mat64.Dense
-	// bmus stores codebook row indices of Best Match Units (BMU) over the training
-	// bmus will give us an indication of how many clusters are there in the data
-	bmus map[int]int
+	// bmus stores indices of Best Match Units (BMU) for each input data
+	bmus []int
 }
 
 // NewMap creates new SOM based on the provided configuration and input data
@@ -68,7 +67,8 @@ func NewMap(c *MapConfig, data *mat64.Dense) (*Map, error) {
 	if err != nil {
 		return nil, err
 	}
-	bmus := make(map[int]int)
+	rows, _ := data.Dims()
+	bmus := make([]int, rows)
 	// return pointer to new map
 	return &Map{
 		codebook: codebook,
@@ -88,7 +88,7 @@ func (m Map) UnitDist() *mat64.Dense {
 }
 
 // BMUs returns a slice which contains indices of Best Match Units (BMUs) of each input vector
-func (m Map) BMUs() map[int]int {
+func (m Map) BMUs() []int {
 	return m.bmus
 }
 
@@ -192,13 +192,14 @@ func (m *Map) seqUpdateCbVec(cbIdx int, vec *mat64.Vector, l, r, d float64, nFn 
 
 // batchConfig holds batch training configuration
 type batchConfig struct {
-	// tc is a training configuration
+	// tc is SOM training configuration
 	tc *TrainConfig
 	// iters is a number of batch iterations
 	iters int
 }
 
-// batchResult holds scaled data vector, neighbourhood of data input and index of codebook vector
+// batchResult holds result of batch algorithm for a particular data input
+// It holds scaled data vector, neighbourhood of its BMU and index of codebook vector
 type batchResult struct {
 	// vec is a scaled data vector
 	vec *mat64.Vector
@@ -217,12 +218,12 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 	if rows < cbRows {
 		bSize = rows
 	}
-	// number of batchIters in one learning iteration
+	// number of batch iterations in one training iteration
 	bIters := rows / bSize
 	if rows%bSize != 0 {
 		bIters++
 	}
-	// batchConfig: training config and number of iterations
+	// batchConfig holds training config and number of iterations
 	bc := &batchConfig{
 		tc:    tc,
 		iters: bIters,
@@ -234,6 +235,7 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 	if workerBatch == 0 {
 		workerBatch = 1
 	}
+	// set the first batch iteration to 0
 	iter := 0
 	// train for a number of iterations
 	for i := 0; i < iters; i++ {
