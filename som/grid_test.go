@@ -21,7 +21,7 @@ func TestGridDims(t *testing.T) {
 	dims, err = GridDims(data, uShape)
 	assert.NoError(err)
 	assert.EqualValues(dims, []int{2, 2})
-	// 2D+ data with more than one sample
+	// 2D+ data with more than one sample and hexagon uShape
 	data = mat64.NewDense(6, 4, []float64{
 		5.1, 3.5, 1.4, 0.2,
 		4.9, 3.0, 1.4, 0.2,
@@ -31,6 +31,10 @@ func TestGridDims(t *testing.T) {
 		5.4, 3.9, 1.7, 0.4,
 	})
 	dims, err = GridDims(data, uShape)
+	assert.NoError(err)
+	assert.EqualValues(dims, []int{4, 3})
+	// 2D+ data with more than one sample and rectangle uShape
+	dims, err = GridDims(data, "rectangle")
 	assert.NoError(err)
 	assert.EqualValues(dims, []int{4, 3})
 	// data matrix can't be nil
