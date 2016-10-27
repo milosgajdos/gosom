@@ -59,6 +59,7 @@ func UMatrixSVG(codebook *mat64.Dense, coordsDims []int, uShape string, title st
 
 	umatrix := make([]float64, rows)
 	maxDistance := -math.MaxFloat64
+	minDistance := math.MaxFloat64
 	for row := 0; row < rows; row++ {
 		avgDistance := 0.0
 		// this is a rough approximation of the notion of neighbor grid coords
@@ -72,6 +73,9 @@ func UMatrixSVG(codebook *mat64.Dense, coordsDims []int, uShape string, title st
 		umatrix[row] = avgDistance
 		if avgDistance > maxDistance {
 			maxDistance = avgDistance
+		}
+		if avgDistance < maxDistance {
+			minDistance = avgDistance
 		}
 	}
 
@@ -89,6 +93,7 @@ func UMatrixSVG(codebook *mat64.Dense, coordsDims []int, uShape string, title st
 		coord := coords.RowView(row)
 		// this is here for the future when we have more colours
 		colorMask := []int{255, 255, 255}
+		colorMul := 1.0 - (umatrix[row]-minDistance)/(maxDistance-minDistance)
 		r := int(colorMul * float64(colorMask[0]))
 		g := int(colorMul * float64(colorMask[1]))
 		b := int(colorMul * float64(colorMask[2]))
