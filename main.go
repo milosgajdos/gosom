@@ -37,6 +37,8 @@ var (
 	umxout string
 	// path to saved SOM model
 	output string
+	// number of training iterations
+	iters int
 )
 
 func init() {
@@ -53,6 +55,7 @@ func init() {
 	flag.StringVar(&ldecay, "ldecay", "lin", "Learning rate decay strategy")
 	flag.StringVar(&umxout, "umxout", "", "Path to u-matrix output visualization")
 	flag.StringVar(&output, "output", "", "Path to serialize the learnt SOM model")
+	flag.IntVar(&iters, "iters", 1000, "Number of training iterations")
 }
 
 func parseCliFlags() error {
@@ -61,6 +64,10 @@ func parseCliFlags() error {
 	// path to input data is mandatory
 	if input == "" {
 		return fmt.Errorf("Invalid path to input data: %s\n", input)
+	}
+	// number of iterations mus tbe positive integer
+	if iters <= 0 {
+		return fmt.Errorf("Invalid number of training iterations: %d", iters)
 	}
 	return nil
 }
@@ -111,7 +118,7 @@ func main() {
 		LDecay:   ldecay,
 	}
 	// run SOM training
-	if err := smap.Train(tConfig, data, 1000); err != nil {
+	if err := smap.Train(tConfig, data, iters); err != nil {
 		fmt.Printf("Training failed: %s\n", err)
 		os.Exit(1)
 	}

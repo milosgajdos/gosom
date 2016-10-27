@@ -226,7 +226,7 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 	// batchConfig holds training config and number of iterations
 	bc := &batchConfig{
 		tc:    tc,
-		iters: bIters,
+		iters: iters * bIters,
 	}
 	// number of worker goroutines
 	workers := runtime.NumCPU()
