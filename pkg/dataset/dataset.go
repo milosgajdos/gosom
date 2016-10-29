@@ -113,11 +113,11 @@ func LoadCSV(r io.Reader) (*mat64.Dense, error) {
 func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 	const DATA_COL = 1
 	const (
-		HEADER_SIZE  = iota
-		HEADER_COLS  = iota
-		HEADER_TYPES = iota
-		HEADER_NAMES = iota
-		HEADER_ROWS  = iota
+		HEADER_SIZE = iota
+		HEADER_COLS
+		HEADER_TYPES
+		HEADER_NAMES
+		HEADER_ROWS
 	)
 
 	var rows, cols int
