@@ -28,13 +28,19 @@ func TestDistance(t *testing.T) {
 		assert.InDelta(tc.expected, dist, 0.01)
 	}
 
+	// foobar metric returns euclidean distance
+	a := mat64.NewVector(2, []float64{0.0, 0.0})
+	b := mat64.NewVector(2, []float64{0.0, 1.0})
+	d, err := Distance("foobar", a, b)
+	assert.NoError(err)
+	assert.InDelta(1.0, d, 0.01)
 	// nil vectors
-	d, err := Distance("euclidean", nil, nil)
+	d, err = Distance("euclidean", nil, nil)
 	assert.Error(err)
 	assert.Equal(0.0, d)
 	// different vector dimensions
-	a := mat64.NewVector(2, []float64{0.0, 0.0})
-	b := mat64.NewVector(1, []float64{1.0})
+	a = mat64.NewVector(2, []float64{0.0, 0.0})
+	b = mat64.NewVector(1, []float64{1.0})
 	d, err = Distance("euclidean", a, b)
 	assert.Error(err)
 	assert.Equal(0.0, d)
@@ -55,6 +61,12 @@ func TestDistanceMx(t *testing.T) {
 	})
 
 	oneOut, err := DistanceMx("euclidean", one)
+
+	assert.NoError(err)
+	assert.True(mat64.EqualApprox(oneOutExpected, oneOut, 0.01))
+
+	// test if default distance is computed for unknown metrix
+	oneOut, err = DistanceMx("foobar", one)
 
 	assert.NoError(err)
 	assert.True(mat64.EqualApprox(oneOutExpected, oneOut, 0.01))
@@ -128,6 +140,12 @@ func TestClosestVec(t *testing.T) {
 	assert.Equal(-1, closest)
 	// nil vector returns error
 	closest, err = ClosestVec(metric, nil, m)
+	assert.Error(err)
+	assert.Equal(-1, closest)
+	// mismatched dimensions return error
+	v = mat64.NewVector(3, nil)
+	m = mat64.NewDense(2, 2, nil)
+	closest, err = ClosestVec(metric, v, m)
 	assert.Error(err)
 	assert.Equal(-1, closest)
 }

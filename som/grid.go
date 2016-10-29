@@ -51,7 +51,7 @@ func GridDims(data *mat64.Dense, uShape string) ([]int, error) {
 			ratio = math.Sqrt(eigVals[0] / eigVals[1])
 		}
 	}
-	// If the unit shape is hexagon, the ratio is modified a bit to take it into account
+	// For hexagon unit shape, the ratio is modified a bit to take it into account
 	// Remember when using hexagon we don't get rectangle so the area != dimA * dimB
 	tmpDim := math.Sqrt(mUnits / ratio)
 	if strings.EqualFold(uShape, "hexagon") {
