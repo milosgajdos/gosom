@@ -1,12 +1,14 @@
 package dataset
 
 import (
+	"bufio"
 	"encoding/csv"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/gonum/matrix/mat64"
 	"github.com/gonum/stat"
@@ -102,6 +104,101 @@ func LoadCSV(r io.Reader) (*mat64.Dense, error) {
 		rows++
 	}
 	// return data matrix
+	return mat64.NewDense(rows, cols, mxData), nil
+}
+
+func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
+	const DATA_COL = 1
+
+	var rows, cols int
+	var mxData []float64
+	headerRow := 0
+	columnTypes := []int{}
+	valueRow := 0
+
+	r := bufio.NewReader(reader)
+	for {
+		line, err := r.ReadString('\n')
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+		line = strings.TrimSuffix(line, "\n")
+		if strings.HasPrefix(line, "#") { // comment
+			continue
+		} else if strings.HasPrefix(line, "%") { // header
+			headerLine := strings.TrimPrefix(line, "% ")
+			if headerRow == 0 { // rows
+				rows64, err := strconv.ParseInt(headerLine, 10, 64)
+				if err != nil {
+					fmt.Println(err)
+					return nil, fmt.Errorf("Dataset size information missing")
+				}
+				rows = int(rows64)
+			} else if headerRow == 1 { // cols
+				cols64, err := strconv.ParseInt(headerLine, 10, 64)
+				if err != nil {
+					return nil, fmt.Errorf("Dataset dimension information missing")
+				}
+				cols = int(cols64)
+				// allocate data matrix because we know rows and cols now
+				mxData = make([]float64, rows*cols)
+			} else if headerRow == 2 { // col types
+				colTypes := strings.Split(headerLine, "\t")
+				// for validation purposes only
+				dataColsCount := 0
+				for _, colType := range colTypes {
+					ct, err := strconv.ParseInt(colType, 10, 64)
+					if err != nil {
+						return nil, err
+					}
+					columnTypes = append(columnTypes, int(ct))
+					if ct == DATA_COL {
+						dataColsCount++
+					}
+				}
+				if dataColsCount != cols {
+					return nil, fmt.Errorf("Invalid number of column types")
+				}
+			} else if headerRow == 3 { // col names
+				// discard
+				continue
+			}
+			headerRow++
+		} else { // data
+			if headerRow < 3 {
+				return nil, fmt.Errorf("Invalid header")
+			}
+			if valueRow >= rows {
+				return nil, fmt.Errorf("Too many data rows")
+			}
+			vals := strings.Split(line, "\t")
+			valueIndex := 0
+			for i, val := range vals {
+				if i > len(columnTypes) {
+					return nil, fmt.Errorf("Too many columns")
+				}
+				if columnTypes[i] == DATA_COL {
+					if valueIndex >= cols {
+						return nil, fmt.Errorf("Too many data columns")
+					} else {
+						f, err := strconv.ParseFloat(val, 64)
+						if err != nil {
+							return nil, fmt.Errorf("Problem parsing value at line %d, col %d", valueRow, i)
+						}
+						println(f)
+						mxData[valueRow*cols+valueIndex] = f
+					}
+				}
+			}
+			valueRow++
+		}
+	}
+	if valueRow != rows {
+		return nil, fmt.Errorf("Wrong number of data rows.  Expecting %d, but was %d", rows, valueRow)
+	}
+
 	return mat64.NewDense(rows, cols, mxData), nil
 }
 

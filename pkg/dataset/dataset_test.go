@@ -102,6 +102,15 @@ func TestLoadCSV(t *testing.T) {
 	assert.Nil(mx)
 }
 
+func TestLRN(t *testing.T) {
+	assert := assert.New(t)
+
+	tstRdr := strings.NewReader("# some comment\n% 1\n% 1\n% 9\t1\n% Key\tValue\n1\t1")
+	mx, err := LoadLRN(tstRdr)
+	assert.NoError(err)
+	assert.NotNil(mx)
+}
+
 func TestScale(t *testing.T) {
 	assert := assert.New(t)
 
