@@ -17,6 +17,7 @@ import (
 // load data funcs
 var loadFuncs = map[string]func(io.Reader) (*mat64.Dense, error){
 	".csv": LoadCSV,
+	".lrn": LoadLRN,
 }
 
 // DataSet represents training data set
@@ -107,6 +108,8 @@ func LoadCSV(r io.Reader) (*mat64.Dense, error) {
 	return mat64.NewDense(rows, cols, mxData), nil
 }
 
+// LoadLRN reads data from a .lrn file.
+// See the specification here: http://databionic-esom.sourceforge.net/user.html#Data_files____lrn_
 func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 	const DATA_COL = 1
 
@@ -116,15 +119,9 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 	columnTypes := []int{}
 	valueRow := 0
 
-	r := bufio.NewReader(reader)
-	for {
-		line, err := r.ReadString('\n')
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return nil, err
-		}
-		line = strings.TrimSuffix(line, "\n")
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
 		if strings.HasPrefix(line, "#") { // comment
 			continue
 		} else if strings.HasPrefix(line, "%") { // header
@@ -137,37 +134,32 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 				}
 				rows = int(rows64)
 			} else if headerRow == 1 { // cols
-				cols64, err := strconv.ParseInt(headerLine, 10, 64)
-				if err != nil {
-					return nil, fmt.Errorf("Dataset dimension information missing")
-				}
-				cols = int(cols64)
-				// allocate data matrix because we know rows and cols now
-				mxData = make([]float64, rows*cols)
+				// discard
 			} else if headerRow == 2 { // col types
 				colTypes := strings.Split(headerLine, "\t")
-				// for validation purposes only
-				dataColsCount := 0
 				for _, colType := range colTypes {
+					// this seems to happen in real .lrn files
+					if len(colType) == 0 {
+						continue
+					}
 					ct, err := strconv.ParseInt(colType, 10, 64)
 					if err != nil {
 						return nil, err
 					}
 					columnTypes = append(columnTypes, int(ct))
+					// we're interested in data columns only
 					if ct == DATA_COL {
-						dataColsCount++
+						cols++
 					}
 				}
-				if dataColsCount != cols {
-					return nil, fmt.Errorf("Invalid number of column types")
-				}
+				// allocate data matrix because we know rows and cols now
+				mxData = make([]float64, rows*cols)
 			} else if headerRow == 3 { // col names
 				// discard
-				continue
 			}
 			headerRow++
 		} else { // data
-			if headerRow < 3 {
+			if headerRow < 4 {
 				return nil, fmt.Errorf("Invalid header")
 			}
 			if valueRow >= rows {
@@ -187,7 +179,6 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 						if err != nil {
 							return nil, fmt.Errorf("Problem parsing value at line %d, col %d", valueRow, i)
 						}
-						println(f)
 						mxData[valueRow*cols+valueIndex] = f
 					}
 				}
