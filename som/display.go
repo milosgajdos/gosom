@@ -29,7 +29,7 @@ type svgElement struct {
 	XMLName  xml.Name `xml:"svg"`
 	Width    float64  `xml:"width,attr"`
 	Height   float64  `xml:"height,attr"`
-	Polygons []polygon
+	Polygons []interface{}
 }
 
 // UMatrixSVG creates SVG representation of the U-Matrix of the given codebook.
@@ -56,40 +56,46 @@ func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape string, title string, 
 		return err
 	}
 
-	// get maximum distance between codebook vectors
-	// maximum distance will be rgb(0,0,0)
-	maxDistance := mat64.Max(distMat)
-
-	// function to scale the coord grid to something visible
-	const MUL = 20.0
-	const OFF = 10.0
-	scale := func(x float64) float64 { return MUL*x + OFF }
-
-	svgElem := svgElement{
-		Width:    float64(dims[1])*MUL + 2*OFF,
-		Height:   float64(dims[0])*MUL + 2*OFF,
-		Polygons: make([]polygon, rows),
-	}
-	elems = append(elems, svgElem)
+	umatrix := make([]float64, rows)
+	maxDistance := -math.MaxFloat64
+	minDistance := math.MaxFloat64
 	for row := 0; row < rows; row++ {
-		coord := coords.RowView(row)
-		cbVec := codebook.RowView(row)
 		avgDistance := 0.0
 		// this is a rough approximation of the notion of neighbor grid coords
 		allRowsInRadius := allRowsInRadius(row, math.Sqrt2*1.01, coordsDistMat)
 		for _, rwd := range allRowsInRadius {
 			if rwd.Dist > 0.0 {
-				otherMu := codebook.RowView(rwd.Row)
-				cbvDist, err := Distance("euclidean", cbVec, otherMu)
-				if err != nil {
-					return err
-				}
-
-				avgDistance += cbvDist
+				avgDistance += distMat.At(row, rwd.Row)
 			}
 		}
 		avgDistance /= float64(len(allRowsInRadius) - 1)
-		color := int((1.0 - avgDistance/maxDistance) * 255.0)
+		umatrix[row] = avgDistance
+		if avgDistance > maxDistance {
+			maxDistance = avgDistance
+		}
+		if avgDistance < maxDistance {
+			minDistance = avgDistance
+		}
+	}
+
+	// function to scale the coord grid to something visible
+	const MUL = 50.0
+	const OFF = 10.0
+	scale := func(x float64) float64 { return MUL*x + OFF }
+
+	svgElem := svgElement{
+		Width:    float64(coordsDims[1])*MUL + 2*OFF,
+		Height:   float64(coordsDims[0])*MUL + 2*OFF,
+		Polygons: make([]interface{}, rows),
+	}
+	for row := 0; row < rows; row++ {
+		coord := coords.RowView(row)
+		// this is here for the future when we have more colours
+		colorMask := []int{255, 255, 255}
+		colorMul := 1.0 - (umatrix[row]-minDistance)/(maxDistance-minDistance)
+		r := int(colorMul * float64(colorMask[0]))
+		g := int(colorMul * float64(colorMask[1]))
+		b := int(colorMul * float64(colorMask[2]))
 		polygonCoords := ""
 		x := scale(coord.At(0, 0))
 		y := scale(coord.At(1, 0))
@@ -108,9 +114,11 @@ func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape string, title string, 
 
 		svgElem.Polygons[row] = polygon{
 			Points: []byte(polygonCoords),
-			Style:  fmt.Sprintf("fill:rgb(%d,%d,%d);stroke:black;stroke-width:1", color, color, color),
+			Style:  fmt.Sprintf("fill:rgb(%d,%d,%d);stroke:black;stroke-width:1", r, g, b),
 		}
 	}
+
+	elems = append(elems, svgElem)
 
 	xmlEncoder.Encode(elems)
 	xmlEncoder.Flush()
