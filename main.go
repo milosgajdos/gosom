@@ -33,6 +33,12 @@ var (
 	lrate float64
 	// learning rate decay strategy: lin, exp
 	ldecay string
+	// path to umatrix visualization
+	umxout string
+	// path to saved SOM model
+	output string
+	// number of training iterations
+	iters int
 )
 
 func init() {
@@ -47,6 +53,9 @@ func init() {
 	flag.StringVar(&neighb, "neighb", "gaussian", "SOM neighbourhood function")
 	flag.Float64Var(&lrate, "lrate", 0.0, "SOM initial learning rate")
 	flag.StringVar(&ldecay, "ldecay", "lin", "Learning rate decay strategy")
+	flag.StringVar(&umxout, "umxout", "", "Path to u-matrix output visualization")
+	flag.StringVar(&output, "output", "", "Path to serialize the learnt SOM model")
+	flag.IntVar(&iters, "iters", 1000, "Number of training iterations")
 }
 
 func parseCliFlags() error {
@@ -55,6 +64,10 @@ func parseCliFlags() error {
 	// path to input data is mandatory
 	if input == "" {
 		return fmt.Errorf("Invalid path to input data: %s\n", input)
+	}
+	// number of iterations mus tbe positive integer
+	if iters <= 0 {
+		return fmt.Errorf("Invalid number of training iterations: %d", iters)
 	}
 	return nil
 }
@@ -95,5 +108,32 @@ func main() {
 		fmt.Printf("Failed to create new SOM: %s\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Hello Go SOM: %v\n", smap)
+	// training configuration
+	tConfig := &som.TrainConfig{
+		Method:   training,
+		Radius:   radius,
+		RDecay:   rdecay,
+		NeighbFn: neighb,
+		LRate:    lrate,
+		LDecay:   ldecay,
+	}
+	// run SOM training
+	if err := smap.Train(tConfig, data, iters); err != nil {
+		fmt.Printf("Training failed: %s\n", err)
+		os.Exit(1)
+	}
+	// if output is not empty save map to a file
+	if output != "" {
+		file, err := os.Open(output)
+		if err != nil {
+			fmt.Printf("Output file error: %s\n", err)
+			os.Exit(1)
+		}
+		defer file.Close()
+		// save the model
+		if _, err := smap.MarshalTo("gonum", file); err != nil {
+			fmt.Printf("Failed to save model: %s\n", err)
+			os.Exit(1)
+		}
+	}
 }
