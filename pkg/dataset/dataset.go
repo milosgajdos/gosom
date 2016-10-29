@@ -112,6 +112,13 @@ func LoadCSV(r io.Reader) (*mat64.Dense, error) {
 // See the specification here: http://databionic-esom.sourceforge.net/user.html#Data_files____lrn_
 func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 	const DATA_COL = 1
+	const (
+		HEADER_SIZE  = iota
+		HEADER_COLS  = iota
+		HEADER_TYPES = iota
+		HEADER_NAMES = iota
+		HEADER_ROWS  = iota
+	)
 
 	var rows, cols int
 	var mxData []float64
@@ -126,16 +133,16 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 			continue
 		} else if strings.HasPrefix(line, "%") { // header
 			headerLine := strings.TrimPrefix(line, "% ")
-			if headerRow == 0 { // rows
+			if headerRow == HEADER_SIZE { // rows
 				rows64, err := strconv.ParseInt(headerLine, 10, 64)
 				if err != nil {
 					fmt.Println(err)
 					return nil, fmt.Errorf("Dataset size information missing")
 				}
 				rows = int(rows64)
-			} else if headerRow == 1 { // cols
+			} else if headerRow == HEADER_COLS { // cols
 				// discard
-			} else if headerRow == 2 { // col types
+			} else if headerRow == HEADER_TYPES { // col types
 				colTypes := strings.Split(headerLine, "\t")
 				for _, colType := range colTypes {
 					// this seems to happen in real .lrn files
@@ -154,12 +161,12 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 				}
 				// allocate data matrix because we know rows and cols now
 				mxData = make([]float64, rows*cols)
-			} else if headerRow == 3 { // col names
+			} else if headerRow == HEADER_NAMES { // col names
 				// discard
 			}
 			headerRow++
 		} else { // data
-			if headerRow < 4 {
+			if headerRow < HEADER_ROWS {
 				return nil, fmt.Errorf("Invalid header")
 			}
 			if valueRow >= rows {
