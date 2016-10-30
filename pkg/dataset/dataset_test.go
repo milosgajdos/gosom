@@ -102,6 +102,49 @@ func TestLoadCSV(t *testing.T) {
 	assert.Nil(mx)
 }
 
+func TestLoadLRN(t *testing.T) {
+	assert := assert.New(t)
+
+	// simple
+	tstRdr := strings.NewReader(`# some comment
+% 1
+% 2
+% 9	1
+% Key	Value
+1	1`)
+	mx, err := LoadLRN(tstRdr)
+	assert.NoError(err)
+	assert.NotNil(mx)
+	rows, cols := mx.Dims()
+	assert.Equal(1, rows)
+	assert.Equal(1, cols)
+
+	// real-like
+	tstRdr = strings.NewReader(`% 4
+% 4
+% 9	1	1	1	
+% Key	C1	C2	C3	
+1	0.000000E+000	0.000000E+000	1.000000E+000
+2	0.000000E+000	5.233600E-002	9.986300E-001
+3	4.977400E-002	1.617300E-002	9.986300E-001
+4	3.076200E-002	-4.234100E-002	9.986300E-001
+`)
+	mx, err = LoadLRN(tstRdr)
+	assert.NoError(err)
+	assert.NotNil(mx)
+
+	// invalid header - one header row missing
+	tstRdr = strings.NewReader(`% 1
+% 2
+% 9	1
+1	1
+`)
+	mx, err = LoadLRN(tstRdr)
+	assert.Equal("Invalid header", err.Error())
+	assert.Nil(mx)
+
+}
+
 func TestScale(t *testing.T) {
 	assert := assert.New(t)
 
