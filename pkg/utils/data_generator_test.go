@@ -10,13 +10,15 @@ import (
 func TestInvariants(t *testing.T) {
 	assert := assert.New(t)
 
-	const rows = 20
-	const columns = 2
-	const numOfClusters = 10
-	const min = 0.0
-	const max = 1.0
-	const vari = 0.1
-	const randSeed = 1
+	const (
+		rows          = 20
+		columns       = 2
+		numOfClusters = 10
+		min           = 0.0
+		max           = 1.0
+		vari          = 0.1
+		randSeed      = 1
+	)
 	data := CreateClusteredData(20, 2, 10, 0.0, 1.0, 0.1, 1)
 
 	dRows, dCols := data.Dims()
