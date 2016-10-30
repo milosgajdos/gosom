@@ -14,9 +14,9 @@ import (
 // cols - dimension of data
 // clusters - how many clusters
 // max,min - maximum and minimum coordinates (applies to all dimensions)
-// vari - this is the interval where the data will be located around the cluster centres.
+// maxOffset - this is the maximum distance of a sample from its cluster centre in any dimension.
 // randSeed - random seed
-func CreateClusteredData(rows, cols, clusters int, max, min float64, vari float64, randSeed int64) *mat64.Dense {
+func CreateClusteredData(rows, cols, clusters int, max, min float64, maxOffset float64, randSeed int64) *mat64.Dense {
 	rand.Seed(randSeed)
 
 	data := mat64.NewDense(rows, cols, nil)
@@ -29,7 +29,7 @@ func CreateClusteredData(rows, cols, clusters int, max, min float64, vari float6
 
 	for i := 0; i < rows; i++ {
 		clusterId := i % clusters
-		rv := randVector(vari, -vari, cols)
+		rv := randVector(maxOffset, -maxOffset, cols)
 		cc := make([]float64, cols)
 		copy(cc, clusterCentres[clusterId])
 
