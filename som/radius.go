@@ -8,10 +8,11 @@ import (
 // MinRadius is the smallest allowed SOM unit Radius
 const MinRadius = 1.0
 
-// Radius is a decay function for the radius parameter. The supported strategies are "exp" and "lin".
-// Any other strategy defaults to "exp". "exp" is an exponential decay function, "lin" is linear.
-// At iteration 0 the function returns the initRadius, at totalIterations-1 it returns MinRadius
-// initRadius has to be a positive number
+// Radius is a decay function for the SOM neighbourhood radius parameter.
+// It supports exponential and linear decay strategies denoted as "exp" and "lin".
+// Any other strategy defaults to "exp". At the first iteration the function returns
+// the initRadius, at totalIterations-1 it returns MinRadius.
+// It returns error if initRadius is not a positive integer
 func Radius(iteration, totalIterations int, strategy string, initRadius float64) (float64, error) {
 	if initRadius <= 0.0 {
 		return math.NaN(), fmt.Errorf("initRadius must be a positive number")

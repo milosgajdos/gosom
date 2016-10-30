@@ -27,6 +27,7 @@ func Distance(metric string, a, b *mat64.Vector) (float64, error) {
 }
 
 // DistanceMx calculates a distance matrix for the given matrix using the given metric.
+// Distance matrix is also known in literature as dissimilarity matrix.
 // It returns a hollow symmetric matrix where an item x_ij contains the distance between
 // vectors stored in rows i and j. You can request different distance metrics via metric
 // parameter. If an unknown metric is supplied Euclidean distance is computed.
@@ -47,8 +48,8 @@ func DistanceMx(metric string, m *mat64.Dense) (*mat64.Dense, error) {
 // ClosestVec finds the closest vector to v from the vectors stored in m rows
 // using the requested distance metric. It returns an index to the m rows.
 // If several vectors of the same distance are found, it returns the index of the first one.
-// ClosestVec fails with error if either v or m are nil or if the distance could not be calculated.
-// If the ClosestVec fails with error, returned index is set to -1.
+// ClosestVec returns error if either v or m are nil or if the distance could not be calculated.
+// When the ClosestVec fails with error, returned index is set to -1.
 func ClosestVec(metric string, v *mat64.Vector, m *mat64.Dense) (int, error) {
 	// vector can't be nil
 	if v == nil {

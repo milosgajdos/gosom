@@ -8,10 +8,11 @@ import (
 // MinLRate smallest possible learning rate
 const MinLRate = 0.01
 
-// LRate is a decay function for the LRate parameter. The supported strategies are "exp" and "lin"
-// Any other strategy defaults to "exp". "exp" is an exponential decay function, "lin" is linear.
-// At iteration 0 the function returns the initLRate, at totalIterations-1 it returns MinLRate
-// initLRate has to be a positive number
+// LRate is a decay function for the SOM learning rate parameter.
+// It supports exponential and linear decay strategies denoted as "exp" and "lin".
+// Any other strategy defaults to "exp". At the first iteration the function returns
+// the initLRate, at totalIterations-1 it returns MinLRate
+// It returns error if initLRate  is not a positive integer
 func LRate(iteration, totalIterations int, strategy string, initLRate float64) (float64, error) {
 	if initLRate <= 0.0 {
 		return math.NaN(), fmt.Errorf("initLRate must be a positive number")

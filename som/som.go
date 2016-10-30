@@ -213,77 +213,60 @@ type batchResult struct {
 func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 	cbRows, _ := m.codebook.Dims()
 	rows, _ := data.Dims()
-	// bSize set to min(cbRows,rows)
-	bSize := cbRows
-	if rows < cbRows {
-		bSize = rows
-	}
-	// number of batch iterations in one training iteration
-	bIters := rows / bSize
-	if rows%bSize != 0 {
-		bIters++
-	}
 	// batchConfig holds training config and number of iterations
 	bc := &batchConfig{
 		tc:    tc,
-		iters: iters * bIters,
+		iters: iters,
 	}
 	// number of worker goroutines
 	workers := runtime.NumCPU()
 	// evenly distribute batch work between workers
-	workerBatch := bSize / workers
-	if workerBatch == 0 {
-		workerBatch = 1
-	}
-	// set the first batch iteration to 0
-	iter := 0
+	workerBatch := rows / workers
 	// train for a number of iterations
 	for i := 0; i < iters; i++ {
+		// reset from index and input count
+		from := 0
 		count := workerBatch
-		// Iterate over the input data in batches of size bSize
-		for j := 0; j < rows; j += bSize {
-			// create batch results channel
-			results := make(chan *batchResult, workers*4)
-			wg := &sync.WaitGroup{}
-			// start worker goroutines
-			for k := 0; k < workers; k++ {
-				// from is data matrix row pointer
-				from := j + k*workerBatch
-				// last worker will work through the batch reminder
-				if k == workers-1 {
-					count += bSize % workers
-				}
-				// if we go over the number of rows adjust bSamples
-				if from+count > rows {
-					count = rows - from
-				}
-				wg.Add(1)
-				go m.processBatch(results, wg, bc, data, from, count, iter)
+		// create batch results channel
+		results := make(chan *batchResult, workers*4)
+		wg := &sync.WaitGroup{}
+		// start worker goroutines
+		for j := 0; j < workers; j++ {
+			// from is data matrix row pointer
+			from += j * workerBatch
+			// last worker will work through the batch reminder
+			if j == workers-1 {
+				count += rows % workers
 			}
-			// wait for workers to finish and close the result channel
-			go func() {
-				wg.Wait()
-				close(results)
-			}()
-			// collect batch results from all workers
-			cbVecs := make([]*mat64.Vector, cbRows)
-			nghbs := make([]float64, cbRows)
-			for result := range results {
-				if cbVecs[result.idx] != nil {
-					cbVecs[result.idx].AddVec(cbVecs[result.idx], result.vec)
-				} else {
-					cbVecs[result.idx] = result.vec
-				}
-				nghbs[result.idx] += result.nghb
+			// if we go over the number of rows adjust bSamples
+			if from+count > rows {
+				count = rows - from
 			}
-			// update codebook vectors
-			for k := 0; k < cbRows; k++ {
-				if cbVecs[k] != nil {
-					cbVecs[k].ScaleVec(1.0/nghbs[k], cbVecs[k])
-					m.codebook.SetRow(k, cbVecs[k].RawVector().Data)
-				}
+			wg.Add(1)
+			go m.processBatch(results, wg, bc, data, from, count, i)
+		}
+		// wait for workers to finish and close the result channel
+		go func() {
+			wg.Wait()
+			close(results)
+		}()
+		// collect batch results from all workers
+		cbVecs := make([]*mat64.Vector, cbRows)
+		nghbs := make([]float64, cbRows)
+		for result := range results {
+			if cbVecs[result.idx] != nil {
+				cbVecs[result.idx].AddVec(cbVecs[result.idx], result.vec)
+			} else {
+				cbVecs[result.idx] = result.vec
 			}
-			iter++
+			nghbs[result.idx] += result.nghb
+		}
+		// update codebook vectors
+		for k := 0; k < cbRows; k++ {
+			if cbVecs[k] != nil {
+				cbVecs[k].ScaleVec(1.0/nghbs[k], cbVecs[k])
+				m.codebook.SetRow(k, cbVecs[k].RawVector().Data)
+			}
 		}
 	}
 
