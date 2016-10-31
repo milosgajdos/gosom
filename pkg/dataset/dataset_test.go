@@ -200,7 +200,7 @@ func TestLoadCLS(t *testing.T) {
 	assert.NoError(err)
 	assert.NotNil(cls)
 	assert.Equal(3, len(cls))
-	assert.Equal(1, cls[1])
+	assert.Equal(1, cls[0])
 
 	// unsupported header (this is permitted by the original .cls format)
 	tstRdr = strings.NewReader(`# some comment
