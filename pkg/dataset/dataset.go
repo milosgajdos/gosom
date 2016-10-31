@@ -163,7 +163,7 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		line := scanner.Text()
+		line := strings.TrimRight(scanner.Text(), "\t ")
 		if strings.HasPrefix(line, "#") { // comment
 			continue
 		} else if strings.HasPrefix(line, "%") { // header
@@ -179,10 +179,6 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 			} else if headerRow == LrnHeaderTypes { // col types
 				colTypes := strings.Split(headerLine, "\t")
 				for _, colType := range colTypes {
-					// this seems to happen in real .lrn files
-					if len(colType) == 0 {
-						continue
-					}
 					ct, err := strconv.ParseInt(colType, 10, 64)
 					if err != nil {
 						return nil, err
@@ -245,7 +241,7 @@ func LoadCLS(reader io.Reader) (map[int]int, error) {
 
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		line := scanner.Text()
+		line := strings.TrimRight(scanner.Text(), "\t ")
 		if strings.HasPrefix(line, "#") { // comment
 			continue
 		} else if strings.HasPrefix(line, "%") { // header
@@ -271,7 +267,7 @@ func LoadCLS(reader io.Reader) (map[int]int, error) {
 			// classes come in pairs: index -> class
 			var index, class *int
 			for i, val := range vals {
-				if i > 2 {
+				if i > 1 {
 					return nil, fmt.Errorf("Too many classification columns")
 				}
 				num64, err := strconv.ParseInt(val, 10, 64)
