@@ -171,6 +171,9 @@ func TestLoadLRN(t *testing.T) {
 4	3.076200E-002	-4.234100E-002	9.986300E-001
 `)
 	mx, err = LoadLRN(tstRdr)
+	assert.Equal(1.0, mx.At(0, 2))
+	assert.Equal(0.049774, mx.At(2, 0))
+	assert.True(mx.At(1, 1) > 0.0)
 	assert.NoError(err)
 	assert.NotNil(mx)
 

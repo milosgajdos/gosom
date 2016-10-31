@@ -171,7 +171,6 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 			if headerRow == LrnHeaderSize { // rows
 				rows64, err := strconv.ParseInt(headerLine, 10, 64)
 				if err != nil {
-					fmt.Println(err)
 					return nil, fmt.Errorf("Dataset size information missing")
 				}
 				rows = int(rows64)
@@ -220,6 +219,7 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 							return nil, fmt.Errorf("Problem parsing value at line %d, col %d", valueRow, i)
 						}
 						mxData[valueRow*cols+valueIndex] = f
+						valueIndex++
 						continue
 					}
 					return nil, fmt.Errorf("Too many data columns")
