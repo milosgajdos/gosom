@@ -19,7 +19,7 @@ func TestInvariants(t *testing.T) {
 		vari          = 0.1
 		randSeed      = 1
 	)
-	data := CreateClusteredData(20, 2, 10, 0.0, 1.0, 0.1, 1)
+	data := GenerateClusters(20, 2, 10, 0.0, 1.0, 0.1, 1)
 
 	dRows, dCols := data.Dims()
 	assert.Equal(rows, dRows)
@@ -36,7 +36,7 @@ func TestInvariants(t *testing.T) {
 func Test0Var(t *testing.T) {
 	assert := assert.New(t)
 
-	data := CreateClusteredData(100, 2, 1, 0.0, 1.0, 0.0, 1)
+	data := GenerateClusters(100, 2, 1, 0.0, 1.0, 0.0, 1)
 
 	dRows, dCols := data.Dims()
 	prevVal := make([]*float64, dCols)
@@ -55,7 +55,7 @@ func TestWithVar(t *testing.T) {
 	assert := assert.New(t)
 
 	const vari = 0.1
-	data := CreateClusteredData(100, 2, 1, 0.0, 1.0, vari, 1)
+	data := GenerateClusters(100, 2, 1, 0.0, 1.0, vari, 1)
 
 	dRows, dCols := data.Dims()
 	prevVal := make([]*float64, dCols)

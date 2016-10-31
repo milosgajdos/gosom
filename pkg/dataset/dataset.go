@@ -14,6 +14,20 @@ import (
 	"github.com/gonum/stat"
 )
 
+// LRN data format constants
+const (
+	// LrnHeaderSize holds the size of LRN file header
+	LrnHeaderSize = iota
+	// LrnHeaderCols holds number of LRN header columns
+	LrnHeaderCols
+	// LrnHeaderTypes holds number of LRN types
+	LrnHeaderTypes
+	// LrnHeaderNames not used
+	LrnHeaderNames
+	// LrnHeaderRows holds number of LRN header rows
+	LrnHeaderRows
+)
+
 // load data funcs
 var loadFuncs = map[string]func(io.Reader) (*mat64.Dense, error){
 	".csv": LoadCSV,
@@ -111,15 +125,7 @@ func LoadCSV(r io.Reader) (*mat64.Dense, error) {
 // LoadLRN reads data from a .lrn file.
 // See the specification here: http://databionic-esom.sourceforge.net/user.html#Data_files____lrn_
 func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
-	const DATA_COL = 1
-	const (
-		HEADER_SIZE = iota
-		HEADER_COLS
-		HEADER_TYPES
-		HEADER_NAMES
-		HEADER_ROWS
-	)
-
+	const DataCol = 1
 	var rows, cols int
 	var mxData []float64
 	headerRow := 0
@@ -133,16 +139,16 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 			continue
 		} else if strings.HasPrefix(line, "%") { // header
 			headerLine := strings.TrimPrefix(line, "% ")
-			if headerRow == HEADER_SIZE { // rows
+			if headerRow == LrnHeaderSize { // rows
 				rows64, err := strconv.ParseInt(headerLine, 10, 64)
 				if err != nil {
 					fmt.Println(err)
 					return nil, fmt.Errorf("Dataset size information missing")
 				}
 				rows = int(rows64)
-			} else if headerRow == HEADER_COLS { // cols
+			} else if headerRow == LrnHeaderCols { // cols
 				// discard
-			} else if headerRow == HEADER_TYPES { // col types
+			} else if headerRow == LrnHeaderTypes { // col types
 				colTypes := strings.Split(headerLine, "\t")
 				for _, colType := range colTypes {
 					// this seems to happen in real .lrn files
@@ -155,18 +161,18 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 					}
 					columnTypes = append(columnTypes, int(ct))
 					// we're interested in data columns only
-					if ct == DATA_COL {
+					if ct == DataCol {
 						cols++
 					}
 				}
 				// allocate data matrix because we know rows and cols now
 				mxData = make([]float64, rows*cols)
-			} else if headerRow == HEADER_NAMES { // col names
+			} else if headerRow == LrnHeaderNames { // col names
 				// discard
 			}
 			headerRow++
 		} else { // data
-			if headerRow < HEADER_ROWS {
+			if headerRow < LrnHeaderRows {
 				return nil, fmt.Errorf("Invalid header")
 			}
 			if valueRow >= rows {
@@ -178,16 +184,16 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 				if i > len(columnTypes) {
 					return nil, fmt.Errorf("Too many columns")
 				}
-				if columnTypes[i] == DATA_COL {
-					if valueIndex >= cols {
-						return nil, fmt.Errorf("Too many data columns")
-					} else {
+				if columnTypes[i] == DataCol {
+					if valueIndex < cols {
 						f, err := strconv.ParseFloat(val, 64)
 						if err != nil {
 							return nil, fmt.Errorf("Problem parsing value at line %d, col %d", valueRow, i)
 						}
 						mxData[valueRow*cols+valueIndex] = f
+						continue
 					}
+					return nil, fmt.Errorf("Too many data columns")
 				}
 			}
 			valueRow++

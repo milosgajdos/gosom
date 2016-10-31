@@ -41,14 +41,15 @@ type textElement struct {
 
 var colors = [][]int{{255, 0, 0}, {0, 255, 0}, {0, 0, 255}, {255, 255, 0}, {255, 0, 255}, {0, 255, 255}}
 
-// Creates an SVG representation of the U-Matrix of the given codebook.
+// UMatrixSVG creates an SVG representation of the U-Matrix of the given codebook.
+// It accepts the following parameters:
 // codebook - the codebook we're displaying the U-Matrix for
-// dims - the dimensions of the grid
-// uShape - the shape of the grid
-// title - the title of the output SVG
-// writer - the io.Writter to write the output SVG to.
+// dims     - the dimensions of the map grid
+// uShape   - the shape of the map grid
+// title    - the title of the output SVG
+// writer   - the io.Writter to write the output SVG to.
 // clusters - if the clusters are known (i.e. these are test data) they can be displayed providing the information in this map.
-// The map is: codebook vector row -> cluster number.  When clusters are not known (i.e. running with real data), just provide an empty map.
+// The map is: codebook vector row -> cluster number. When clusters are not known (i.e. running with real data), just provide an empty map.
 func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape, title string, writer io.Writer, clusters map[int]int) error {
 	xmlEncoder := xml.NewEncoder(writer)
 	// array to hold the xml elements
@@ -103,9 +104,9 @@ func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape, title string, writer 
 	for row := 0; row < rows; row++ {
 		coord := coords.RowView(row)
 		var colorMask []int
-		clusterId, clusterFound := clusters[row]
+		clusterID, clusterFound := clusters[row]
 		// if no cluster information, just use shades of gray
-		if !clusterFound || clusterId == -1 {
+		if !clusterFound || clusterID == -1 {
 			colorMask = []int{255, 255, 255}
 		} else {
 			colorMask = colors[clusters[row]%len(colors)]
