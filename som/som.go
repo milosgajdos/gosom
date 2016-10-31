@@ -139,7 +139,6 @@ func (m Map) UMatrixOut(format, title string, mapConfig *MapConfig, w io.Writer,
 						bmuClasses[cbi] = clsList
 					}
 				}
-				fmt.Println(bmuClasses)
 
 				// find the most frequent class for each codebook vector
 				for cbi, clss := range bmuClasses {
@@ -159,7 +158,6 @@ func (m Map) UMatrixOut(format, title string, mapConfig *MapConfig, w io.Writer,
 					}
 					classes[cbi] = clss[currentIndex]
 				}
-				fmt.Println(classes)
 			}
 
 			return UMatrixSVG(m.codebook, mapConfig.Dims, mapConfig.UShape, title, w, classes)
