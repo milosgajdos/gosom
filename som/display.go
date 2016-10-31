@@ -49,7 +49,7 @@ var colors = [][]int{{255, 0, 0}, {0, 255, 0}, {0, 0, 255}, {255, 255, 0}, {255,
 // writer - the io.Writter to write the output SVG to.
 // clusters - if the clusters are known (i.e. these are test data) they can be displayed providing the information in this map.
 // The map is: codebook vector row -> cluster number.  When clusters are not known (i.e. running with real data), just provide an empty map.
-func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape string, title string, writer io.Writer, clusters map[int]int) error {
+func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape, title string, writer io.Writer, clusters map[int]int) error {
 	xmlEncoder := xml.NewEncoder(writer)
 	// array to hold the xml elements
 	elems := []interface{}{h1{Title: title}}
