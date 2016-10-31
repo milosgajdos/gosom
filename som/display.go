@@ -32,12 +32,24 @@ type svgElement struct {
 	Polygons []interface{}
 }
 
-// UMatrixSVG creates SVG representation of the U-Matrix of the given codebook.
-// codebook is a SOM codebook we're rendering the U-Matrix for,
-// dims are dimensions of the map grid, uShape is the shape of the grid unit,
-// title is the title of the output SVG, and writer is the io.Writter to write the SVG to.
-// UMatrixSVG returns error when the SVG could not be generated.
-func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape string, title string, writer io.Writer) error {
+type textElement struct {
+	XMLName xml.Name `xml:"text"`
+	X       float64  `xml:"x,attr"`
+	Y       float64  `xml:"y,attr"`
+	Text    string   `xml:",innerxml"`
+}
+
+var colors = [][]int{{255, 0, 0}, {0, 255, 0}, {0, 0, 255}, {255, 255, 0}, {255, 0, 255}, {0, 255, 255}}
+
+// Creates an SVG representation of the U-Matrix of the given codebook.
+// codebook - the codebook we're displaying the U-Matrix for
+// dims - the dimensions of the grid
+// uShape - the shape of the grid
+// title - the title of the output SVG
+// writer - the io.Writter to write the output SVG to.
+// clusters - if the clusters are known (i.e. these are test data) they can be displayed providing the information in this map.
+// The map is: codebook vector row -> cluster number.  When clusters are not known (i.e. running with real data), just provide an empty map.
+func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape string, title string, writer io.Writer, clusters map[int]int) error {
 	xmlEncoder := xml.NewEncoder(writer)
 	// array to hold the xml elements
 	elems := []interface{}{h1{Title: title}}
@@ -86,12 +98,18 @@ func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape string, title string, 
 	svgElem := svgElement{
 		Width:    float64(dims[1])*MUL + 2*OFF,
 		Height:   float64(dims[0])*MUL + 2*OFF,
-		Polygons: make([]interface{}, rows),
+		Polygons: make([]interface{}, rows*2),
 	}
 	for row := 0; row < rows; row++ {
 		coord := coords.RowView(row)
-		// this is here for the future when we have more colours
-		colorMask := []int{255, 255, 255}
+		var colorMask []int
+		clusterId, clusterFound := clusters[row]
+		// if no cluster information, just use shades of gray
+		if !clusterFound || clusterId == -1 {
+			colorMask = []int{255, 255, 255}
+		} else {
+			colorMask = colors[clusters[row]%len(colors)]
+		}
 		colorMul := 1.0 - (umatrix[row]-minDistance)/(maxDistance-minDistance)
 		r := int(colorMul * float64(colorMask[0]))
 		g := int(colorMul * float64(colorMask[1]))
@@ -112,9 +130,18 @@ func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape string, title string, 
 		polygonCoords += fmt.Sprintf("%f,%f ", x-xOffset, y+yOffset)
 		polygonCoords += fmt.Sprintf("%f,%f ", x+xOffset, y+yOffset)
 
-		svgElem.Polygons[row] = polygon{
+		svgElem.Polygons[row*2] = polygon{
 			Points: []byte(polygonCoords),
 			Style:  fmt.Sprintf("fill:rgb(%d,%d,%d);stroke:black;stroke-width:1", r, g, b),
+		}
+
+		// print cluster number
+		if clusterFound {
+			svgElem.Polygons[row*2+1] = textElement{
+				X:    x - 0.25*MUL,
+				Y:    y + 0.25*MUL,
+				Text: fmt.Sprintf("%d", clusters[row]),
+			}
 		}
 	}
 
