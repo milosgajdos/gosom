@@ -13,6 +13,8 @@ import (
 var (
 	// path to input data set
 	input string
+	// classification information flag
+	clsinfo bool
 	// feature scaling flag
 	scale bool
 	// map dimensions: 2D only [for now]
@@ -43,6 +45,7 @@ var (
 
 func init() {
 	flag.StringVar(&input, "input", "", "Path to input data set")
+	flag.BoolVar(&clsinfo, "clsinfo", false, "Dataset has classification information in a .cls file of same name as input")
 	flag.BoolVar(&scale, "scale", false, "Request data scaling")
 	flag.StringVar(&dims, "dims", "", "comma-separated SOM dimensions")
 	flag.StringVar(&grid, "grid", "planar", "SOM grid")
@@ -85,7 +88,7 @@ func main() {
 		os.Exit(1)
 	}
 	// load data set from a file in provided path
-	ds, err := dataset.New(input)
+	ds, err := dataset.New(input, clsinfo)
 	if err != nil {
 		fmt.Printf("Unable to load Data Set: %s\n", err)
 		os.Exit(1)
@@ -135,5 +138,16 @@ func main() {
 			fmt.Printf("Failed to save model: %s\n", err)
 			os.Exit(1)
 		}
+	}
+
+	// if umxout provided create U-matrix
+	if umxout != "" {
+		file, err := os.Create(umxout)
+		if err != nil {
+			fmt.Printf("Umatrix file error: %s\n", err)
+			os.Exit(1)
+		}
+		defer file.Close()
+		smap.UMatrixOut("svg", input, mConfig, file, ds)
 	}
 }

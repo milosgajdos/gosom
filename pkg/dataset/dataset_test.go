@@ -47,7 +47,7 @@ func TestDataSet(t *testing.T) {
 
 	tmpPath := path.Join(os.TempDir(), fileName)
 	// create new dataset
-	ds, err := New(tmpPath)
+	ds, err := New(tmpPath, false)
 	assert.NoError(err)
 	assert.NotNil(ds)
 
@@ -70,12 +70,53 @@ func TestDataSet(t *testing.T) {
 	assert.True(mat64.Equal(scaledMx, ds.Data()))
 
 	// Unsupported file format
-	ds, err = New("example")
+	ds, err = New("example", false)
 	assert.Error(err)
 
 	// Nonexistent file
-	ds, err = New(path.Join(".", "nonexistent.csv"))
+	ds, err = New(path.Join(".", "nonexistent.csv"), false)
 	assert.Error(err)
+}
+
+func TestDataWithClasses(t *testing.T) {
+	assert := assert.New(t)
+
+	fileName := "TestDataWithClasses"
+
+	// create a .lrn file
+	lrnPath := path.Join(os.TempDir(), fileName+".lrn")
+	lrn := `% 4
+% 4
+% 9	1	1	1	
+% Key	C1	C2	C3	
+1	0.000000E+000	0.000000E+000	1.000000E+000
+2	0.000000E+000	5.233600E-002	9.986300E-001
+3	4.977400E-002	1.617300E-002	9.986300E-001
+4	3.076200E-002	-4.234100E-002	9.986300E-001
+`
+	if err := ioutil.WriteFile(lrnPath, []byte(lrn), 0666); err != nil {
+		log.Fatal(err)
+	}
+
+	// create a corresponding .cls file - only some rows have classification information
+	clsPath := path.Join(os.TempDir(), fileName+".cls")
+	cls := `% 2
+1	1
+4	2
+`
+	if err := ioutil.WriteFile(clsPath, []byte(cls), 0666); err != nil {
+		log.Fatal(err)
+	}
+
+	ds, err := New(lrnPath, true)
+	assert.NoError(err)
+	assert.NotNil(ds)
+	rows, cols := ds.Data().Dims()
+	assert.Equal(4, rows)
+	assert.Equal(3, cols)
+	assert.Equal(2, len(ds.Classes()))
+	// index is 0-based so '4' becomes '3' here
+	assert.Equal(2, ds.Classes()[3])
 }
 
 func TestLoadCSV(t *testing.T) {
@@ -145,12 +186,55 @@ func TestLoadLRN(t *testing.T) {
 
 }
 
+func TestLoadCLS(t *testing.T) {
+	assert := assert.New(t)
+
+	// simple
+	tstRdr := strings.NewReader(`# some comment
+% 3
+1	1
+2	2
+3	3
+`)
+	cls, err := LoadCLS(tstRdr)
+	assert.NoError(err)
+	assert.NotNil(cls)
+	assert.Equal(3, len(cls))
+	assert.Equal(1, cls[1])
+
+	// unsupported header (this is permitted by the original .cls format)
+	tstRdr = strings.NewReader(`# some comment
+% 3
+% 1 class1	255	0	0
+% 2 class2	0	255	0
+% 3 class3	0	0	255
+1	1
+2	2
+3	3
+`)
+	cls, err = LoadCLS(tstRdr)
+	assert.Error(err)
+	assert.Nil(cls)
+	assert.Equal("Unsupported header", err.Error())
+
+	// invalid header
+	tstRdr = strings.NewReader(`# some comment
+1	1
+2	2
+3	3
+`)
+	cls, err = LoadCLS(tstRdr)
+	assert.Error(err)
+	assert.Nil(cls)
+	assert.Equal("Invalid header", err.Error())
+}
+
 func TestScale(t *testing.T) {
 	assert := assert.New(t)
 
 	// unlabeled data set
 	tmpPath := path.Join(os.TempDir(), fileName)
-	ds, err := New(tmpPath)
+	ds, err := New(tmpPath, false)
 	assert.NoError(err)
 	assert.NotNil(ds)
 	// pre-computed test data

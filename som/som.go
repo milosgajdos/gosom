@@ -5,10 +5,12 @@ import (
 	"io"
 	"math/rand"
 	"runtime"
+	"sort"
 	"sync"
 	"time"
 
 	"github.com/gonum/matrix/mat64"
+	"github.com/milosgajdos83/gosom/pkg/dataset"
 	"github.com/milosgajdos83/gosom/pkg/utils"
 )
 
@@ -106,9 +108,64 @@ func (m *Map) MarshalTo(format string, w io.Writer) (int, error) {
 
 // UMatrixOut generates SOM u-matrix in a given format and writes the output to w.
 // At the moment only SVG format is supported. It fails with error if the write to w fails.
-func (m Map) UMatrixOut(format, title string, w io.Writer) error {
-	// TODO: needs some UMatrixSVG modifications first
-	return nil
+func (m Map) UMatrixOut(format, title string, mapConfig *MapConfig, w io.Writer, ds *dataset.DataSet) error {
+	switch format {
+	case "svg":
+		{
+			classes := make(map[int]int)
+
+			// This is a rough method to assign a class to each codebook vector based
+			// on the classes of the data samples.
+			// First we go through all data samples and add their classes
+			// to the list of classes of their respective BMUs.
+			// Then we go through each BMU and assign it the most frequent class.
+			if len(ds.Classes()) > 0 {
+				data := ds.Data()
+				rows, _ := data.Dims()
+
+				bmuClasses := make(map[int][]int)
+				for row := 0; row < rows; row++ {
+					cbi, err := ClosestVec("euclidean", data.RowView(row), m.codebook)
+					if err != nil {
+						return err
+					}
+					class, ok := ds.Classes()[row]
+					if ok {
+						clsList, ok := bmuClasses[cbi]
+						if !ok {
+							clsList = []int{}
+						}
+						clsList = append(clsList, class)
+						bmuClasses[cbi] = clsList
+					}
+				}
+				fmt.Println(bmuClasses)
+
+				// find the most frequent class for each codebook vector
+				for cbi, clss := range bmuClasses {
+					sort.Ints(clss)
+					count := 1
+					currentIndex := 0
+					for i := 1; i < len(clss); i++ {
+						if clss[i] == clss[currentIndex] {
+							count++
+						} else {
+							count--
+						}
+						if count == 0 {
+							currentIndex = i
+							count = 1
+						}
+					}
+					classes[cbi] = clss[currentIndex]
+				}
+				fmt.Println(classes)
+			}
+
+			return UMatrixSVG(m.codebook, mapConfig.Dims, mapConfig.UShape, title, w, classes)
+		}
+	}
+	return fmt.Errorf("Invalid format %s", format)
 }
 
 // Train runs a SOM training for a given data set and training configuration parameters.
