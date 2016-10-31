@@ -288,10 +288,10 @@ func LoadCLS(reader io.Reader) (map[int]int, error) {
 			}
 			if index == nil || class == nil {
 				return nil, fmt.Errorf("Incomplete classification row")
-			} else {
-				// CLS indexes are 1-based, but we're using 0-based
-				classifications[*index-1] = *class
 			}
+
+			// CLS indexes are 1-based, but we're using 0-based
+			classifications[*index-1] = *class
 			valueRow++
 		}
 	}
