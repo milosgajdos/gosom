@@ -233,7 +233,7 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 		// start worker goroutines
 		for j := 0; j < workers; j++ {
 			// from is data matrix row pointer
-			from += j * workerBatch
+			from = j * workerBatch
 			// last worker will work through the batch reminder
 			if j == workers-1 {
 				count += rows % workers
