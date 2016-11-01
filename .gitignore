@@ -24,6 +24,10 @@ _testmain.go
 *.test
 *.prof
 
+# ignore go build and test outputs
 coverage.txt
 coverage.out
 gosom
+
+# ignore HTML files produced by gosom
+*.html

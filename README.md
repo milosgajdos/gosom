@@ -6,21 +6,53 @@
 [![Go Report Card](https://goreportcard.com/badge/milosgajdos83/gosom)](https://goreportcard.com/report/github.com/milosgajdos83/gosom)
 [![codecov](https://codecov.io/gh/milosgajdos83/gosom/branch/master/graph/badge.svg)](https://codecov.io/gh/milosgajdos83/gosom)
 
-**THIS PROJECT IS A WIP!!!**
+This project provides an implementation of [Self-Organizing Map](https://en.wikipedia.org/wiki/Self-organizing_map) (SOM) in Go. In addition the project provides few useful packages that can be used independently in your other projects.
 
-This project will provide an implementation of [Self-Organizing Map](https://en.wikipedia.org/wiki/Self-organizing_map) (SOM) in Go.
+The project provides an implementation of both `sequential` and `batch` mode SOM training algorithms. You're encourage to read up on both before you start using the program as the choice of available command line options can have a noticeable effect on performance and resulting output of the training.
+
+# Get started
+
+Get the source code:
+
+```
+$ go get -u github.com/milosgajdos83/gosom
+```
+
+Run the tests:
+
+```
+$ make test
+```
+
+Build and install in `$GOPATH/bin`:
+
+```
+make install
+```
+
+See the `Makefile` for more available `make` tasks.
+
+Once the program has successfully built you can inspect available command line options it provides:
+
+```
+$ gosom -h
+```
 
 # Examples
-Try the following simple examples using the FCPS dataset (see below):
+
+Try to run the following examples using the `FCPS` dataset (see below). Change the `$D` environment variable to test different datasets. Both programs output an `HTML` file with [U-matrix](https://en.wikipedia.org/wiki/U-matrix) rendered as `SVG` image.
+
+## Batch algorithm
 
 ```
-# Batch algorithm ()
-export P=Target; go build; ./gosom -umxout umatrix_batch.html -dims 30,30 -radius 500.0 -rdecay exp -ushape rectangle -iters 100 -training batch -input testdata/fcps/${P}.lrn -clsinput testdata/fcps/${P}.cls
-
-# Sequential algorithm
-export P=Hepta; go build; ./gosom -umxout umatrix_seq.html -dims 30,30 -radius 500.0 -rdecay exp -lrate 0.5 -ldecay exp -ushape rectangle -iters 30000 -training seq -input testdata/fcps/${P}.lrn -clsinput testdata/fcps/${P}.cls
+$ D=Target; go build; ./gosom -umxout umatrix_batch.html -dims 30,30 -radius 500.0 -rdecay exp -ushape rectangle -iters 100 -training batch -input testdata/fcps/${D}.lrn -clsinput testdata/fcps/${D}.cls
 ```
-Change the $P variable for different data sets
+
+## Sequential algorithm
+
+```
+D=Hepta; go build; ./gosom -umxout umatrix_seq.html -dims 30,30 -radius 500.0 -rdecay exp -lrate 0.5 -ldecay exp -ushape rectangle -iters 30000 -training seq -input testdata/fcps/${D}.lrn -clsinput testdata/fcps/${D}.cls
+```
 
 # Acknowledgements
 

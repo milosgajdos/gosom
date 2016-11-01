@@ -45,25 +45,25 @@ type DataSet struct {
 	classes map[int]int
 }
 
-// New returns new data set or fails with error if either the path to data set
-// supplied as a parameter does not exist or if the file is encoded
-// in an unsupported format. File format is inferred from the file extension.
-// Currently csv and lrn files are supported.
+// New returns pointer to dataset or fails with error if either the file
+// in dataPath does not exist or if it is encoded in an unsupported format.
+// File format is inferred from the file extension. Currently only csv and lrn
+// data formats are supported.
 // If the dataset has classification information it can be provided as the second
-// parameter.
-func New(path string, clsPath string) (*DataSet, error) {
+// parameter. If the file in clsPath doesn't exist New fails with error.
+func New(dataPath string, clsPath string) (*DataSet, error) {
 	// Check if the supplied file type is supported
-	fileType := filepath.Ext(path)
+	fileType := filepath.Ext(dataPath)
 	loadData, ok := loadFuncs[fileType]
 	if !ok {
 		return nil, fmt.Errorf("Unsupported file type: %s\n", fileType)
 	}
 	// Check if the training data file exists
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(dataPath); os.IsNotExist(err) {
 		return nil, err
 	}
 	// Open training data file
-	file, err := os.Open(path)
+	file, err := os.Open(dataPath)
 	if err != nil {
 		return nil, err
 	}

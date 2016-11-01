@@ -1,3 +1,4 @@
+BINARY=gosom
 BUILD=go build
 CLEAN=go clean
 INSTALL=go install
@@ -10,15 +11,16 @@ build: builddir
 all: builddir build
 
 install:
-	$(INSTALL) $(SRCPATH)/...
+	$(INSTALL) ./...
 clean:
 	rm -rf $(BUILDPATH)
+	rm -rf $(GOPATH)/bin/$(BINARY)
 builddir:
 	mkdir -p $(BUILDPATH)
 test:
 	for pkg in ${PACKAGES}; do \
-		go vet $$pkg ; \
-		golint $$pkg ; \
+		go vet $$pkg || exit ; \
+		golint $$pkg || exit ; \
 		go test -coverprofile="../../../$$pkg/coverage.txt" -covermode=atomic $$pkg || exit; \
 	done
 

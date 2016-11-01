@@ -45,19 +45,19 @@ var (
 
 func init() {
 	flag.StringVar(&input, "input", "", "Path to input data set")
-	flag.StringVar(&clsinput, "clsinput", "", "Path to classification file for the data set")
+	flag.StringVar(&clsinput, "clsinput", "", "Path to classification file for the input data set")
 	flag.BoolVar(&scale, "scale", false, "Request data scaling")
-	flag.StringVar(&dims, "dims", "", "comma-separated SOM dimensions")
-	flag.StringVar(&grid, "grid", "planar", "SOM grid")
+	flag.StringVar(&dims, "dims", "", "comma-separated SOM grid dimensions")
+	flag.StringVar(&grid, "grid", "planar", "Type of SOM grid")
 	flag.StringVar(&ushape, "ushape", "hexagon", "SOM map unit shape")
 	flag.StringVar(&training, "training", "seq", "SOM training method")
-	flag.Float64Var(&radius, "radius", 0.0, "SOM neihbourhood starting radius")
-	flag.StringVar(&rdecay, "rdecay", "lin", "Radius decay strategy")
 	flag.StringVar(&neighb, "neighb", "gaussian", "SOM neighbourhood function")
+	flag.Float64Var(&radius, "radius", 0.0, "SOM neighbourhood initial radius")
+	flag.StringVar(&rdecay, "rdecay", "lin", "Radius decay strategy")
 	flag.Float64Var(&lrate, "lrate", 0.0, "SOM initial learning rate")
 	flag.StringVar(&ldecay, "ldecay", "lin", "Learning rate decay strategy")
 	flag.StringVar(&umxout, "umxout", "", "Path to u-matrix output visualization")
-	flag.StringVar(&output, "output", "", "Path to serialize the learnt SOM model")
+	flag.StringVar(&output, "output", "", "Path to tore erialized trained SOM model")
 	flag.IntVar(&iters, "iters", 1000, "Number of training iterations")
 }
 
@@ -125,7 +125,7 @@ func main() {
 		fmt.Printf("Training failed: %s\n", err)
 		os.Exit(1)
 	}
-	// if output is not empty save map to a file
+	// if output is not empty save map model to a file
 	if output != "" {
 		file, err := os.Open(output)
 		if err != nil {
@@ -139,7 +139,6 @@ func main() {
 			os.Exit(1)
 		}
 	}
-
 	// if umxout provided create U-matrix
 	if umxout != "" {
 		file, err := os.Create(umxout)
