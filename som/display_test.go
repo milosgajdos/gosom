@@ -48,11 +48,11 @@ func TestUMatrixSVGWithClusters(t *testing.T) {
 	title := "Done"
 	writer := bytes.NewBufferString("")
 
-	clusters := map[int]int{
+	classes := map[int]int{
 		0: 0,
 		1: 1,
 	}
-	UMatrixSVG(mUnits, coordDims, uShape, title, writer, clusters)
+	UMatrixSVG(mUnits, coordDims, uShape, title, writer, classes)
 
 	assert.Equal(svg, writer.String())
 	// make sure there is at least one text element

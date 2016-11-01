@@ -48,9 +48,9 @@ var colors = [][]int{{255, 0, 0}, {0, 255, 0}, {0, 0, 255}, {255, 255, 0}, {255,
 // uShape   - the shape of the map grid
 // title    - the title of the output SVG
 // writer   - the io.Writter to write the output SVG to.
-// clusters - if the clusters are known (i.e. these are test data) they can be displayed providing the information in this map.
-// The map is: codebook vector row -> cluster number. When clusters are not known (i.e. running with real data), just provide an empty map.
-func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape, title string, writer io.Writer, clusters map[int]int) error {
+// classes  - if the classes are known (i.e. these are test data) they can be displayed providing the information in this map.
+// The map is: codebook vector row -> class number. When classes are not known (i.e. running with real data), just provide an empty map.
+func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape, title string, writer io.Writer, classes map[int]int) error {
 	xmlEncoder := xml.NewEncoder(writer)
 	// array to hold the xml elements
 	elems := []interface{}{h1{Title: title}}
@@ -104,12 +104,12 @@ func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape, title string, writer 
 	for row := 0; row < rows; row++ {
 		coord := coords.RowView(row)
 		var colorMask []int
-		clusterID, clusterFound := clusters[row]
-		// if no cluster information, just use shades of gray
-		if !clusterFound || clusterID == -1 {
+		classID, classFound := classes[row]
+		// if no class information, just use shades of gray
+		if !classFound || classID == -1 {
 			colorMask = []int{255, 255, 255}
 		} else {
-			colorMask = colors[clusters[row]%len(colors)]
+			colorMask = colors[classes[row]%len(colors)]
 		}
 		colorMul := 1.0 - (umatrix[row]-minDistance)/(maxDistance-minDistance)
 		r := int(colorMul * float64(colorMask[0]))
@@ -136,12 +136,12 @@ func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape, title string, writer 
 			Style:  fmt.Sprintf("fill:rgb(%d,%d,%d);stroke:black;stroke-width:1", r, g, b),
 		}
 
-		// print cluster number
-		if clusterFound {
+		// print class number
+		if classFound {
 			svgElem.Polygons[row*2+1] = textElement{
 				X:    x - 0.25*MUL,
 				Y:    y + 0.25*MUL,
-				Text: fmt.Sprintf("%d", clusters[row]),
+				Text: fmt.Sprintf("%d", classes[row]),
 			}
 		}
 	}

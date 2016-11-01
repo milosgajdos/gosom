@@ -34,16 +34,24 @@ var loadFuncs = map[string]func(io.Reader) (*mat64.Dense, error){
 	".lrn": LoadLRN,
 }
 
+// load classifications funcs
+var loadClassificationsFuncs = map[string]func(io.Reader) (map[int]int, error){
+	".cls": LoadCLS,
+}
+
 // DataSet represents training data set
 type DataSet struct {
-	data *mat64.Dense
+	data    *mat64.Dense
+	classes map[int]int
 }
 
 // New returns new data set or fails with error if either the path to data set
 // supplied as a parameter does not exist or if the file is encoded
 // in an unsupported format. File format is inferred from the file extension.
-// Currently only csv files are supported.
-func New(path string) (*DataSet, error) {
+// Currently csv and lrn files are supported.
+// If the dataset has classification information it can be provided as the second
+// parameter.
+func New(path string, clsPath string) (*DataSet, error) {
 	// Check if the supplied file type is supported
 	fileType := filepath.Ext(path)
 	loadData, ok := loadFuncs[fileType]
@@ -65,15 +73,45 @@ func New(path string) (*DataSet, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Load classes
+	classes := make(map[int]int) // default empty classification information
+	if clsPath != "" {
+		// Check if the classification file type is supported
+		clsFileType := filepath.Ext(clsPath)
+		loadCls, ok := loadClassificationsFuncs[clsFileType]
+		if !ok {
+			return nil, fmt.Errorf("Unsupported type of classification file: %s", clsFileType)
+		}
+		// Check if the classification file exists
+		if _, err := os.Stat(clsPath); os.IsNotExist(err) {
+			return nil, err
+		}
+		clsFile, err := os.Open(clsPath)
+		if err != nil {
+			return nil, err
+		}
+		defer clsFile.Close()
+		classes, err = loadCls(clsFile)
+
+		if err != nil {
+			return nil, err
+		}
+	}
 	// Return Data
 	return &DataSet{
-		data: data,
+		data:    data,
+		classes: classes,
 	}, nil
 }
 
 // Data returns the data stored in a matrix
 func (ds DataSet) Data() *mat64.Dense {
 	return ds.data
+}
+
+// Classes returns classification information stored in a map
+func (ds DataSet) Classes() map[int]int {
+	return ds.classes
 }
 
 // Scale normalizes data in each column based on its mean and standard deviation and returns it.
@@ -134,7 +172,7 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		line := scanner.Text()
+		line := strings.TrimRight(scanner.Text(), "\t ")
 		if strings.HasPrefix(line, "#") { // comment
 			continue
 		} else if strings.HasPrefix(line, "%") { // header
@@ -142,7 +180,6 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 			if headerRow == LrnHeaderSize { // rows
 				rows64, err := strconv.ParseInt(headerLine, 10, 64)
 				if err != nil {
-					fmt.Println(err)
 					return nil, fmt.Errorf("Dataset size information missing")
 				}
 				rows = int(rows64)
@@ -151,10 +188,6 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 			} else if headerRow == LrnHeaderTypes { // col types
 				colTypes := strings.Split(headerLine, "\t")
 				for _, colType := range colTypes {
-					// this seems to happen in real .lrn files
-					if len(colType) == 0 {
-						continue
-					}
 					ct, err := strconv.ParseInt(colType, 10, 64)
 					if err != nil {
 						return nil, err
@@ -191,6 +224,7 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 							return nil, fmt.Errorf("Problem parsing value at line %d, col %d", valueRow, i)
 						}
 						mxData[valueRow*cols+valueIndex] = f
+						valueIndex++
 						continue
 					}
 					return nil, fmt.Errorf("Too many data columns")
@@ -204,6 +238,69 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 	}
 
 	return mat64.NewDense(rows, cols, mxData), nil
+}
+
+// LoadCLS reads classification information from a .cls file.
+// See the specification here: http://databionic-esom.sourceforge.net/user.html#Classification_files____cls_
+// The only supported header is the Number of datasets (n)
+func LoadCLS(reader io.Reader) (map[int]int, error) {
+	var rows *int
+	valueRow := 0
+	classifications := make(map[int]int)
+
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := strings.TrimRight(scanner.Text(), "\t ")
+		if strings.HasPrefix(line, "#") { // comment
+			continue
+		} else if strings.HasPrefix(line, "%") { // header
+			if rows != nil {
+				return nil, fmt.Errorf("Unsupported header")
+			}
+			headerLine := strings.TrimPrefix(line, "% ")
+			rows64, err := strconv.ParseInt(headerLine, 10, 64)
+			if err != nil {
+				fmt.Println(err)
+				return nil, fmt.Errorf("Classification data size information missing")
+			}
+			rowsTmp := int(rows64)
+			rows = &rowsTmp
+		} else { // classes
+			if rows == nil {
+				return nil, fmt.Errorf("Invalid header")
+			}
+			if valueRow >= *rows {
+				return nil, fmt.Errorf("Too many classification rows")
+			}
+			vals := strings.Split(line, "\t")
+			// classes come in pairs: index -> class
+			var index, class *int
+			for i, val := range vals {
+				if i > 1 {
+					return nil, fmt.Errorf("Too many classification columns")
+				}
+				num64, err := strconv.ParseInt(val, 10, 64)
+				if err != nil {
+					return nil, fmt.Errorf("Problem parsing value at line %d, col %d", valueRow, i)
+				}
+				num := int(num64)
+
+				if i == 0 {
+					index = &num
+				} else if i == 1 {
+					class = &num
+				}
+			}
+			if index == nil || class == nil {
+				return nil, fmt.Errorf("Incomplete classification row")
+			}
+
+			// CLS indexes are 1-based, but we're using 0-based
+			classifications[*index-1] = *class
+			valueRow++
+		}
+	}
+	return classifications, nil
 }
 
 // Scale centers the data set to zero mean values in each column and then normalizes them.
