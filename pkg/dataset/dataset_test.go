@@ -47,7 +47,7 @@ func TestDataSet(t *testing.T) {
 
 	tmpPath := path.Join(os.TempDir(), fileName)
 	// create new dataset
-	ds, err := New(tmpPath, false)
+	ds, err := New(tmpPath, "")
 	assert.NoError(err)
 	assert.NotNil(ds)
 
@@ -70,11 +70,11 @@ func TestDataSet(t *testing.T) {
 	assert.True(mat64.Equal(scaledMx, ds.Data()))
 
 	// Unsupported file format
-	ds, err = New("example", false)
+	ds, err = New("example", "")
 	assert.Error(err)
 
 	// Nonexistent file
-	ds, err = New(path.Join(".", "nonexistent.csv"), false)
+	ds, err = New(path.Join(".", "nonexistent.csv"), "")
 	assert.Error(err)
 }
 
@@ -108,7 +108,7 @@ func TestDataWithClasses(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	ds, err := New(lrnPath, true)
+	ds, err := New(lrnPath, clsPath)
 	assert.NoError(err)
 	assert.NotNil(ds)
 	rows, cols := ds.Data().Dims()
@@ -117,6 +117,18 @@ func TestDataWithClasses(t *testing.T) {
 	assert.Equal(2, len(ds.Classes()))
 	// index is 0-based so '4' becomes '3' here
 	assert.Equal(2, ds.Classes()[3])
+
+	// invalid classification file extension
+	ds, err = New(lrnPath, "somefile.class")
+	assert.Error(err)
+	assert.Nil(ds)
+	assert.Equal("Unsupported type of classification file: .class", err.Error())
+
+	// classification file doesn't exist
+	ds, err = New(lrnPath, "nonexistent.cls")
+	assert.Error(err)
+	assert.Nil(ds)
+	assert.True(strings.Contains(err.Error(), "no such file or directory"))
 }
 
 func TestLoadCSV(t *testing.T) {
@@ -237,7 +249,7 @@ func TestScale(t *testing.T) {
 
 	// unlabeled data set
 	tmpPath := path.Join(os.TempDir(), fileName)
-	ds, err := New(tmpPath, false)
+	ds, err := New(tmpPath, "")
 	assert.NoError(err)
 	assert.NotNil(ds)
 	// pre-computed test data

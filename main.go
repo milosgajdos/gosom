@@ -13,8 +13,8 @@ import (
 var (
 	// path to input data set
 	input string
-	// classification information flag
-	clsinfo bool
+	// path to classification file for the data set
+	clsinput string
 	// feature scaling flag
 	scale bool
 	// map dimensions: 2D only [for now]
@@ -45,7 +45,7 @@ var (
 
 func init() {
 	flag.StringVar(&input, "input", "", "Path to input data set")
-	flag.BoolVar(&clsinfo, "clsinfo", false, "Dataset has classification information in a .cls file of same name as input")
+	flag.StringVar(&clsinput, "clsinput", "", "Path to classification file for the data set")
 	flag.BoolVar(&scale, "scale", false, "Request data scaling")
 	flag.StringVar(&dims, "dims", "", "comma-separated SOM dimensions")
 	flag.StringVar(&grid, "grid", "planar", "SOM grid")
@@ -88,7 +88,7 @@ func main() {
 		os.Exit(1)
 	}
 	// load data set from a file in provided path
-	ds, err := dataset.New(input, clsinfo)
+	ds, err := dataset.New(input, clsinput)
 	if err != nil {
 		fmt.Printf("Unable to load Data Set: %s\n", err)
 		os.Exit(1)

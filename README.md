@@ -10,6 +10,18 @@
 
 This project will provide an implementation of [Self-Organizing Map](https://en.wikipedia.org/wiki/Self-organizing_map) (SOM) in Go.
 
+# Examples
+Try the following simple examples using the FCPS dataset (see below):
+
+```
+# Batch algorithm ()
+export P=Target; go build; ./gosom -umxout umatrix_batch.html -dims 30,30 -radius 500.0 -rdecay exp -ushape rectangle -iters 100 -training batch -input testdata/fcps/${P}.lrn -clsinput testdata/fcps/${P}.cls
+
+# Sequential algorithm
+export P=Hepta; go build; ./gosom -umxout umatrix_seq.html -dims 30,30 -radius 500.0 -rdecay exp -lrate 0.5 -ldecay exp -ushape rectangle -iters 30000 -training seq -input testdata/fcps/${P}.lrn -clsinput testdata/fcps/${P}.cls
+```
+Change the $P variable for different data sets
+
 # Acknowledgements
 
 Test data present in `fcps` subdirectory of `testdata` come from [Philipps University of Marburg](http://www.uni-marburg.de/fb12/arbeitsgruppen/datenbionik/data?language_sync=1):

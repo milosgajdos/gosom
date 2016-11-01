@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -35,6 +34,11 @@ var loadFuncs = map[string]func(io.Reader) (*mat64.Dense, error){
 	".lrn": LoadLRN,
 }
 
+// load classifications funcs
+var loadClassificationsFuncs = map[string]func(io.Reader) (map[int]int, error){
+	".cls": LoadCLS,
+}
+
 // DataSet represents training data set
 type DataSet struct {
 	data    *mat64.Dense
@@ -44,8 +48,10 @@ type DataSet struct {
 // New returns new data set or fails with error if either the path to data set
 // supplied as a parameter does not exist or if the file is encoded
 // in an unsupported format. File format is inferred from the file extension.
-// Currently only csv files are supported.
-func New(path string, classifications bool) (*DataSet, error) {
+// Currently csv and lrn files are supported.
+// If the dataset has classification information it can be provided as the second
+// parameter.
+func New(path string, clsPath string) (*DataSet, error) {
 	// Check if the supplied file type is supported
 	fileType := filepath.Ext(path)
 	loadData, ok := loadFuncs[fileType]
@@ -69,10 +75,13 @@ func New(path string, classifications bool) (*DataSet, error) {
 	}
 	// Load classes
 	classes := make(map[int]int) // default empty classification information
-	if classifications {
-		// get cls file path by replacing the extension
-		regex, _ := regexp.Compile("\\..+$") // no error expected here
-		clsPath := regex.ReplaceAllString(path, ".cls")
+	if clsPath != "" {
+		// Check if the classification file type is supported
+		clsFileType := filepath.Ext(clsPath)
+		loadCls, ok := loadClassificationsFuncs[clsFileType]
+		if !ok {
+			return nil, fmt.Errorf("Unsupported type of classification file: %s", clsFileType)
+		}
 		// Check if the classification file exists
 		if _, err := os.Stat(clsPath); os.IsNotExist(err) {
 			return nil, err
@@ -82,7 +91,7 @@ func New(path string, classifications bool) (*DataSet, error) {
 			return nil, err
 		}
 		defer clsFile.Close()
-		classes, err = LoadCLS(clsFile)
+		classes, err = loadCls(clsFile)
 
 		if err != nil {
 			return nil, err
