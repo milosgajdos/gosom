@@ -253,15 +253,12 @@ type batchConfig struct {
 	iters int
 }
 
-// batchResult holds result of batch algorithm for a particular data input
-// It holds scaled data vector, neighbourhood of its BMU and index of codebook vector
+// batchResult holds results of batch algorithm for a particular data input batch
 type batchResult struct {
-	// vec is a scaled data vector
-	vec *mat64.Vector
-	// nghb is vec BMU neighbourhood
-	nghb float64
-	// idx is an index of codebook vector to update
-	idx int
+	// vecs is a slice of nghb scaled data vectors
+	vecs []*mat64.Vector
+	// nghbs is a slice of BMU neighbourhoods
+	nghbs []float64
 }
 
 // batchTrain runs batch SOM training on a given data set
@@ -283,7 +280,7 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 		from := 0
 		count := workerBatch
 		// create batch results channel
-		results := make(chan *batchResult, workers*4)
+		results := make(chan *batchResult, workers*40)
 		wg := &sync.WaitGroup{}
 		// start worker goroutines
 		for j := 0; j < workers; j++ {
@@ -306,21 +303,25 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 			close(results)
 		}()
 		// collect batch results from all workers
-		cbVecs := make([]*mat64.Vector, cbRows)
+		vecs := make([]*mat64.Vector, cbRows)
 		nghbs := make([]float64, cbRows)
 		for result := range results {
-			if cbVecs[result.idx] != nil {
-				cbVecs[result.idx].AddVec(cbVecs[result.idx], result.vec)
-			} else {
-				cbVecs[result.idx] = result.vec
+			for k := 0; k < len(result.vecs); k++ {
+				if result.vecs[k] != nil {
+					if vecs[k] != nil {
+						vecs[k].AddVec(vecs[k], result.vecs[k])
+					} else {
+						vecs[k] = result.vecs[k]
+					}
+					nghbs[k] += result.nghbs[k]
+				}
 			}
-			nghbs[result.idx] += result.nghb
 		}
 		// update codebook vectors
 		for k := 0; k < cbRows; k++ {
-			if cbVecs[k] != nil {
-				cbVecs[k].ScaleVec(1.0/nghbs[k], cbVecs[k])
-				m.codebook.SetRow(k, cbVecs[k].RawVector().Data)
+			if vecs[k] != nil {
+				vecs[k].ScaleVec(1.0/nghbs[k], vecs[k])
+				m.codebook.SetRow(k, vecs[k].RawVector().Data)
 			}
 		}
 	}
@@ -331,8 +332,13 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 // processRow processes data rows and sends tehm down the results channel
 func (m Map) processBatch(res chan<- *batchResult, wg *sync.WaitGroup,
 	bc *batchConfig, data *mat64.Dense, from, count, iter int) {
+	// allocate codebook vectors and neighbourhoods
+	rows, _ := m.codebook.Dims()
+	vecs := make([]*mat64.Vector, rows)
+	nghbs := make([]float64, rows)
 	// retrieve Neighbourhood function
 	neighbFn := Neighb[bc.tc.NeighbFn]
+	// iterate through the whole batch
 	for i := from; i < count+from; i++ {
 		row := data.RowView(i)
 		// find codebook BMU for this data row
@@ -348,14 +354,19 @@ func (m Map) processBatch(res chan<- *batchResult, wg *sync.WaitGroup,
 			if dist < radius {
 				// calculate neighbourhood function
 				nghb := neighbFn(dist, radius)
-				// allocate new vector and copy row data to it
-				vec := new(mat64.Vector)
-				vec.CloneVec(row)
-				vec.ScaleVec(nghb, vec)
-				// send batchResult down results channel
-				res <- &batchResult{vec: vec, nghb: nghb, idx: j}
+				if vecs[j] != nil {
+					vecs[j].AddScaledVec(vecs[j], nghb, row)
+				} else {
+					// allocate new vector and copy row data to it
+					vecs[j] = new(mat64.Vector)
+					vecs[j].CloneVec(row)
+					vecs[j].ScaleVec(nghb, vecs[j])
+				}
+				nghbs[j] += nghb
 			}
 		}
 	}
+	// send batchResult down results channel
+	res <- &batchResult{vecs: vecs, nghbs: nghbs}
 	wg.Done()
 }
