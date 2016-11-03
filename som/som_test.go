@@ -104,6 +104,20 @@ func TestCodebook(t *testing.T) {
 	assert.Equal(cols, cbCols)
 }
 
+func TestGrid(t *testing.T) {
+	assert := assert.New(t)
+
+	// default config should not throw any errors
+	m, err := NewMap(mSom, dataMx)
+	assert.NotNil(m)
+	assert.NoError(err)
+	grid := m.Grid()
+	assert.NotNil(grid)
+	rows, cols := grid.Dims()
+	assert.Equal(cols, len(mSom.Dims))
+	assert.Equal(rows, mSom.Dims[0]*mSom.Dims[1])
+}
+
 func TestUnitDist(t *testing.T) {
 	assert := assert.New(t)
 
@@ -112,24 +126,26 @@ func TestUnitDist(t *testing.T) {
 	m, err := NewMap(mSom, dataMx)
 	assert.NotNil(m)
 	assert.NoError(err)
-	unitDist := m.UnitDist()
+	unitDist, err := m.UnitDist()
 	assert.NotNil(unitDist)
+	assert.NoError(err)
 	cbRows, cbCols := unitDist.Dims()
 	assert.Equal(mapUnits, cbRows)
 	assert.Equal(mapUnits, cbCols)
 }
 
-func TestBmus(t *testing.T) {
+func TestMapBmus(t *testing.T) {
 	assert := assert.New(t)
 
 	// default config should not throw any errors
 	m, err := NewMap(mSom, dataMx)
 	assert.NotNil(m)
 	assert.NoError(err)
-	bmus := m.BMUs()
+	bmus, err := m.BMUs(dataMx)
+	assert.NoError(err)
 	assert.NotNil(bmus)
 	rows, _ := dataMx.Dims()
-	assert.Equal(len(bmus), rows)
+	assert.Equal(rows, len(bmus))
 }
 
 func TestTrain(t *testing.T) {
@@ -165,4 +181,17 @@ func TestTrain(t *testing.T) {
 	err = m.Train(tSom, dataMx, iters)
 	assert.NoError(err)
 	tSom.Method = origMethod
+}
+
+func TestMapQuantError(t *testing.T) {
+	assert := assert.New(t)
+
+	// default config should not throw any errors
+	m, err := NewMap(mSom, dataMx)
+	assert.NotNil(m)
+	assert.NoError(err)
+	// get quant error
+	qe, err := m.QuantError(dataMx)
+	assert.NoError(err)
+	assert.True(qe > 0.0)
 }

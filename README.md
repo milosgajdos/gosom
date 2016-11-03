@@ -45,13 +45,13 @@ Try to run the following examples using the `FCPS` dataset (see below). Change t
 ## Batch algorithm
 
 ```
-$ D=Target; go build; ./gosom -umxout umatrix_batch.html -dims 30,30 -radius 500.0 -rdecay exp -ushape rectangle -iters 100 -training batch -input testdata/fcps/${D}.lrn -clsinput testdata/fcps/${D}.cls
+D=Target; go build; ./gosom -umatrix umatrix_batch.html -dims 30,30 -radius 500.0 -rdecay exp -ushape rectangle -iters 100 -training batch -input testdata/fcps/${D}.lrn -clsinput testdata/fcps/${D}.cls
 ```
 
 ## Sequential algorithm
 
 ```
-D=Hepta; go build; ./gosom -umxout umatrix_seq.html -dims 30,30 -radius 500.0 -rdecay exp -lrate 0.5 -ldecay exp -ushape rectangle -iters 30000 -training seq -input testdata/fcps/${D}.lrn -clsinput testdata/fcps/${D}.cls
+D=Hepta; go build; ./gosom -umatrix umatrix_seq.html -dims 30,30 -radius 500.0 -rdecay exp -lrate 0.5 -ldecay exp -ushape rectangle -iters 30000 -training seq -input testdata/fcps/${D}.lrn -clsinput testdata/fcps/${D}.cls
 ```
 
 # Acknowledgements

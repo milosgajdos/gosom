@@ -36,7 +36,7 @@ var (
 	// learning rate decay strategy: lin, exp
 	ldecay string
 	// path to umatrix visualization
-	umxout string
+	umatrix string
 	// path to saved SOM model
 	output string
 	// number of training iterations
@@ -56,7 +56,7 @@ func init() {
 	flag.StringVar(&rdecay, "rdecay", "lin", "Radius decay strategy")
 	flag.Float64Var(&lrate, "lrate", 0.0, "SOM initial learning rate")
 	flag.StringVar(&ldecay, "ldecay", "lin", "Learning rate decay strategy")
-	flag.StringVar(&umxout, "umxout", "", "Path to u-matrix output visualization")
+	flag.StringVar(&umatrix, "umatrix", "", "Path to u-matrix output visualization")
 	flag.StringVar(&output, "output", "", "Path to tore erialized trained SOM model")
 	flag.IntVar(&iters, "iters", 1000, "Number of training iterations")
 }
@@ -139,14 +139,37 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	// if umxout provided create U-matrix
-	if umxout != "" {
-		file, err := os.Create(umxout)
+	// if umatrix provided create U-matrix
+	if umatrix != "" {
+		file, err := os.Create(umatrix)
 		if err != nil {
 			fmt.Printf("Umatrix file error: %s\n", err)
 			os.Exit(1)
 		}
 		defer file.Close()
-		smap.UMatrixOut("svg", input, mConfig, file, ds)
+		smap.UMatrix("svg", input, mConfig, ds, file)
 	}
+
+	// ======= QUALITY measures =======
+	// Quantization error
+	qe, err := smap.QuantError(data)
+	if err != nil {
+		fmt.Printf("Failed to compute quant error: %s\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("Quantization Error: %f\n", qe)
+	// Topographic product
+	tp, err := smap.TopoProduct()
+	if err != nil {
+		fmt.Printf("Failed to compute topographic product: %s\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("Topographic Product: %f\n", tp)
+	// Topographice error
+	te, err := smap.TopoError(data)
+	if err != nil {
+		fmt.Printf("Failed to compute topographic error: %s\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("Topographic Error: %f\n", te)
 }
