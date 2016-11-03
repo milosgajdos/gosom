@@ -1,6 +1,8 @@
 package som
 
 import (
+	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/gonum/matrix/mat64"
@@ -148,4 +150,79 @@ func TestClosestVec(t *testing.T) {
 	closest, err = ClosestVec(metric, v, m)
 	assert.Error(err)
 	assert.Equal(-1, closest)
+}
+
+func TestClosestNVec(t *testing.T) {
+	assert := assert.New(t)
+
+	metric := "euclidean"
+	// test failure cases
+	v := new(mat64.Vector)
+	m := new(mat64.Dense)
+	n := 2
+	// nil vector returns error
+	errString := "Invalid vector: %v\n"
+	closest, err := ClosestNVec(metric, n, nil, m)
+	assert.EqualError(err, fmt.Sprintf(errString, nil))
+	assert.Nil(closest)
+	// nil matrix returns error
+	errString = "Invalid matrix: %v\n"
+	closest, err = ClosestNVec(metric, n, v, nil)
+	assert.EqualError(err, fmt.Sprintf(errString, nil))
+	// incorrect number of n closest vectors
+	n = -5
+	errString = "Invalid number of closest vectors requested: %d\n"
+	closest, err = ClosestNVec(metric, n, v, m)
+	assert.EqualError(err, fmt.Sprintf(errString, n))
+	assert.Nil(closest)
+	// when n==1, return BMU
+	n = 1
+	vData, mData := []float64{0.0, 0.0}, []float64{0.0, 1.0, 0.0, 0.1}
+	v = mat64.NewVector(len(vData), vData)
+	m = mat64.NewDense(2, len(vData), mData)
+	closest, err = ClosestNVec(metric, n, v, m)
+	assert.NotNil(closest)
+	assert.Equal(1, closest[0])
+	// find 2 closest vectors
+	n = 2
+	mData = []float64{
+		0.0, 1.0,
+		0.0, 0.1,
+		0.0, 0.2,
+		0.1, 0.0,
+		0.0, 0.5}
+	m = mat64.NewDense(5, len(vData), mData)
+	closest, err = ClosestNVec(metric, n, v, m)
+	assert.NoError(err)
+	sort.Ints(closest)
+	assert.EqualValues([]int{1, 3}, closest)
+}
+
+func TestBmus(t *testing.T) {
+	assert := assert.New(t)
+
+	// test data and codebook
+	rows := 3
+	data := mat64.NewDense(rows, 4,
+		[]float64{5.1, 3.5, 1.4, 0.1,
+			4.6, 3.1, 1.5, 0.4,
+			5.0, 3.6, 1.4, 0.5})
+	cbook := mat64.NewDense(2, 4,
+		[]float64{5.1, 3.5, 1.4, 0.1,
+			5.0, 3.6, 1.4, 0.5})
+	// nil data returns error
+	errString := "Invalid data supplied: %v\n"
+	bmus, err := BMUs(nil, cbook)
+	assert.EqualError(err, fmt.Sprintf(errString, nil))
+	assert.Nil(bmus)
+	// nil codebook returns error
+	errString = "Invalid codebook supplied: %v\n"
+	bmus, err = BMUs(data, nil)
+	assert.EqualError(err, fmt.Sprintf(errString, nil))
+	assert.Nil(bmus)
+	// this should pass through without errors
+	bmus, err = BMUs(data, cbook)
+	assert.NoError(err)
+	assert.NotNil(bmus)
+	assert.Equal(rows, len(bmus))
 }

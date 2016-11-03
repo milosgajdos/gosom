@@ -1,6 +1,7 @@
 package som
 
 import (
+	"container/heap"
 	"fmt"
 	"math"
 
@@ -45,11 +46,12 @@ func DistanceMx(metric string, m *mat64.Dense) (*mat64.Dense, error) {
 	}
 }
 
-// ClosestVec finds the closest vector to v from the vectors stored in m rows
-// using the requested distance metric. It returns an index to the m rows.
-// If several vectors of the same distance are found, it returns the index of the first one.
-// ClosestVec returns error if either v or m are nil or if the distance could not be calculated.
-// When the ClosestVec fails with error, returned index is set to -1.
+// ClosestVec finds the closest vector to v in the vectors stored as m rows
+// using the supplied distance metric. It returns index to the m rows.
+// If unsupported metric is requested, ClosestVec falls over to euclidean metric.
+// If several vectors of the same distance are found, it returns the index of the first one found.
+// ClosestVec returns error if either v or m are nil or if the v dimension is different from
+// the number of m columns. When the ClosestVec fails with error returned index is set to -1.
 func ClosestVec(metric string, v *mat64.Vector, m *mat64.Dense) (int, error) {
 	// vector can't be nil
 	if v == nil {
@@ -75,6 +77,82 @@ func ClosestVec(metric string, v *mat64.Vector, m *mat64.Dense) (int, error) {
 	}
 
 	return closest, nil
+}
+
+// ClosestNVec finds the N closest vectors to v in the vectors stored as m rows
+// using the supplied distance metric and returns a slice of its indices.
+// It fails in the same way as ClosestVec. If n is higher than the number of
+// rows in m, or if it is not a positive integer, it fails with error too.
+func ClosestNVec(metric string, n int, v *mat64.Vector, m *mat64.Dense) ([]int, error) {
+	// vector can't be nil
+	if v == nil {
+		return nil, fmt.Errorf("Invalid vector: %v\n", v)
+	}
+	// matrix cant be nil
+	if m == nil {
+		return nil, fmt.Errorf("Invalid matrix: %v\n", m)
+	}
+	rows, _ := m.Dims()
+	// n must be positive integer and smaller than number of rows in m
+	if n <= 0 || n > rows {
+		return nil, fmt.Errorf("Invalid number of closest vectors requested: %d\n", n)
+	}
+	// we return slice of indices
+	closest := make([]int, n)
+
+	switch {
+	case n == 1:
+		idx, err := ClosestVec(metric, v, m)
+		if err != nil {
+			return nil, err
+		}
+		closest[0] = idx
+	default:
+		// no need to check for error
+		h, _ := newFloat64Heap(n)
+		rows, _ := m.Dims()
+		for i := 0; i < rows; i++ {
+			d, err := Distance(metric, v, m.RowView(i))
+			if err != nil {
+				return nil, err
+			}
+			f := &float64Item{val: d, index: i}
+			heap.Push(h, f)
+		}
+		// add max vals to closest slide
+		for j := 0; j < n; j++ {
+			closest[j] = (heap.Pop(h).(*float64Item)).index
+		}
+	}
+
+	return closest, nil
+}
+
+// BMUs returns a slice of codebook indices of Best Match Unit vectors for each
+// vector stored in data rows. It returns error if either the data or codebook are nil
+// or if their dimensions are mismatched.
+func BMUs(data, codebook *mat64.Dense) ([]int, error) {
+	// data can't be nil
+	if data == nil {
+		return nil, fmt.Errorf("Invalid data supplied: %v\n", data)
+	}
+	// codebook cant be nil
+	if codebook == nil {
+		return nil, fmt.Errorf("Invalid codebook supplied: %v\n", codebook)
+	}
+
+	rows, _ := data.Dims()
+	bmus := make([]int, rows)
+	// loop through all data
+	for i := 0; i < rows; i++ {
+		idx, err := ClosestVec("euclidean", data.RowView(i), codebook)
+		if err != nil {
+			return nil, err
+		}
+		bmus[i] = idx
+	}
+
+	return bmus, nil
 }
 
 // euclideanVec computes euclidean distance between vectors a and b.

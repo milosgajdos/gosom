@@ -28,11 +28,9 @@ type Map struct {
 	// codebook is a matrix which contains SOM codebook vectors
 	// codebook dimensions: SOM units x data features
 	codebook *mat64.Dense
-	// unitDist is a symmetric hollow matrix that maps distances between SOM units
-	// unitDist dimesions: SOM units x SOM units
-	unitDist *mat64.Dense
-	// bmus stores indices of Best Match Units (BMU) for each input data
-	bmus []int
+	// grid is a matrix which contains SOM unit coordinages
+	// grid dimensions depend on chosen configuration
+	grid *mat64.Dense
 }
 
 // NewMap creates new SOM based on the provided configuration and input data
@@ -40,6 +38,7 @@ type Map struct {
 // SOM codebook vectors to initial values. If codebook InitFunc is nil, random initialization
 // is used. NewMap returns error if the provided configuration is not valid or if the data matrix
 // is nil or if the codebook matrix could not be initialized.
+// TODO: we should avoid initializing using data
 func NewMap(c *MapConfig, data *mat64.Dense) (*Map, error) {
 	// if input data is empty throw error
 	if data == nil {
@@ -60,38 +59,37 @@ func NewMap(c *MapConfig, data *mat64.Dense) (*Map, error) {
 		return nil, err
 	}
 	// grid coordinates matrix
-	gridCoords, err := GridCoords(c.UShape, c.Dims)
+	grid, err := GridCoords(c.UShape, c.Dims)
 	if err != nil {
 		return nil, err
 	}
-	// unit distance matrix
-	unitDist, err := DistanceMx("euclidean", gridCoords)
-	if err != nil {
-		return nil, err
-	}
-	rows, _ := data.Dims()
-	bmus := make([]int, rows)
 	// return pointer to new map
 	return &Map{
 		codebook: codebook,
-		unitDist: unitDist,
-		bmus:     bmus,
+		grid:     grid,
 	}, nil
 }
 
 // Codebook returns a matrix which contains SOM codebook vectors
-func (m Map) Codebook() *mat64.Dense {
+func (m Map) Codebook() mat64.Matrix {
 	return m.codebook
 }
 
-// UnitDist returns a matrix which contains Euclidean distances between SOM units
-func (m Map) UnitDist() *mat64.Dense {
-	return m.unitDist
+// Grid returns a matrix with SOM map unit coordinages
+func (m Map) Grid() mat64.Matrix {
+	return m.grid
 }
 
-// BMUs returns a slice which contains indices of Best Match Units (BMUs) of each input vector
-func (m Map) BMUs() []int {
-	return m.bmus
+// UnitDist returns a matrix which contains Euclidean distances between SOM units
+func (m Map) UnitDist() (*mat64.Dense, error) {
+	return DistanceMx("euclidean", m.grid)
+}
+
+// BMUs returns a slice which contains indices of Best Match Unit vectors to the map
+// codebook for each vector stored in data rows.
+// It returns error if the data dimension and map codebook dimensions are not the same.
+func (m Map) BMUs(data *mat64.Dense) ([]int, error) {
+	return BMUs(data, m.codebook)
 }
 
 // MarshalTo serializes SOM codebook in a given format to writer w.
@@ -106,14 +104,13 @@ func (m *Map) MarshalTo(format string, w io.Writer) (int, error) {
 	return 0, fmt.Errorf("Unsupported format: %s\n", format)
 }
 
-// UMatrixOut generates SOM u-matrix in a given format and writes the output to w.
+// UMatrix generates SOM u-matrix in a given format and writes the output to w.
 // At the moment only SVG format is supported. It fails with error if the write to w fails.
-func (m Map) UMatrixOut(format, title string, mapConfig *MapConfig, w io.Writer, ds *dataset.DataSet) error {
+func (m Map) UMatrix(format, title string, c *MapConfig, ds *dataset.DataSet, w io.Writer) error {
 	switch format {
 	case "svg":
 		{
 			classes := make(map[int]int)
-
 			// This is a rough method to assign a class to each codebook vector based
 			// on the classes of the data samples.
 			// First we go through all data samples and add their classes
@@ -160,7 +157,7 @@ func (m Map) UMatrixOut(format, title string, mapConfig *MapConfig, w io.Writer,
 				}
 			}
 
-			return UMatrixSVG(m.codebook, mapConfig.Dims, mapConfig.UShape, title, w, classes)
+			return UMatrixSVG(m.codebook, c.Dims, c.UShape, title, w, classes)
 		}
 	}
 	return fmt.Errorf("Invalid format %s", format)
@@ -193,12 +190,37 @@ func (m *Map) Train(c *TrainConfig, data *mat64.Dense, iters int) error {
 	return nil
 }
 
+// QuantError computes SOM quantization error for the supplied data set
+// It returns the quantization error or fails with error if the passed in data is nil
+// or the distance betweent vectors could not be calculated.
+// When the error is returned, quantization error is set to -1.0.
+func (m Map) QuantError(data *mat64.Dense) (float64, error) {
+	return QuantError(data, m.codebook)
+}
+
+// TopoProduct computes SOM topographic product
+// It returns a single number or fails with error if the product could not be computed
+func (m Map) TopoProduct() (float64, error) {
+	return TopoProduct(m.codebook, m.grid)
+}
+
+// TopoError computes SOM topographic error for a given data set.
+// It returns a single number or fails with error if the error could not be computed
+func (m Map) TopoError(data *mat64.Dense) (float64, error) {
+	return TopoError(data, m.codebook, m.grid)
+}
+
 // seqTrain runs sequential SOM training algorithm on a given data set
 func (m *Map) seqTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 	rows, _ := data.Dims()
 	// create random number generator
 	rSrc := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(rSrc)
+	// calculate unit distances
+	unitDist, err := m.UnitDist()
+	if err != nil {
+		return err
+	}
 	// retrieve Neighbourhood function
 	neighbFn := Neighb[tc.NeighbFn]
 	// perform iters number of learning iterations
@@ -213,7 +235,7 @@ func (m *Map) seqTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 		lRate, _ := LRate(i, iters, tc.LDecay, tc.LRate)
 		radius, _ := Radius(i, iters, tc.RDecay, tc.Radius)
 		// pick the bmu unit distance row
-		bmuDists := m.unitDist.RowView(bmu)
+		bmuDists := unitDist.RowView(bmu)
 		// find units which are within the radius
 		for i := 0; i < bmuDists.Len(); i++ {
 			// bmu distance to i-th map unit
@@ -270,6 +292,11 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 		tc:    tc,
 		iters: iters,
 	}
+	// calculate unit distances
+	unitDist, err := m.UnitDist()
+	if err != nil {
+		return err
+	}
 	// number of worker goroutines
 	workers := runtime.NumCPU()
 	// evenly distribute batch work between workers
@@ -295,7 +322,7 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 				count = rows - from
 			}
 			wg.Add(1)
-			go m.processBatch(results, wg, bc, data, from, count, i)
+			go m.processBatch(results, wg, bc, unitDist, data, from, count, i)
 		}
 		// wait for workers to finish and close the result channel
 		go func() {
@@ -331,7 +358,7 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 
 // processRow processes data rows and sends tehm down the results channel
 func (m Map) processBatch(res chan<- *batchResult, wg *sync.WaitGroup,
-	bc *batchConfig, data *mat64.Dense, from, count, iter int) {
+	bc *batchConfig, unitDist, data *mat64.Dense, from, count, iter int) {
 	// allocate codebook vectors and neighbourhoods
 	rows, _ := m.codebook.Dims()
 	vecs := make([]*mat64.Vector, rows)
@@ -346,7 +373,7 @@ func (m Map) processBatch(res chan<- *batchResult, wg *sync.WaitGroup,
 		// calculate radius for this iteration
 		radius, _ := Radius(iter, bc.iters, bc.tc.RDecay, bc.tc.Radius)
 		// pick the BMU's distance row
-		bmuDists := m.unitDist.RowView(bmu)
+		bmuDists := unitDist.RowView(bmu)
 		for j := 0; j < bmuDists.Len(); j++ {
 			// bmu distance to i-th map unit
 			dist := bmuDists.At(j, 0)
