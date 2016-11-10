@@ -49,24 +49,37 @@ func (f float64Item) String() string {
 	return fmt.Sprintf("val: %f, index: %d", f.val, f.index)
 }
 
-// float64Heap provides an implementation of inverted float64 heap
-// inverted heap is a tree structure that has the largest number at its root
+// float64Heap provides an implementation of min float64 heap
+// min heap is a binary that has a max value in its tip/peak
 // float64Heap it implements heap.Interface
 type float64Heap struct {
 	// heap nodes
 	items []*float64Item
+	// heap size
+	size int
 	// heap capacity
 	cap int
 }
 
+// newFloat64Heap initializes new heap and returns it
 func newFloat64Heap(cap int, items ...*float64Item) (*float64Heap, error) {
 	if cap <= 0 {
 		return nil, fmt.Errorf("Invalid capacity supplied: %d\n", cap)
 	}
 
+	if cap < len(items) {
+		return nil, fmt.Errorf("Items count exceeds capacity: %d\n", cap)
+	}
+
+	// pre-allocate heap buffer
+	heapItems := make([]*float64Item, cap)
+	for i, item := range items {
+		heapItems[i] = item
+	}
 	// init the heap
 	h := &float64Heap{
-		items: items,
+		items: heapItems,
+		size:  len(items),
 		cap:   cap,
 	}
 	heap.Init(h)
@@ -74,28 +87,28 @@ func newFloat64Heap(cap int, items ...*float64Item) (*float64Heap, error) {
 	return h, nil
 }
 
-func (h float64Heap) Len() int           { return len(h.items) }
+func (h float64Heap) Len() int           { return h.size }
 func (h float64Heap) Less(i, j int) bool { return h.items[i].val > h.items[j].val }
 func (h float64Heap) Swap(i, j int)      { h.items[i], h.items[j] = h.items[j], h.items[i] }
 
 func (h *float64Heap) Push(x interface{}) {
 	item := x.(*float64Item)
-	if len(h.items) < h.cap {
-		h.items = append(h.items, item)
-		return
-	}
 	// if we are at full cap, just replace the peak
-	if len(h.items) == h.cap && item.val < h.items[0].val {
-		h.items[0] = item
-		heap.Fix(h, 0)
+	switch h.size {
+	case h.cap:
+		if item.val < (*h).items[0].val {
+			(*h).items[0] = item
+			heap.Fix(h, 0)
+		}
+	default:
+		h.items[h.size] = item
+		h.size++
 	}
 }
 
 func (h *float64Heap) Pop() interface{} {
-	old := *h
-	n := len(old.items)
-	x := old.items[n-1]
-	(*h).items = old.items[0 : n-1]
+	x := h.items[h.size-1]
+	h.size--
 	return x
 }
 
