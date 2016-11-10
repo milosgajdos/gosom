@@ -57,8 +57,6 @@ type float64Heap struct {
 	items []*float64Item
 	// heap size
 	size int
-	// heap capacity
-	cap int
 }
 
 // newFloat64Heap initializes new heap and returns it
@@ -80,7 +78,6 @@ func newFloat64Heap(cap int, items ...*float64Item) (*float64Heap, error) {
 	h := &float64Heap{
 		items: heapItems,
 		size:  len(items),
-		cap:   cap,
 	}
 	heap.Init(h)
 
@@ -95,7 +92,7 @@ func (h *float64Heap) Push(x interface{}) {
 	item := x.(*float64Item)
 	// if we are at full cap, just replace the peak
 	switch h.size {
-	case h.cap:
+	case len(h.items):
 		if item.val < (*h).items[0].val {
 			(*h).items[0] = item
 			heap.Fix(h, 0)
@@ -113,5 +110,5 @@ func (h *float64Heap) Pop() interface{} {
 }
 
 func (h float64Heap) Cap() int {
-	return h.cap
+	return len(h.items)
 }
