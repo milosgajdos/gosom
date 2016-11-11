@@ -25,12 +25,12 @@ func QuantError(data, codebook *mat64.Dense) (float64, error) {
 	metric := "euclidean"
 	rows, _ := data.Dims()
 	for i := 0; i < rows; i++ {
-		bmuIdx, err := ClosestVec(metric, data.RowView(i), codebook)
+		bmuIdx, err := ClosestVec(metric, data.RawRowView(i), codebook)
 		if err != nil {
 			return -1.0, err
 		}
 		// get the BMU distance -- no need to check for errors here
-		d, err := Distance(metric, data.RowView(i), codebook.RowView(bmuIdx))
+		d, err := Distance(metric, data.RawRowView(i), codebook.RawRowView(bmuIdx))
 		if err != nil {
 			return -1.0, err
 		}
@@ -69,11 +69,11 @@ func TopoProduct(codebook, grid *mat64.Dense) (float64, error) {
 	// loop through all neurons
 	for i := 0; i < gRows; i++ {
 		// retrieve unit distance slice and sort it
-		uSlice := newFloat64Slice(uDistMx.RowView(i).RawVector().Data...)
+		uSlice := newFloat64Slice(uDistMx.RawRowView(i)...)
 		sort.Sort(uSlice)
 		uKNeighb := uSlice.index[1:]
 		// retrieve codebook distance slice and sort it
-		cSlice := newFloat64Slice(cDistMx.RowView(i).RawVector().Data...)
+		cSlice := newFloat64Slice(cDistMx.RawRowView(i)...)
 		sort.Sort(cSlice)
 		cKNeighb := cSlice.index[1:]
 		// topgraphic product and partial distortion products
@@ -121,15 +121,15 @@ func TopoError(data, codebook, grid *mat64.Dense) (float64, error) {
 	// iterate through all data samples
 	rows, _ := data.Dims()
 	for i := 0; i < rows; i++ {
-		closest, err := ClosestNVec("euclidean", 2, data.RowView(i), codebook)
+		closest, err := ClosestNVec("euclidean", 2, data.RawRowView(i), codebook)
 		if err != nil {
 			return -1.0, err
 		}
 		// If the 2 BMUS are next to each other on lattice increment te.
 		// 1.01*math.Sqrt(2) accounts for voronoi cell neighbourhood.
 		// This makes the diagonal lattice units to be considered neighb.
-		uDistVec := uDistMx.RowView(closest[0])
-		if uDistVec.At(closest[1], 0) >= 1.01*math.Sqrt(2) {
+		uDistVec := uDistMx.RawRowView(closest[0])
+		if uDistVec[closest[1]] >= 1.01*math.Sqrt(2) {
 			te++
 		}
 	}

@@ -122,7 +122,7 @@ func (m Map) UMatrix(format, title string, c *MapConfig, ds *dataset.DataSet, w 
 
 				bmuClasses := make(map[int][]int)
 				for row := 0; row < rows; row++ {
-					cbi, err := ClosestVec("euclidean", data.RowView(row), m.codebook)
+					cbi, err := ClosestVec("euclidean", data.RawRowView(row), m.codebook)
 					if err != nil {
 						return err
 					}
@@ -226,7 +226,7 @@ func (m *Map) seqTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 	// perform iters number of learning iterations
 	for i := 0; i < iters; i++ {
 		// pick a random sample from dataset
-		sample := data.RowView(r.Intn(rows))
+		sample := data.RawRowView(r.Intn(rows))
 		// no need to check for error here:
 		// sample and codebook are not nil and have the same dimension
 		bmu, _ := ClosestVec("euclidean", sample, m.codebook)
@@ -235,11 +235,11 @@ func (m *Map) seqTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 		lRate, _ := LRate(i, iters, tc.LDecay, tc.LRate)
 		radius, _ := Radius(i, iters, tc.RDecay, tc.Radius)
 		// pick the bmu unit distance row
-		bmuDists := unitDist.RowView(bmu)
+		bmuDists := unitDist.RawRowView(bmu)
 		// find units which are within the radius
-		for i := 0; i < bmuDists.Len(); i++ {
+		for i := 0; i < len(bmuDists); i++ {
 			// bmu distance to i-th map unit
-			dist := bmuDists.At(i, 0)
+			dist := bmuDists[i]
 			// we are within BMU radius
 			if dist < radius {
 				// update particular codebook vector
@@ -253,18 +253,18 @@ func (m *Map) seqTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 
 // seqUpdateCbVec updates codebook vector on row cbIdx given the learning rate l,
 // radius r, distance d and neihgbourhood function nFn
-func (m *Map) seqUpdateCbVec(cbIdx int, vec *mat64.Vector, l, r, d float64, nFn NeighbFunc) {
+func (m *Map) seqUpdateCbVec(cbIdx int, vec []float64, l, r, d float64, nFn NeighbFunc) {
 	// pick codebook vector that should be updated
-	cbVec := m.codebook.RowView(cbIdx)
-	// update codebook vector according to the algorithm
-	diff := mat64.NewVector(cbVec.Len(), nil)
-	diff.AddScaledVec(vec, -1.0, cbVec)
+	cbVec := m.codebook.RawRowView(cbIdx)
 	mul := l
-	// nFn returns 1 for d == 0; skipping this case will save us some CPU time
-	if d > 0.0 {
-		mul *= nFn(d, r)
+	// Update codebook vector element by element
+	for i := 0; i < len(cbVec); i++ {
+		// nFn returns 1 for d == 0; skipping this case will save us some CPU time
+		if d > 0.0 {
+			mul *= nFn(d, r)
+		}
+		cbVec[i] = cbVec[i] + mul*(vec[i]-cbVec[i])
 	}
-	cbVec.AddScaledVec(cbVec, mul, diff)
 }
 
 // batchConfig holds batch training configuration
@@ -278,7 +278,7 @@ type batchConfig struct {
 // batchResult holds results of batch algorithm for a particular data input batch
 type batchResult struct {
 	// vecs is a slice of nghb scaled data vectors
-	vecs []*mat64.Vector
+	vecs [][]float64
 	// nghbs is a slice of BMU neighbourhoods
 	nghbs []float64
 }
@@ -330,13 +330,15 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 			close(results)
 		}()
 		// collect batch results from all workers
-		vecs := make([]*mat64.Vector, cbRows)
+		vecs := make([][]float64, cbRows)
 		nghbs := make([]float64, cbRows)
 		for result := range results {
 			for k := 0; k < len(result.vecs); k++ {
 				if result.vecs[k] != nil {
 					if vecs[k] != nil {
-						vecs[k].AddVec(vecs[k], result.vecs[k])
+						for l := 0; l < len(vecs[k]); l++ {
+							vecs[k][l] += result.vecs[k][l]
+						}
 					} else {
 						vecs[k] = result.vecs[k]
 					}
@@ -347,8 +349,10 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 		// update codebook vectors
 		for k := 0; k < cbRows; k++ {
 			if vecs[k] != nil {
-				vecs[k].ScaleVec(1.0/nghbs[k], vecs[k])
-				m.codebook.SetRow(k, vecs[k].RawVector().Data)
+				for l := 0; l < len(vecs[k]); l++ {
+					vecs[k][l] = vecs[k][l] / nghbs[k]
+				}
+				m.codebook.SetRow(k, vecs[k])
 			}
 		}
 	}
@@ -361,33 +365,35 @@ func (m Map) processBatch(res chan<- *batchResult, wg *sync.WaitGroup,
 	bc *batchConfig, unitDist, data *mat64.Dense, from, count, iter int) {
 	// allocate codebook vectors and neighbourhoods
 	rows, _ := m.codebook.Dims()
-	vecs := make([]*mat64.Vector, rows)
+	vecs := make([][]float64, rows)
 	nghbs := make([]float64, rows)
 	// retrieve Neighbourhood function
 	neighbFn := Neighb[bc.tc.NeighbFn]
 	// iterate through the whole batch
 	for i := from; i < count+from; i++ {
-		row := data.RowView(i)
+		row := data.RawRowView(i)
 		// find codebook BMU for this data row
 		bmu, _ := ClosestVec("euclidean", row, m.codebook)
 		// calculate radius for this iteration
 		radius, _ := Radius(iter, bc.iters, bc.tc.RDecay, bc.tc.Radius)
 		// pick the BMU's distance row
-		bmuDists := unitDist.RowView(bmu)
-		for j := 0; j < bmuDists.Len(); j++ {
+		bmuDists := unitDist.RawRowView(bmu)
+		for j := 0; j < len(bmuDists); j++ {
 			// bmu distance to i-th map unit
-			dist := bmuDists.At(j, 0)
+			dist := bmuDists[j]
 			// when in BMU radius, scale and add to all neighbourhood vecs
 			if dist < radius {
 				// calculate neighbourhood function
 				nghb := neighbFn(dist, radius)
 				if vecs[j] != nil {
-					vecs[j].AddScaledVec(vecs[j], nghb, row)
+					for k := 0; k < len(vecs[j]); k++ {
+						vecs[j][k] += nghb * row[k]
+					}
 				} else {
-					// allocate new vector and copy row data to it
-					vecs[j] = new(mat64.Vector)
-					vecs[j].CloneVec(row)
-					vecs[j].ScaleVec(nghb, vecs[j])
+					vecs[j] = make([]float64, len(row))
+					for k := 0; k < len(vecs[j]); k++ {
+						vecs[j][k] = nghb * row[k]
+					}
 				}
 				nghbs[j] += nghb
 			}
