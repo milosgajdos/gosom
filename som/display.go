@@ -119,28 +119,32 @@ func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape, title string, writer 
 		x := scale(coord.At(0, 0))
 		y := scale(coord.At(1, 0))
 		// hexagon has a different yOffset
-		if uShape == "hexagon" {
-			xOffset := 0.5 * MUL
-			yBigOffset := math.Tan(math.Pi/6.0) * MUL
-			ySmallOffset := yBigOffset / 2.0
-			// draw a hexagon around the current coord
-			polygonCoords += fmt.Sprintf("%f,%f ", x+xOffset, y+ySmallOffset)
-			polygonCoords += fmt.Sprintf("%f,%f ", x, y+yBigOffset)
-			polygonCoords += fmt.Sprintf("%f,%f ", x-xOffset, y+ySmallOffset)
-			polygonCoords += fmt.Sprintf("%f,%f ", x-xOffset, y-ySmallOffset)
-			polygonCoords += fmt.Sprintf("%f,%f ", x, y-yBigOffset)
-			polygonCoords += fmt.Sprintf("%f,%f ", x+xOffset, y-ySmallOffset)
-			polygonCoords += fmt.Sprintf("%f,%f ", x+xOffset, y+ySmallOffset)
-
-		} else {
-			xOffset := 0.5 * MUL
-			yOffset := 0.5 * MUL
-			// draw a box around the current coord
-			polygonCoords += fmt.Sprintf("%f,%f ", x+xOffset, y+yOffset)
-			polygonCoords += fmt.Sprintf("%f,%f ", x+xOffset, y-yOffset)
-			polygonCoords += fmt.Sprintf("%f,%f ", x-xOffset, y-yOffset)
-			polygonCoords += fmt.Sprintf("%f,%f ", x-xOffset, y+yOffset)
-			polygonCoords += fmt.Sprintf("%f,%f ", x+xOffset, y+yOffset)
+		switch uShape {
+		case "hexagon":
+			{
+				xOffset := 0.5 * MUL
+				yBigOffset := math.Tan(math.Pi/6.0) * MUL
+				ySmallOffset := yBigOffset / 2.0
+				// draw a hexagon around the current coord
+				polygonCoords += fmt.Sprintf("%f,%f ", x+xOffset, y+ySmallOffset)
+				polygonCoords += fmt.Sprintf("%f,%f ", x, y+yBigOffset)
+				polygonCoords += fmt.Sprintf("%f,%f ", x-xOffset, y+ySmallOffset)
+				polygonCoords += fmt.Sprintf("%f,%f ", x-xOffset, y-ySmallOffset)
+				polygonCoords += fmt.Sprintf("%f,%f ", x, y-yBigOffset)
+				polygonCoords += fmt.Sprintf("%f,%f ", x+xOffset, y-ySmallOffset)
+				polygonCoords += fmt.Sprintf("%f,%f ", x+xOffset, y+ySmallOffset)
+			}
+		default:
+			{
+				xOffset := 0.5 * MUL
+				yOffset := 0.5 * MUL
+				// draw a box around the current coord
+				polygonCoords += fmt.Sprintf("%f,%f ", x+xOffset, y+yOffset)
+				polygonCoords += fmt.Sprintf("%f,%f ", x+xOffset, y-yOffset)
+				polygonCoords += fmt.Sprintf("%f,%f ", x-xOffset, y-yOffset)
+				polygonCoords += fmt.Sprintf("%f,%f ", x-xOffset, y+yOffset)
+				polygonCoords += fmt.Sprintf("%f,%f ", x+xOffset, y+yOffset)
+			}
 		}
 
 		svgElem.Polygons[row*2] = polygon{
