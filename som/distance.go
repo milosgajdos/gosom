@@ -9,14 +9,14 @@ import (
 )
 
 // Distance calculates a distance metric between vectors a and b.
-// If unsupported metric is requested DistVector returns euclidean distance.
+// If unsupported metric is requested Distance returns euclidean distance.
 // It returns error if the supplied vectors are either nil or are different dimensions
-func Distance(metric string, a, b *mat64.Vector) (float64, error) {
+func Distance(metric string, a, b []float64) (float64, error) {
 	if a == nil || b == nil {
 		return 0.0, fmt.Errorf("Invalid vectors supplied. a: %v, b: %v\n", a, b)
 	}
-	if a.Len() != b.Len() {
-		return 0.0, fmt.Errorf("Incorrect vector dims. a: %d, b: %d\n", a.Len(), b.Len())
+	if len(a) != len(b) {
+		return 0.0, fmt.Errorf("Incorrect vector dims. a: %d, b: %d\n", len(a), len(b))
 	}
 
 	switch metric {
@@ -52,9 +52,9 @@ func DistanceMx(metric string, m *mat64.Dense) (*mat64.Dense, error) {
 // If several vectors of the same distance are found, it returns the index of the first one found.
 // ClosestVec returns error if either v or m are nil or if the v dimension is different from
 // the number of m columns. When the ClosestVec fails with error returned index is set to -1.
-func ClosestVec(metric string, v *mat64.Vector, m *mat64.Dense) (int, error) {
+func ClosestVec(metric string, v []float64, m *mat64.Dense) (int, error) {
 	// vector can't be nil
-	if v == nil {
+	if v == nil || len(v) == 0 {
 		return -1, fmt.Errorf("Invalid vector: %v\n", v)
 	}
 	// matrix cant be nil
@@ -66,7 +66,7 @@ func ClosestVec(metric string, v *mat64.Vector, m *mat64.Dense) (int, error) {
 	closest := 0
 	dist := math.MaxFloat64
 	for i := 0; i < rows; i++ {
-		d, err := Distance(metric, v, m.RowView(i))
+		d, err := Distance(metric, v, m.RawRowView(i))
 		if err != nil {
 			return -1, err
 		}
@@ -83,9 +83,9 @@ func ClosestVec(metric string, v *mat64.Vector, m *mat64.Dense) (int, error) {
 // using the supplied distance metric and returns a slice of its indices.
 // It fails in the same way as ClosestVec. If n is higher than the number of
 // rows in m, or if it is not a positive integer, it fails with error too.
-func ClosestNVec(metric string, n int, v *mat64.Vector, m *mat64.Dense) ([]int, error) {
+func ClosestNVec(metric string, n int, v []float64, m *mat64.Dense) ([]int, error) {
 	// vector can't be nil
-	if v == nil {
+	if v == nil || len(v) == 0 {
 		return nil, fmt.Errorf("Invalid vector: %v\n", v)
 	}
 	// matrix cant be nil
@@ -112,7 +112,7 @@ func ClosestNVec(metric string, n int, v *mat64.Vector, m *mat64.Dense) ([]int, 
 		h, _ := newFloat64Heap(n)
 		rows, _ := m.Dims()
 		for i := 0; i < rows; i++ {
-			d, err := Distance(metric, v, m.RowView(i))
+			d, err := Distance(metric, v, m.RawRowView(i))
 			if err != nil {
 				return nil, err
 			}
@@ -145,7 +145,7 @@ func BMUs(data, codebook *mat64.Dense) ([]int, error) {
 	bmus := make([]int, rows)
 	// loop through all data
 	for i := 0; i < rows; i++ {
-		idx, err := ClosestVec("euclidean", data.RowView(i), codebook)
+		idx, err := ClosestVec("euclidean", data.RawRowView(i), codebook)
 		if err != nil {
 			return nil, err
 		}
@@ -156,13 +156,10 @@ func BMUs(data, codebook *mat64.Dense) ([]int, error) {
 }
 
 // euclideanVec computes euclidean distance between vectors a and b.
-func euclideanVec(a, b *mat64.Vector) float64 {
-	// to optimize distance calculations we use raw data
-	aData := a.RawVector().Data
-	bData := b.RawVector().Data
+func euclideanVec(a, b []float64) float64 {
 	d := 0.0
-	for i := 0; i < a.Len(); i++ {
-		d += (aData[i] - bData[i]) * (aData[i] - bData[i])
+	for i := 0; i < len(a); i++ {
+		d += (a[i] - b[i]) * (a[i] - b[i])
 	}
 	return math.Sqrt(d)
 }
@@ -174,10 +171,10 @@ func euclideanMx(m *mat64.Dense) *mat64.Dense {
 
 	for row := 0; row < rows-1; row++ {
 		dist := 0.0
-		a := m.RowView(row)
+		a := m.RawRowView(row)
 		for i := row + 1; i < rows; i++ {
 			if i != row {
-				b := m.RowView(i)
+				b := m.RawRowView(i)
 				dist = euclideanVec(a, b)
 				out.Set(row, i, dist)
 				out.Set(i, row, dist)

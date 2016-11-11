@@ -23,16 +23,14 @@ func TestDistance(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		a := mat64.NewVector(len(tc.a), tc.a)
-		b := mat64.NewVector(len(tc.b), tc.b)
-		dist, err := Distance("euclidean", a, b)
+		dist, err := Distance("euclidean", tc.a, tc.b)
 		assert.NoError(err)
 		assert.InDelta(tc.expected, dist, 0.01)
 	}
 
 	// foobar metric returns euclidean distance
-	a := mat64.NewVector(2, []float64{0.0, 0.0})
-	b := mat64.NewVector(2, []float64{0.0, 1.0})
+	a := []float64{0.0, 0.0}
+	b := []float64{0.0, 1.0}
 	d, err := Distance("foobar", a, b)
 	assert.NoError(err)
 	assert.InDelta(1.0, d, 0.01)
@@ -41,8 +39,8 @@ func TestDistance(t *testing.T) {
 	assert.Error(err)
 	assert.Equal(0.0, d)
 	// different vector dimensions
-	a = mat64.NewVector(2, []float64{0.0, 0.0})
-	b = mat64.NewVector(1, []float64{1.0})
+	a = []float64{0.0, 0.0}
+	b = []float64{1.0}
 	d, err = Distance("euclidean", a, b)
 	assert.Error(err)
 	assert.Equal(0.0, d)
@@ -127,25 +125,30 @@ func TestClosestVec(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		v := mat64.NewVector(len(tc.v), tc.v)
 		m := mat64.NewDense(2, len(tc.v), tc.m)
-		closest, err := ClosestVec(tc.metric, v, m)
+		closest, err := ClosestVec(tc.metric, tc.v, m)
 		assert.NoError(err)
 		assert.Equal(tc.expected, closest)
 	}
 
-	// nil matrix returns error
-	v := new(mat64.Vector)
-	m := new(mat64.Dense)
-	closest, err := ClosestVec(metric, v, nil)
-	assert.Error(err)
-	assert.Equal(-1, closest)
 	// nil vector returns error
-	closest, err = ClosestVec(metric, nil, m)
+	v := []float64{}
+	m := new(mat64.Dense)
+	errString := "Invalid vector: %v\n"
+	closest, err := ClosestVec(metric, v, m)
 	assert.Error(err)
+	assert.EqualError(err, fmt.Sprintf(errString, v))
+	assert.Equal(-1, closest)
+	// nil matrix returns error
+	v = []float64{1.0}
+	m = nil
+	errString = "Invalid matrix: %v\n"
+	closest, err = ClosestVec(metric, v, m)
+	assert.Error(err)
+	assert.EqualError(err, fmt.Sprintf(errString, m))
 	assert.Equal(-1, closest)
 	// mismatched dimensions return error
-	v = mat64.NewVector(3, nil)
+	v = make([]float64, 3)
 	m = mat64.NewDense(2, 2, nil)
 	closest, err = ClosestVec(metric, v, m)
 	assert.Error(err)
@@ -157,19 +160,22 @@ func TestClosestNVec(t *testing.T) {
 
 	metric := "euclidean"
 	// test failure cases
-	v := new(mat64.Vector)
+	v := []float64{}
 	m := new(mat64.Dense)
 	n := 2
 	// nil vector returns error
 	errString := "Invalid vector: %v\n"
-	closest, err := ClosestNVec(metric, n, nil, m)
-	assert.EqualError(err, fmt.Sprintf(errString, nil))
+	closest, err := ClosestNVec(metric, n, v, m)
+	assert.EqualError(err, fmt.Sprintf(errString, v))
 	assert.Nil(closest)
 	// nil matrix returns error
+	v = []float64{1.0}
+	m = nil
 	errString = "Invalid matrix: %v\n"
-	closest, err = ClosestNVec(metric, n, v, nil)
-	assert.EqualError(err, fmt.Sprintf(errString, nil))
+	closest, err = ClosestNVec(metric, n, v, m)
+	assert.EqualError(err, fmt.Sprintf(errString, m))
 	// incorrect number of n closest vectors
+	m = new(mat64.Dense)
 	n = -5
 	errString = "Invalid number of closest vectors requested: %d\n"
 	closest, err = ClosestNVec(metric, n, v, m)
@@ -177,9 +183,8 @@ func TestClosestNVec(t *testing.T) {
 	assert.Nil(closest)
 	// when n==1, return BMU
 	n = 1
-	vData, mData := []float64{0.0, 0.0}, []float64{0.0, 1.0, 0.0, 0.1}
-	v = mat64.NewVector(len(vData), vData)
-	m = mat64.NewDense(2, len(vData), mData)
+	v, mData := []float64{0.0, 0.0}, []float64{0.0, 1.0, 0.0, 0.1}
+	m = mat64.NewDense(2, len(v), mData)
 	closest, err = ClosestNVec(metric, n, v, m)
 	assert.NotNil(closest)
 	assert.Equal(1, closest[0])
@@ -191,7 +196,7 @@ func TestClosestNVec(t *testing.T) {
 		0.0, 0.2,
 		0.1, 0.0,
 		0.0, 0.5}
-	m = mat64.NewDense(5, len(vData), mData)
+	m = mat64.NewDense(5, len(v), mData)
 	closest, err = ClosestNVec(metric, n, v, m)
 	assert.NoError(err)
 	sort.Ints(closest)
