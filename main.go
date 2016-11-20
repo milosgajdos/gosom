@@ -3,62 +3,71 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
+	"time"
 
 	"github.com/milosgajdos83/gosom/pkg/dataset"
 	"github.com/milosgajdos83/gosom/pkg/utils"
 	"github.com/milosgajdos83/gosom/som"
 )
 
+const (
+	cliname = "gosom"
+)
+
 var (
 	// path to input data set
 	input string
 	// path to classification file for the data set
-	clsinput string
+	cls string
 	// feature scaling flag
 	scale bool
-	// map dimensions: 2D only [for now]
+	// coma separated map dimensions: 2D only [for now]
 	dims string
 	// map grid type: planar
 	grid string
-	// training method: seq, batch
-	training string
-	// map unit shape type: hexagon, rectangle
+	// map unit shape: hexagon, rectangle
 	ushape string
-	// initial SOM unit neihbourhood radius
+	// initial unit neihbourhood radius
 	radius float64
 	// radius decay strategy: lin, exp
 	rdecay string
 	// neighbourhood func: gaussian, bubble, mexican
 	neighb string
-	// initial SOM learning rate
+	// initial learning rate
 	lrate float64
 	// learning rate decay strategy: lin, exp
 	ldecay string
 	// path to umatrix visualization
 	umatrix string
-	// path to saved SOM model
+	// path to saved model
 	output string
+	// training method: seq, batch
+	training string
 	// number of training iterations
 	iters int
 )
 
 func init() {
 	flag.StringVar(&input, "input", "", "Path to input data set")
-	flag.StringVar(&clsinput, "clsinput", "", "Path to classification file for the input data set")
+	flag.StringVar(&cls, "cls", "", "Path to input data set classification file")
 	flag.BoolVar(&scale, "scale", false, "Request data scaling")
 	flag.StringVar(&dims, "dims", "", "comma-separated SOM grid dimensions")
 	flag.StringVar(&grid, "grid", "planar", "Type of SOM grid")
 	flag.StringVar(&ushape, "ushape", "hexagon", "SOM map unit shape")
-	flag.StringVar(&training, "training", "seq", "SOM training method")
 	flag.StringVar(&neighb, "neighb", "gaussian", "SOM neighbourhood function")
 	flag.Float64Var(&radius, "radius", 0.0, "SOM neighbourhood initial radius")
 	flag.StringVar(&rdecay, "rdecay", "lin", "Radius decay strategy")
 	flag.Float64Var(&lrate, "lrate", 0.0, "SOM initial learning rate")
 	flag.StringVar(&ldecay, "ldecay", "lin", "Learning rate decay strategy")
 	flag.StringVar(&umatrix, "umatrix", "", "Path to u-matrix output visualization")
-	flag.StringVar(&output, "output", "", "Path to tore erialized trained SOM model")
+	flag.StringVar(&output, "output", "", "Path to store trained SOM model")
+	flag.StringVar(&training, "training", "seq", "SOM training method")
 	flag.IntVar(&iters, "iters", 1000, "Number of training iterations")
+	// disable timestamps and set prefix
+	log.SetFlags(0)
+	log.SetPrefix("[ " + cliname + " ] ")
 }
 
 func parseCliFlags() error {
@@ -75,44 +84,74 @@ func parseCliFlags() error {
 	return nil
 }
 
+func saveModel(m *som.Map, format, path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	// save the model
+	if _, err := m.MarshalTo(format, file); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func saveUMatrix(m *som.Map, format, title, path string, c *som.MapConfig, d *dataset.DataSet) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return m.UMatrix(format, title, c, d, file)
+}
+
 func main() {
-	// parse cli flags; exit with non-zero return code on error
+	// parse cli flags
 	if err := parseCliFlags(); err != nil {
-		fmt.Printf("Error parsing cli flags: %s\n", err)
+		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
 	}
 	// parse SOM grid dimensions
 	mdims, err := utils.ParseDims(dims)
 	if err != nil {
-		fmt.Printf("Error parsing grid dimensions: %s\n", err)
+		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
 	}
-	// load data set from a file in provided path
-	ds, err := dataset.New(input, clsinput)
+
+	log.Printf("Loading data set %s", input)
+	// load input data set from a file in provided path
+	ds, err := dataset.New(input, cls)
 	if err != nil {
-		fmt.Printf("Unable to load Data Set: %s\n", err)
+		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
 	}
-	// scale input data if requested
+
+	// scale features in input data if requested
 	data := ds.Data()
 	if scale {
+		log.Printf("Attempting feature scaling")
 		data = ds.Scale()
 	}
 	// SOM configuration
-	mConfig := &som.MapConfig{
+	mapCfg := &som.MapConfig{
 		Dims:     mdims,
 		InitFunc: som.RandInit,
 		Grid:     grid,
 		UShape:   ushape,
 	}
-	// create new SOM map
-	smap, err := som.NewMap(mConfig, data)
+	// create new SOM
+	log.Printf("Creating new SOM. Dimensions: %v, Grid: %s, Unit shape: %s",
+		mapCfg.Dims, mapCfg.Grid, mapCfg.UShape)
+	m, err := som.NewMap(mapCfg, data)
 	if err != nil {
-		fmt.Printf("Failed to create new SOM: %s\n", err)
+		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
 	}
 	// training configuration
-	tConfig := &som.TrainConfig{
+	trainCfg := &som.TrainConfig{
 		Method:   training,
 		Radius:   radius,
 		RDecay:   rdecay,
@@ -121,55 +160,52 @@ func main() {
 		LDecay:   ldecay,
 	}
 	// run SOM training
-	if err := smap.Train(tConfig, data, iters); err != nil {
-		fmt.Printf("Training failed: %s\n", err)
+	log.Printf("Starting SOM training. Method: %s, iterations: %d", trainCfg.Method, iters)
+	t0 := time.Now()
+	if err := m.Train(trainCfg, data, iters); err != nil {
+		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
 	}
+	d := time.Since(t0)
+	//log.Printf("Training completed. Duration: [%.3f]ms", float64(d)/float64(time.Millisecond))
+	log.Printf("Training successfully completed. Duration: %v", d)
 	// if output is not empty save map model to a file
 	if output != "" {
-		file, err := os.Open(output)
-		if err != nil {
-			fmt.Printf("Output file error: %s\n", err)
-			os.Exit(1)
-		}
-		defer file.Close()
-		// save the model
-		if _, err := smap.MarshalTo("gonum", file); err != nil {
-			fmt.Printf("Failed to save model: %s\n", err)
+		log.Printf("Saving trained model to %s", output)
+		if err := saveModel(m, "gonum", output); err != nil {
+			fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 			os.Exit(1)
 		}
 	}
 	// if umatrix provided create U-matrix
 	if umatrix != "" {
-		file, err := os.Create(umatrix)
-		if err != nil {
-			fmt.Printf("Umatrix file error: %s\n", err)
+		log.Printf("Saving U-Matrix to %s", umatrix)
+		if err := saveUMatrix(m, "svg", "U-Matrix", umatrix, mapCfg, ds); err != nil {
+			fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 			os.Exit(1)
 		}
-		defer file.Close()
-		smap.UMatrix("svg", input, mConfig, ds, file)
 	}
 
-	// ======= QUALITY measures =======
+	// ======= SOM QUALITY measures =======
 	// Quantization error
-	qe, err := smap.QuantError(data)
+	qe, err := m.QuantError(data)
 	if err != nil {
-		fmt.Printf("Failed to compute quant error: %s\n", err)
+		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Quantization Error: %f\n", qe)
+	log.Printf("Quantization Error: %f\n", qe)
 	// Topographic product
-	tp, err := smap.TopoProduct()
+	tp, err := m.TopoProduct()
 	if err != nil {
-		fmt.Printf("Failed to compute topographic product: %s\n", err)
+		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Topographic Product: %f\n", tp)
+	log.Printf("Topographic Product: %f\n", tp)
 	// Topographice error
-	te, err := smap.TopoError(data)
+	te, err := m.TopoError(data)
 	if err != nil {
-		fmt.Printf("Failed to compute topographic error: %s\n", err)
+		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Topographic Error: %f\n", te)
+	log.Printf("Topographic Error: %f\n", te)
 }

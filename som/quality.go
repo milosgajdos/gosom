@@ -8,10 +8,10 @@ import (
 	"github.com/gonum/matrix/mat64"
 )
 
-// QuantError computes SOM quantization error for the supplied data set and codebook
-// It returns the quantization error or fails with error if either data or codebook are nil
-// or the distance between the vectors could not be calculated.
-// When the error is returned, quantization error is set to -1.0
+// QuantError computes SOM quantization error for the supplied data set and codebook and returns it.
+// It fails with error if either data or codebook are nil or the distance between the codebook and
+// data vectors could not be calculated. This could be because the dimensions of passed in data and
+// codebook matrix are not the same. When the error is returned, quantization error is set to -1.0
 func QuantError(data, codebook *mat64.Dense) (float64, error) {
 	// data can't be nil
 	if data == nil {
@@ -36,10 +36,8 @@ func QuantError(data, codebook *mat64.Dense) (float64, error) {
 		}
 		qErr += d
 	}
-	// compute the average distance
-	qErr = qErr / float64(rows)
-
-	return qErr, nil
+	// return the average distance
+	return qErr / float64(rows), nil
 }
 
 // TopoProduct calculates topographic product for given codebook and grid.
@@ -64,28 +62,32 @@ func TopoProduct(codebook, grid *mat64.Dense) (float64, error) {
 	// unit and codebook distance matrices -- no need to check for error here
 	uDistMx, _ := DistanceMx("euclidean", grid)
 	cDistMx, _ := DistanceMx("euclidean", codebook)
-	// tp is topographic product
+	// tp is the topographic product
 	var tp float64
 	// loop through all neurons
 	for i := 0; i < gRows; i++ {
 		// retrieve unit distance slice and sort it
 		uSlice := newFloat64Slice(uDistMx.RawRowView(i)...)
 		sort.Sort(uSlice)
-		uKNeighb := uSlice.index[1:]
+		uNeighb := uSlice.index[1:]
 		// retrieve codebook distance slice and sort it
 		cSlice := newFloat64Slice(cDistMx.RawRowView(i)...)
 		sort.Sort(cSlice)
-		cKNeighb := cSlice.index[1:]
+		cNeighb := cSlice.index[1:]
 		// topgraphic product and partial distortion products
 		p1, p2, p3 := 1.0, 1.0, 1.0
 		for j := 0; j < cRows-1; j++ {
-			// lattice_space / codebook_space
-			q1 := cDistMx.At(i, uKNeighb[j]) / cDistMx.At(i, cKNeighb[j])
-			q2 := uDistMx.At(i, uKNeighb[j]) / uDistMx.At(i, cKNeighb[j])
-			// if 2 codebooks/map units are the same, return +Inf
-			if math.IsNaN(q1) || math.IsNaN(q2) {
+			// if 2 codebooks are the same, return +Inf or -Inf
+			if cDistMx.At(i, cNeighb[j]) == 0 {
 				return math.Inf(1), nil
 			}
+
+			if cDistMx.At(i, uNeighb[j]) == 0 {
+				return math.Inf(-1), nil
+			}
+			// lattice_space / codebook_space
+			q1 := cDistMx.At(i, uNeighb[j]) / cDistMx.At(i, cNeighb[j])
+			q2 := uDistMx.At(i, uNeighb[j]) / uDistMx.At(i, cNeighb[j])
 			// calculate P1, P2, P3
 			p1 *= q1
 			p2 *= q2

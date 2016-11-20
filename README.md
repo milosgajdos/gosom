@@ -6,9 +6,11 @@
 [![Go Report Card](https://goreportcard.com/badge/milosgajdos83/gosom)](https://goreportcard.com/report/github.com/milosgajdos83/gosom)
 [![codecov](https://codecov.io/gh/milosgajdos83/gosom/branch/master/graph/badge.svg)](https://codecov.io/gh/milosgajdos83/gosom)
 
-This project provides an implementation of [Self-Organizing Map](https://en.wikipedia.org/wiki/Self-organizing_map) (SOM) in Go. In addition the project provides few useful packages that can be used independently in your other projects.
+`gosom` is an implementation of [Self-Organizing Map](https://en.wikipedia.org/wiki/Self-organizing_map) (SOM) in Go. In addition to the main program, the project provides some useful `Go` packages which can be used independently of the main program.
 
-The project provides an implementation of both `sequential` and `batch` mode SOM training algorithms. You're encourage to read up on both before you start using the program as the choice of available command line options can have a noticeable effect on performance and resulting output of the training.
+The project provides an implementation of the two most well known training algorithms: `sequential` and `batch`. The `batch` training algorithm is faster than the `sequential` as it can be parallelized taking advantage of as many cores as your machine provides. The `sequential` algorithm is performed as its name implies, sequentially. `Batch` training provides a resonable approximation of SOM and thus its results can be less accurate than the ones produced by `sequential` algorithm, but still acceptable. You can find more information about SOM training algorithms [here](http://www.scholarpedia.org/article/Kohonen_network).
+
+`gosom` also implements various SOM quality measures that can help you validate the results of the algorithm. In particular the project implements `quantization` and `topographic` error to measure both the projection and topography as well as `topographic product` which allows to help to make a decision about the size of the SOM grid.
 
 # Get started
 
@@ -30,30 +32,42 @@ Build and install in `$GOPATH/bin`:
 make install
 ```
 
-See the `Makefile` for more available `make` tasks.
-
-Once the program has successfully built you can inspect available command line options it provides:
+Once the program has been successfully built you can inspect available command line options it provides:
 
 ```
 $ gosom -h
 ```
-
 # Examples
 
-Try to run the following examples using the `FCPS` dataset (see below). Change the `$D` environment variable to test different datasets. Both programs output an `HTML` file with [U-matrix](https://en.wikipedia.org/wiki/U-matrix) rendered as `SVG` image.
+To get you started quickly you can run the examples below. We will use [FCPS dataset]((http://www.uni-marburg.de/fb12/arbeitsgruppen/datenbionik/data?language_sync=1)). Change the `$D` environment variable to play with different example datasets. Both examples below output an `HTML` file with [U-matrix](https://en.wikipedia.org/wiki/U-matrix) rendered as `SVG` image.
 
 ## Batch algorithm
 
 ```
-D=Target; go build; ./gosom -umatrix umatrix_batch.html -dims 30,30 -radius 500.0 -rdecay exp -ushape rectangle -iters 100 -training batch -input testdata/fcps/${D}.lrn -clsinput testdata/fcps/${D}.cls
+$ D=Target; go run main.go -umatrix umatrix_batch.html -dims 30,30 -radius 500.0 -rdecay exp -ushape rectangle -iters 100 -training batch -input testdata/fcps/${D}.lrn -cls testdata/fcps/${D}.cls
+[ gosom ] Loading data set testdata/fcps/Target.lrn
+[ gosom ] Creating new SOM. Dimensions: [30 30], Grid: planar, Unit shape: rectangle
+[ gosom ] Starting SOM training. Method: batch, iterations: 100
+[ gosom ] Training successfully completed. Duration: 1.923548243s
+[ gosom ] Saving U-Matrix to umatrix_batch.html
+[ gosom ] Quantization Error: 0.023212
+[ gosom ] Topographic Product: +Inf
+[ gosom ] Topographic Error: 0.015584
 ```
 
 ## Sequential algorithm
 
 ```
-D=Hepta; go build; ./gosom -umatrix umatrix_seq.html -dims 30,30 -radius 500.0 -rdecay exp -lrate 0.5 -ldecay exp -ushape rectangle -iters 30000 -training seq -input testdata/fcps/${D}.lrn -clsinput testdata/fcps/${D}.cls
+$ D=Target; go run main.go -umatrix umatrix_seq.html -dims 30,30 -radius 500.0 -rdecay exp -lrate 0.5 -ldecay exp -ushape hexagon -iters 30000 -training seq -input testdata/fcps/${D}.lrn -cls testdata/fcps/${D}.cls
+[ gosom ] Loading data set testdata/fcps/Target.lrn
+[ gosom ] Creating new SOM. Dimensions: [30 30], Grid: planar, Unit shape: hexagon
+[ gosom ] Starting SOM training. Method: seq, iterations: 30000
+[ gosom ] Training successfully completed. Duration: 2.261068582s
+[ gosom ] Saving U-Matrix to umatrix_seq.html
+[ gosom ] Quantization Error: 0.064704
+[ gosom ] Topographic Product: 0.010281
+[ gosom ] Topographic Error: 0.014286
 ```
-
 # Acknowledgements
 
 Test data present in `fcps` subdirectory of `testdata` come from [Philipps University of Marburg](http://www.uni-marburg.de/fb12/arbeitsgruppen/datenbionik/data?language_sync=1):
