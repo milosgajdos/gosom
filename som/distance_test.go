@@ -12,18 +12,20 @@ import (
 func TestDistance(t *testing.T) {
 	assert := assert.New(t)
 
+	metric := "euclidean"
 	testCases := []struct {
+		metric   string
 		a        []float64
 		b        []float64
 		expected float64
 	}{
-		{[]float64{0.0, 0.0}, []float64{0.0, 1.0}, 1.0},
-		{[]float64{0.0, 0.0}, []float64{0.0, 0.0}, 0.0},
-		{[]float64{3.0, 1.0}, []float64{1.0, 3.0}, 2.828},
+		{metric, []float64{0.0, 0.0}, []float64{0.0, 1.0}, 1.0},
+		{metric, []float64{0.0, 0.0}, []float64{0.0, 0.0}, 0.0},
+		{metric, []float64{3.0, 1.0}, []float64{1.0, 3.0}, 2.828},
 	}
 
 	for _, tc := range testCases {
-		dist, err := Distance("euclidean", tc.a, tc.b)
+		dist, err := Distance(tc.metric, tc.a, tc.b)
 		assert.NoError(err)
 		assert.InDelta(tc.expected, dist, 0.01)
 	}
@@ -65,7 +67,7 @@ func TestDistanceMx(t *testing.T) {
 	assert.NoError(err)
 	assert.True(mat64.EqualApprox(oneOutExpected, oneOut, 0.01))
 
-	// test if default distance is computed for unknown metrix
+	// test if default distance is computed for unknown matrix
 	oneOut, err = DistanceMx("foobar", one)
 
 	assert.NoError(err)
@@ -114,14 +116,14 @@ func TestClosestVec(t *testing.T) {
 
 	metric := "euclidean"
 	testCases := []struct {
+		metric   string
 		v        []float64
 		m        []float64
-		metric   string
 		expected int
 	}{
-		{[]float64{0.0, 0.0}, []float64{0.0, 1.0, 0.0, 0.1}, metric, 1},
-		{[]float64{0.0, 0.0}, []float64{0.0, 0.0, 0.0, 0.1}, metric, 0},
-		{[]float64{3.0, 1.0}, []float64{1.0, 3.0, 1.0, 0.0}, metric, 1},
+		{metric, []float64{0.0, 0.0}, []float64{0.0, 1.0, 0.0, 0.1}, 1},
+		{metric, []float64{0.0, 0.0}, []float64{0.0, 0.0, 0.0, 0.1}, 0},
+		{metric, []float64{3.0, 1.0}, []float64{1.0, 3.0, 1.0, 0.0}, 1},
 	}
 
 	for _, tc := range testCases {
@@ -203,7 +205,7 @@ func TestClosestNVec(t *testing.T) {
 	assert.EqualValues([]int{1, 3}, closest)
 }
 
-func TestBmus(t *testing.T) {
+func TestBMUs(t *testing.T) {
 	assert := assert.New(t)
 
 	// test data and codebook

@@ -35,7 +35,7 @@ var loadFuncs = map[string]func(io.Reader) (*mat64.Dense, error){
 }
 
 // load classifications funcs
-var loadClassificationsFuncs = map[string]func(io.Reader) (map[int]int, error){
+var loadClsFuncs = map[string]func(io.Reader) (map[int]int, error){
 	".cls": LoadCLS,
 }
 
@@ -78,7 +78,7 @@ func New(dataPath string, clsPath string) (*DataSet, error) {
 	if clsPath != "" {
 		// Check if the classification file type is supported
 		clsFileType := filepath.Ext(clsPath)
-		loadCls, ok := loadClassificationsFuncs[clsFileType]
+		loadCls, ok := loadClsFuncs[clsFileType]
 		if !ok {
 			return nil, fmt.Errorf("Unsupported type of classification file: %s", clsFileType)
 		}

@@ -8,9 +8,9 @@ import (
 	"github.com/gonum/matrix/mat64"
 )
 
-// Distance calculates a distance metric between vectors a and b.
+// Distance calculates metric distance between vectors a and b.
 // If unsupported metric is requested Distance returns euclidean distance.
-// It returns error if the supplied vectors are either nil or are different dimensions
+// It returns error if the supplied vectors are either nil or have different dimensions
 func Distance(metric string, a, b []float64) (float64, error) {
 	if a == nil || b == nil {
 		return 0.0, fmt.Errorf("Invalid vectors supplied. a: %v, b: %v\n", a, b)
@@ -27,11 +27,10 @@ func Distance(metric string, a, b []float64) (float64, error) {
 	}
 }
 
-// DistanceMx calculates a distance matrix for the given matrix using the given metric.
+// DistanceMx calculates metric distance matrix for the supplied matrix.
 // Distance matrix is also known in literature as dissimilarity matrix.
-// It returns a hollow symmetric matrix where an item x_ij contains the distance between
-// vectors stored in rows i and j. You can request different distance metrics via metric
-// parameter. If an unknown metric is supplied Euclidean distance is computed.
+// DistanceMx returns a hollow symmetric matrix where an item x_ij contains the distance between
+// vectors stored in rows i and j.  If an unknown metric is supplied Euclidean distance is computed.
 // It returns error if the supplied matrix is nil.
 func DistanceMx(metric string, m *mat64.Dense) (*mat64.Dense, error) {
 	if m == nil {
@@ -46,8 +45,8 @@ func DistanceMx(metric string, m *mat64.Dense) (*mat64.Dense, error) {
 	}
 }
 
-// ClosestVec finds the closest vector to v in the vectors stored as m rows
-// using the supplied distance metric. It returns index to the m rows.
+// ClosestVec finds the closest vector to v in the list of vectors stored in m rows
+// using the supplied distance metric. It returns an index to matrix m rows.
 // If unsupported metric is requested, ClosestVec falls over to euclidean metric.
 // If several vectors of the same distance are found, it returns the index of the first one found.
 // ClosestVec returns error if either v or m are nil or if the v dimension is different from
@@ -79,9 +78,10 @@ func ClosestVec(metric string, v []float64, m *mat64.Dense) (int, error) {
 	return closest, nil
 }
 
-// ClosestNVec finds the N closest vectors to v in the vectors stored as m rows
-// using the supplied distance metric and returns a slice of its indices.
-// It fails in the same way as ClosestVec. If n is higher than the number of
+// ClosestNVec finds the N closest vectors to v in the list of vectors stored in m rows
+// using the supplied distance metric. It returns a slice which contains indices to the m
+// rows. The length of the slice is the same as number of requested closest vectors - n.
+// ClosestNVec fails in the same way as ClosestVec. If n is higher than the number of
 // rows in m, or if it is not a positive integer, it fails with error too.
 func ClosestNVec(metric string, n int, v []float64, m *mat64.Dense) ([]int, error) {
 	// vector can't be nil
@@ -128,9 +128,10 @@ func ClosestNVec(metric string, n int, v []float64, m *mat64.Dense) ([]int, erro
 	return closest, nil
 }
 
-// BMUs returns a slice of codebook indices of Best Match Unit vectors for each
-// vector stored in data rows. It returns error if either the data or codebook are nil
-// or if their dimensions are mismatched.
+// BMUs returns a slice which contains indices of Best Match Unit (BMU) codebook vectors for each
+// vector stored in data rows. The slice has as many items as there are rows in data matrix.
+// If some data row has more than one BMU the index of the first one found is used.
+// It returns error if either the data or codebook are nil or if their dimensions are mismatched.
 func BMUs(data, codebook *mat64.Dense) ([]int, error) {
 	// data can't be nil
 	if data == nil {
@@ -161,6 +162,7 @@ func euclideanVec(a, b []float64) float64 {
 	for i := 0; i < len(a); i++ {
 		d += (a[i] - b[i]) * (a[i] - b[i])
 	}
+
 	return math.Sqrt(d)
 }
 
