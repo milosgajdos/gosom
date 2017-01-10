@@ -13,10 +13,10 @@ import (
 // It returns error if the supplied vectors are either nil or have different dimensions
 func Distance(metric string, a, b []float64) (float64, error) {
 	if a == nil || b == nil {
-		return 0.0, fmt.Errorf("Invalid vectors supplied. a: %v, b: %v\n", a, b)
+		return 0.0, fmt.Errorf("invalid vectors supplied. a: %v, b: %v", a, b)
 	}
 	if len(a) != len(b) {
-		return 0.0, fmt.Errorf("Incorrect vector dims. a: %d, b: %d\n", len(a), len(b))
+		return 0.0, fmt.Errorf("Incorrect vector dims. a: %d, b: %d", len(a), len(b))
 	}
 
 	switch metric {
@@ -34,7 +34,7 @@ func Distance(metric string, a, b []float64) (float64, error) {
 // It returns error if the supplied matrix is nil.
 func DistanceMx(metric string, m *mat64.Dense) (*mat64.Dense, error) {
 	if m == nil {
-		return nil, fmt.Errorf("Invalid matrix supplied: %v\n", m)
+		return nil, fmt.Errorf("invalid matrix supplied: %v", m)
 	}
 
 	switch metric {
@@ -54,11 +54,11 @@ func DistanceMx(metric string, m *mat64.Dense) (*mat64.Dense, error) {
 func ClosestVec(metric string, v []float64, m *mat64.Dense) (int, error) {
 	// vector can't be nil
 	if v == nil || len(v) == 0 {
-		return -1, fmt.Errorf("Invalid vector: %v\n", v)
+		return -1, fmt.Errorf("invalid vector: %v", v)
 	}
 	// matrix cant be nil
 	if m == nil {
-		return -1, fmt.Errorf("Invalid matrix: %v\n", m)
+		return -1, fmt.Errorf("invalid matrix: %v", m)
 	}
 	// check if the dimensions are ok
 	rows, _ := m.Dims()
@@ -86,16 +86,16 @@ func ClosestVec(metric string, v []float64, m *mat64.Dense) (int, error) {
 func ClosestNVec(metric string, n int, v []float64, m *mat64.Dense) ([]int, error) {
 	// vector can't be nil
 	if v == nil || len(v) == 0 {
-		return nil, fmt.Errorf("Invalid vector: %v\n", v)
+		return nil, fmt.Errorf("invalid vector: %v", v)
 	}
 	// matrix cant be nil
 	if m == nil {
-		return nil, fmt.Errorf("Invalid matrix: %v\n", m)
+		return nil, fmt.Errorf("invalid matrix: %v", m)
 	}
 	rows, _ := m.Dims()
 	// n must be positive integer and smaller than number of rows in m
 	if n <= 0 || n > rows {
-		return nil, fmt.Errorf("Invalid number of closest vectors requested: %d\n", n)
+		return nil, fmt.Errorf("invalid number of closest vectors requested: %d", n)
 	}
 	// we return slice of indices
 	closest := make([]int, n)
@@ -135,11 +135,11 @@ func ClosestNVec(metric string, n int, v []float64, m *mat64.Dense) ([]int, erro
 func BMUs(data, codebook *mat64.Dense) ([]int, error) {
 	// data can't be nil
 	if data == nil {
-		return nil, fmt.Errorf("Invalid data supplied: %v\n", data)
+		return nil, fmt.Errorf("invalid data supplied: %v", data)
 	}
 	// codebook cant be nil
 	if codebook == nil {
-		return nil, fmt.Errorf("Invalid codebook supplied: %v\n", codebook)
+		return nil, fmt.Errorf("invalid codebook supplied: %v", codebook)
 	}
 
 	rows, _ := data.Dims()

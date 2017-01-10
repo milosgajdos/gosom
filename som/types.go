@@ -62,11 +62,11 @@ type float64Heap struct {
 // newFloat64Heap initializes new heap and returns it
 func newFloat64Heap(cap int, items ...*float64Item) (*float64Heap, error) {
 	if cap <= 0 {
-		return nil, fmt.Errorf("Invalid capacity supplied: %d\n", cap)
+		return nil, fmt.Errorf("invalid capacity supplied: %d", cap)
 	}
 
 	if cap < len(items) {
-		return nil, fmt.Errorf("Items count exceeds capacity: %d\n", cap)
+		return nil, fmt.Errorf("Items count exceeds capacity: %d", cap)
 	}
 
 	// pre-allocate heap buffer

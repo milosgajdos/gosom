@@ -31,7 +31,7 @@ type Map struct {
 func NewMap(c *MapConfig, data *mat64.Dense) (*Map, error) {
 	// if input data is empty throw error
 	if data == nil {
-		return nil, fmt.Errorf("Invalid input data: %v\n", data)
+		return nil, fmt.Errorf("invalid input data: %v", data)
 	}
 	// validate the map configuration
 	if err := validateMapConfig(c); err != nil {
@@ -85,7 +85,7 @@ func (m *Map) MarshalTo(format string, w io.Writer) (int, error) {
 		return m.codebook.MarshalBinaryTo(w)
 	}
 	// marshal binary to file path
-	return 0, fmt.Errorf("Unsupported format: %s\n", format)
+	return 0, fmt.Errorf("unsupported format: %s", format)
 }
 
 // UMatrix generates SOM u-matrix in a given format and writes the output to w.
@@ -144,7 +144,7 @@ func (m Map) UMatrix(format, title string, c *MapConfig, ds *dataset.DataSet, w 
 			return UMatrixSVG(m.codebook, c.Grid.Dims, c.Grid.UShape, title, w, classes)
 		}
 	}
-	return fmt.Errorf("Invalid format %s", format)
+	return fmt.Errorf("invalid format %s", format)
 }
 
 // Train runs a SOM training for a given data set and training configuration parameters.
@@ -153,11 +153,11 @@ func (m Map) UMatrix(format, title string, c *MapConfig, ds *dataset.DataSet, w 
 func (m *Map) Train(c *TrainConfig, data *mat64.Dense, iters int) error {
 	// number of iterations must be a positive integer
 	if iters <= 0 {
-		return fmt.Errorf("Invalid number of iterations: %d\n", iters)
+		return fmt.Errorf("invalid number of iterations: %d", iters)
 	}
 	// nil data passed in
 	if data == nil {
-		return fmt.Errorf("Invalid data supplied: %v\n", data)
+		return fmt.Errorf("invalid data supplied: %v", data)
 	}
 	// validate the training configuration
 	if err := validateTrainConfig(c); err != nil {

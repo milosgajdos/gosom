@@ -167,13 +167,13 @@ func TestTrain(t *testing.T) {
 	assert.NotNil(m)
 	assert.NoError(err)
 	// incorrect number of iterations
-	errString := "Invalid number of iterations: %d\n"
+	errString := "invalid number of iterations: %d"
 	iters = -100
 	err = m.Train(tSom, dataMx, iters)
 	assert.EqualError(err, fmt.Sprintf(errString, iters))
 	iters = 100
 	// incorrect number of iterations
-	errString = "Invalid data supplied: %v\n"
+	errString = "invalid data supplied: %v"
 	err = m.Train(tSom, nil, iters)
 	assert.EqualError(err, fmt.Sprintf(errString, nil))
 	// throw in incorrect training config

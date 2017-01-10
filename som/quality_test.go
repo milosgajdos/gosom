@@ -25,12 +25,12 @@ func TestQuantError(t *testing.T) {
 	assert := assert.New(t)
 
 	// nil data returns error
-	errString := "Invalid data supplied: %v\n"
+	errString := "invalid data supplied: %v"
 	qe, err := QuantError(nil, qCbook)
 	assert.EqualError(err, fmt.Sprintf(errString, nil))
 	assert.Equal(-1.0, qe)
 	// nil codebook returns error
-	errString = "Invalid codebook supplied: %v\n"
+	errString = "invalid codebook supplied: %v"
 	qe, err = QuantError(qData, nil)
 	assert.EqualError(err, fmt.Sprintf(errString, nil))
 	assert.Equal(-1.0, qe)
@@ -52,19 +52,19 @@ func TestTopoProduct(t *testing.T) {
 	qGrid, err := GridCoords("rectangle", []int{1, 3})
 	assert.NoError(err)
 	// nil codebook returns error
-	errString := "Invalid codebook supplied: %v\n"
+	errString := "invalid codebook supplied: %v"
 	tp, err := TopoProduct(nil, qGrid)
 	assert.EqualError(err, fmt.Sprintf(errString, nil))
 	assert.Equal(0.0, tp)
 	// nil grid returns error
-	errString = "Invalid grid supplied: %v\n"
+	errString = "invalid grid supplied: %v"
 	tp, err = TopoProduct(qCbook, nil)
 	assert.EqualError(err, fmt.Sprintf(errString, nil))
 	assert.Equal(0.0, tp)
 	// grid and codebook dimension mismatch
 	qGridErr, err := GridCoords("rectangle", []int{3, 3})
 	assert.NoError(err)
-	errString = "Grid and codebook dimension mismatch\n"
+	errString = "Grid and codebook dimension mismatch"
 	tp, err = TopoProduct(qCbook, qGridErr)
 	assert.EqualError(err, errString)
 	assert.Equal(0.0, tp)
@@ -78,17 +78,17 @@ func TestTopoError(t *testing.T) {
 
 	qGrid, err := GridCoords("rectangle", []int{1, 3})
 	// nil data returns error
-	errString := "Invalid data supplied: %v\n"
+	errString := "invalid data supplied: %v"
 	te, err := TopoError(nil, qCbook, qGrid)
 	assert.EqualError(err, fmt.Sprintf(errString, nil))
 	assert.Equal(-1.0, te)
 	// nil codebook returns error
-	errString = "Invalid codebook supplied: %v\n"
+	errString = "invalid codebook supplied: %v"
 	te, err = TopoError(qData, nil, qGrid)
 	assert.EqualError(err, fmt.Sprintf(errString, nil))
 	assert.Equal(-1.0, te)
 	// nil grid returns error
-	errString = "Invalid grid supplied: %v\n"
+	errString = "invalid grid supplied: %v"
 	te, err = TopoError(qData, qCbook, nil)
 	assert.EqualError(err, fmt.Sprintf(errString, nil))
 	assert.Equal(-1.0, te)

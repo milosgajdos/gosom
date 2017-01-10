@@ -109,26 +109,26 @@ func validateGridConfig(c *GridConfig) error {
 	// SOM must have 2 dimensions
 	// TODO: figure out 3D maps
 	if len(c.Dims) != 2 {
-		return fmt.Errorf("Unsupported number of SOM grid dimensions supplied: %d\n", len(c.Dims))
+		return fmt.Errorf("unsupported number of SOM grid dimensions supplied: %d", len(c.Dims))
 	}
 	// check if the supplied dimensions are negative integers or if they are single node
 	prod := 1
 	for _, dim := range c.Dims {
 		if dim <= 0 {
-			return fmt.Errorf("Incorrect SOM grid dimensions supplied: %v\n", c.Dims)
+			return fmt.Errorf("incorrect SOM grid dimensions supplied: %v", c.Dims)
 		}
 		prod *= dim
 	}
 	if prod == 1 {
-		return fmt.Errorf("Incorrect SOM grid dimensions supplied: %v\n", c.Dims)
+		return fmt.Errorf("incorrect SOM grid dimensions supplied: %v", c.Dims)
 	}
 	// check if the supplied grid type is supported
 	if _, ok := CoordsInit[c.Type]; !ok {
-		return fmt.Errorf("Unsupported SOM grid type: %s\n", c.Type)
+		return fmt.Errorf("unsupported SOM grid type: %s", c.Type)
 	}
 	// check if the supplied unit shape type is supported
 	if _, ok := UShape[c.UShape]; !ok {
-		return fmt.Errorf("Unsupported SOM unit shape: %s\n", c.UShape)
+		return fmt.Errorf("unsupported SOM unit shape: %s", c.UShape)
 	}
 
 	return nil
@@ -139,11 +139,11 @@ func validateGridConfig(c *GridConfig) error {
 func validateCbConfig(c *CbConfig) error {
 	// codebook vectors must have non-zero dimensions
 	if c.Dim <= 0 {
-		return fmt.Errorf("Incorrect SOM codebook dimension supplied: %v\n", c.Dim)
+		return fmt.Errorf("incorrect SOM codebook dimension supplied: %v", c.Dim)
 	}
 	// check if the codebook init func is not nil
 	if c.InitFunc == nil {
-		return fmt.Errorf("Invalid InitFunc: %v", c.InitFunc)
+		return fmt.Errorf("invalid InitFunc: %v", c.InitFunc)
 	}
 	return nil
 }
@@ -153,27 +153,27 @@ func validateCbConfig(c *CbConfig) error {
 func validateTrainConfig(c *TrainConfig) error {
 	// training method must be supported
 	if _, ok := Training[c.Method]; !ok {
-		return fmt.Errorf("Invalid SOM training method: %s\n", c.Method)
+		return fmt.Errorf("invalid SOM training method: %s", c.Method)
 	}
 	// initial SOM unit radius must be greater than zero
 	if c.Radius < 0 {
-		return fmt.Errorf("Invalid SOM unit radius: %f\n", c.Radius)
+		return fmt.Errorf("invalid SOM unit radius: %f", c.Radius)
 	}
 	// check Radius decay strategy
 	if _, ok := Decay[c.RDecay]; !ok {
-		return fmt.Errorf("Unsupported Radius decay strategy: %s\n", c.RDecay)
+		return fmt.Errorf("unsupported Radius decay strategy: %s", c.RDecay)
 	}
 	// check the supplied neighbourhood function
 	if _, ok := Neighb[c.NeighbFn]; !ok {
-		return fmt.Errorf("Unsupported Neighbourhood function: %s\n", c.NeighbFn)
+		return fmt.Errorf("unsupported Neighbourhood function: %s", c.NeighbFn)
 	}
 	// initial SOM learning rate must be greater than zero
 	if c.LRate < 0 {
-		return fmt.Errorf("Invalid SOM learning rate: %f\n", c.LRate)
+		return fmt.Errorf("invalid SOM learning rate: %f", c.LRate)
 	}
 	// check Learning rate decay strategy
 	if _, ok := Decay[c.LDecay]; !ok {
-		return fmt.Errorf("Unsupported Learning rate decay strategy: %s\n", c.LDecay)
+		return fmt.Errorf("unsupported Learning rate decay strategy: %s", c.LDecay)
 	}
 	return nil
 }

@@ -75,11 +75,11 @@ func parseCliFlags() error {
 	flag.Parse()
 	// path to input data is mandatory
 	if input == "" {
-		return fmt.Errorf("Invalid path to input data: %s\n", input)
+		return fmt.Errorf("invalid path to input data: %s", input)
 	}
 	// number of iterations mus tbe positive integer
 	if iters <= 0 {
-		return fmt.Errorf("Invalid number of training iterations: %d", iters)
+		return fmt.Errorf("invalid number of training iterations: %d", iters)
 	}
 	return nil
 }

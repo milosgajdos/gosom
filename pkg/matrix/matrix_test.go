@@ -10,11 +10,11 @@ import (
 )
 
 var (
-	errInvMx     = "Invalid matrix supplied: %v\n"
-	errInvColsMx = "Invalid number of columns supplied: %v\n"
-	errInvRowsMx = "Invalid number of rows supplied: %v\n"
-	errExcCols   = "Column count exceeds matrix columns: %d\n"
-	errExcRows   = "Row count exceeds matrix rows: %d\n"
+	errInvMx     = "invalid matrix supplied: %v"
+	errInvColsMx = "invalid number of columns supplied: %v"
+	errInvrowsMx = "invalid number of rows supplied: %v"
+	errExcCols   = "column count exceeds matrix columns: %d"
+	errExcrows   = "row count exceeds matrix rows: %d"
 )
 
 func TestRowsColsMax(t *testing.T) {
@@ -44,7 +44,7 @@ func TestRowsColsMax(t *testing.T) {
 	// requested number of rows exceeds matrix dims
 	max, err = RowsMax(rows+1, mx)
 	assert.Nil(max)
-	assert.EqualError(err, fmt.Sprintf(errExcRows, rows+1))
+	assert.EqualError(err, fmt.Sprintf(errExcrows, rows+1))
 	// should get nil back
 	mx = nil
 	max, err = ColsMax(cols, mx)
@@ -62,7 +62,7 @@ func TestRowsColsMax(t *testing.T) {
 	assert.EqualError(err, fmt.Sprintf(errInvColsMx, mx))
 	max, err = RowsMax(rows, mx)
 	assert.Nil(max)
-	assert.EqualError(err, fmt.Sprintf(errInvRowsMx, mx))
+	assert.EqualError(err, fmt.Sprintf(errInvrowsMx, mx))
 }
 
 func TestColsMin(t *testing.T) {
@@ -92,7 +92,7 @@ func TestColsMin(t *testing.T) {
 	// requested number of rows exceeds matrix dims
 	min, err = RowsMin(rows+1, mx)
 	assert.Nil(min)
-	assert.EqualError(err, fmt.Sprintf(errExcRows, rows+1))
+	assert.EqualError(err, fmt.Sprintf(errExcrows, rows+1))
 	// should get nil back
 	mx = nil
 	min, err = ColsMin(cols, mx)
@@ -110,7 +110,7 @@ func TestColsMin(t *testing.T) {
 	assert.EqualError(err, fmt.Sprintf(errInvColsMx, mx))
 	min, err = RowsMin(rows, mx)
 	assert.Nil(min)
-	assert.EqualError(err, fmt.Sprintf(errInvRowsMx, mx))
+	assert.EqualError(err, fmt.Sprintf(errInvrowsMx, mx))
 }
 
 func TestColsMean(t *testing.T) {

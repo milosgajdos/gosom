@@ -19,7 +19,7 @@ import (
 func GridDims(data *mat64.Dense, uShape string) ([]int, error) {
 	// data matrix can't be nil
 	if data == nil {
-		return nil, fmt.Errorf("Invalid data matrix: %v\n", data)
+		return nil, fmt.Errorf("invalid data matrix: %v", data)
 	}
 	dataLen, dataDim := data.Dims()
 	// this is a simple heuristic - you can pick the scale > 5
@@ -71,16 +71,16 @@ func GridDims(data *mat64.Dense, uShape string) ([]int, error) {
 func RandInit(data *mat64.Dense, dims []int) (*mat64.Dense, error) {
 	// if nil matrix is passed in, return error
 	if data == nil {
-		return nil, fmt.Errorf("Invalid input matrix: %v\n", data)
+		return nil, fmt.Errorf("invalid input matrix: %v", data)
 	}
 	// dims can't be nil
 	if dims == nil {
-		return nil, fmt.Errorf("Invalid dimensions: %v\n", dims)
+		return nil, fmt.Errorf("invalid dimensions: %v", dims)
 	}
 	// dims can't be nil or negative
 	for _, dim := range dims {
 		if dim <= 0 {
-			return nil, fmt.Errorf("Non-Positive dimensions supplied: %v\n", dims)
+			return nil, fmt.Errorf("Non-Positive dimensions supplied: %v", dims)
 		}
 	}
 	// input matrix dimensions
@@ -183,22 +183,22 @@ func LinInit(data *mat64.Dense, dims []int) (*mat64.Dense, error) {
 func validateLinInit(data *mat64.Dense, dims []int) error {
 	// if nil matrix is passed in, return error
 	if data == nil {
-		return fmt.Errorf("Invalid data matrix: %v\n", data)
+		return fmt.Errorf("invalid data matrix: %v", data)
 	}
 	// can't pass in nil dimensions
 	if dims == nil {
-		return fmt.Errorf("Incorrect dimensions: %v\n", dims)
+		return fmt.Errorf("Incorrect dimensions: %v", dims)
 	}
 	// Check if any of the supplied dimensions are non-negative
 	for _, dim := range dims {
 		if dim <= 0 {
-			return fmt.Errorf("Non-Positive dimensions supplied: %v\n", dims)
+			return fmt.Errorf("Non-Positive dimensions supplied: %v", dims)
 		}
 	}
 	// Linear initialization requires at least 2 samples
 	samples, _ := data.Dims()
 	if samples < 2 {
-		return fmt.Errorf("Insufficient number of samples: %d\n", samples)
+		return fmt.Errorf("Insufficient number of samples: %d", samples)
 	}
 	return nil
 }
@@ -225,7 +225,7 @@ func getBaseVecs(data *mat64.Dense, mapDim int) (*mat64.Dense, error) {
 			vec.ScaleVec(math.Sqrt(vals[i])/mat64.Norm(vec, 2), vec)
 		}
 		//fb = mat64.Formatted(vecs, mat64.Prefix("    "))
-		//fmt.Printf("NORMALIZED PCA vecs:\na = %v\n\n", fb)
+		//fmt.Printf("NORMALIZED PCA vecs:a = %v", fb)
 		// pick first m eigenvectors
 		baseVecs.Clone(vecs.View(0, 0, dataDim, mapDim))
 	} else {
@@ -341,27 +341,27 @@ func GridCoords(uShape string, dims []int) (*mat64.Dense, error) {
 func validateGridCoords(uShape string, dims []int) error {
 	// unsupported SOM unit shape
 	if _, ok := UShape[uShape]; !ok {
-		return fmt.Errorf("Unsupported unit shape: %s\n", uShape)
+		return fmt.Errorf("unsupported unit shape: %s", uShape)
 	}
 	// map dims can't be nil
 	if dims == nil {
-		return fmt.Errorf("Invalid dimensions supplied: %v\n", dims)
+		return fmt.Errorf("invalid dimensions supplied: %v", dims)
 	}
 	// check if the dimensions are postive numbers
 	for _, dim := range dims {
 		if dim <= 0 {
-			return fmt.Errorf("Non-Positive dimensions supplied: %v\n", dims)
+			return fmt.Errorf("Non-Positive dimensions supplied: %v", dims)
 		}
 	}
 	// map dims can't be longer than 3
 	mDims := len(dims)
 	if mDims > 3 {
-		return fmt.Errorf("Unsupported dimensions requested: %d\n", mDims)
+		return fmt.Errorf("unsupported dimensions requested: %d", mDims)
 	}
 	// can't use hexagon with dims > 2
 	if strings.EqualFold(uShape, "hexagon") {
 		if mDims > 2 {
-			return fmt.Errorf("Exceeded allowed hexagon dims: %d\n", mDims)
+			return fmt.Errorf("Exceeded allowed hexagon dims: %d", mDims)
 		}
 	}
 	return nil

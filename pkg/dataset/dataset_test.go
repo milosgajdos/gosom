@@ -69,7 +69,7 @@ func TestDataSet(t *testing.T) {
 	assert.True(mat64.Equal(scaledMx, scaledDs))
 	assert.True(mat64.Equal(scaledMx, ds.Data()))
 
-	// Unsupported file format
+	// unsupported file format
 	ds, err = New("example", "")
 	assert.Error(err)
 
@@ -87,8 +87,8 @@ func TestDataWithClasses(t *testing.T) {
 	lrnPath := path.Join(os.TempDir(), fileName+".lrn")
 	lrn := `% 4
 % 4
-% 9	1	1	1	
-% Key	C1	C2	C3	
+% 9	1	1	1
+% Key	C1	C2	C3
 1	0.000000E+000	0.000000E+000	1.000000E+000
 2	0.000000E+000	5.233600E-002	9.986300E-001
 3	4.977400E-002	1.617300E-002	9.986300E-001
@@ -122,7 +122,7 @@ func TestDataWithClasses(t *testing.T) {
 	ds, err = New(lrnPath, "somefile.class")
 	assert.Error(err)
 	assert.Nil(ds)
-	assert.Equal("Unsupported type of classification file: .class", err.Error())
+	assert.Equal("unsupported type of classification file: .class", err.Error())
 
 	// classification file doesn't exist
 	ds, err = New(lrnPath, "nonexistent.cls")
@@ -175,8 +175,8 @@ func TestLoadLRN(t *testing.T) {
 	// real-like
 	tstRdr = strings.NewReader(`% 4
 % 4
-% 9	1	1	1	
-% Key	C1	C2	C3	
+% 9	1	1	1
+% Key	C1	C2	C3
 1	0.000000E+000	0.000000E+000	1.000000E+000
 2	0.000000E+000	5.233600E-002	9.986300E-001
 3	4.977400E-002	1.617300E-002	9.986300E-001
@@ -196,7 +196,7 @@ func TestLoadLRN(t *testing.T) {
 1	1
 `)
 	mx, err = LoadLRN(tstRdr)
-	assert.Equal("Invalid header", err.Error())
+	assert.Equal("invalid header", err.Error())
 	assert.Nil(mx)
 
 }
@@ -230,7 +230,7 @@ func TestLoadCLS(t *testing.T) {
 	cls, err = LoadCLS(tstRdr)
 	assert.Error(err)
 	assert.Nil(cls)
-	assert.Equal("Unsupported header", err.Error())
+	assert.Equal("unsupported header", err.Error())
 
 	// invalid header
 	tstRdr = strings.NewReader(`# some comment
@@ -241,7 +241,7 @@ func TestLoadCLS(t *testing.T) {
 	cls, err = LoadCLS(tstRdr)
 	assert.Error(err)
 	assert.Nil(cls)
-	assert.Equal("Invalid header", err.Error())
+	assert.Equal("invalid header", err.Error())
 }
 
 func TestScale(t *testing.T) {

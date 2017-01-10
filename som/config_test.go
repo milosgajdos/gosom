@@ -40,8 +40,8 @@ func TestValidateGridDims(t *testing.T) {
 	assert := assert.New(t)
 
 	mc := makeDefaultMapCfg()
-	errDimLen := "Unsupported number of SOM grid dimensions supplied: %d\n"
-	errDimVal := "Incorrect SOM grid dimensions supplied: %v\n"
+	errDimLen := "unsupported number of SOM grid dimensions supplied: %d"
+	errDimVal := "incorrect SOM grid dimensions supplied: %v"
 	wrongDims := []int{-1, 2}
 	singDims := []int{1, 1}
 	testCases := []struct {
@@ -73,7 +73,7 @@ func TestValidateGridType(t *testing.T) {
 	assert := assert.New(t)
 
 	mc := makeDefaultMapCfg()
-	errString := "Unsupported SOM grid type: %s\n"
+	errString := "unsupported SOM grid type: %s"
 	testCases := []struct {
 		grid   string
 		expErr bool
@@ -99,7 +99,7 @@ func TestValidateGridUshape(t *testing.T) {
 	assert := assert.New(t)
 
 	mc := makeDefaultMapCfg()
-	errString := "Unsupported SOM unit shape: %s\n"
+	errString := "unsupported SOM unit shape: %s"
 	testCases := []struct {
 		ushape string
 		expErr bool
@@ -126,7 +126,7 @@ func TestValidateCbInitFunc(t *testing.T) {
 	assert := assert.New(t)
 
 	mc := makeDefaultMapCfg()
-	errString := "Invalid InitFunc: %v"
+	errString := "invalid InitFunc: %v"
 	testCases := []struct {
 		initFunc CodebookInitFunc
 		expErr   bool
@@ -153,7 +153,7 @@ func TestValidateMethod(t *testing.T) {
 	assert := assert.New(t)
 
 	tr := makeDefaultTrainConfig()
-	errString := "Invalid SOM training method: %s\n"
+	errString := "invalid SOM training method: %s"
 	testCases := []struct {
 		method string
 		expErr bool
@@ -180,7 +180,7 @@ func TestValidateRadius(t *testing.T) {
 	assert := assert.New(t)
 
 	tr := makeDefaultTrainConfig()
-	errString := "Invalid SOM unit radius: %f\n"
+	errString := "invalid SOM unit radius: %f"
 	testCases := []struct {
 		radius float64
 		expErr bool
@@ -207,7 +207,7 @@ func TestValidateRDecay(t *testing.T) {
 	assert := assert.New(t)
 
 	tr := makeDefaultTrainConfig()
-	errString := "Unsupported Radius decay strategy: %s\n"
+	errString := "unsupported Radius decay strategy: %s"
 	testCases := []struct {
 		decay  string
 		expErr bool
@@ -235,7 +235,7 @@ func TestValidateNeighbFn(t *testing.T) {
 	assert := assert.New(t)
 
 	tr := makeDefaultTrainConfig()
-	errString := "Unsupported Neighbourhood function: %s\n"
+	errString := "unsupported Neighbourhood function: %s"
 	testCases := []struct {
 		neighbFn string
 		expErr   bool
@@ -263,7 +263,7 @@ func TestValidateLRate(t *testing.T) {
 	assert := assert.New(t)
 
 	tr := makeDefaultTrainConfig()
-	errString := "Invalid SOM learning rate: %f\n"
+	errString := "invalid SOM learning rate: %f"
 	testCases := []struct {
 		lrate  float64
 		expErr bool
@@ -290,7 +290,7 @@ func TestValidateLDecay(t *testing.T) {
 	assert := assert.New(t)
 
 	tr := makeDefaultTrainConfig()
-	errString := "Unsupported Learning rate decay strategy: %s\n"
+	errString := "unsupported Learning rate decay strategy: %s"
 	testCases := []struct {
 		decay  string
 		expErr bool

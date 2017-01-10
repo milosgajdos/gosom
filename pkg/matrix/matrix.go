@@ -87,7 +87,7 @@ func MakeConstant(rows, cols int, val float64) (*mat64.Dense, error) {
 // AddConstant fails with error if empty matrix is supplied
 func AddConst(val float64, m *mat64.Dense) (*mat64.Dense, error) {
 	if m == nil {
-		return nil, fmt.Errorf("Invalid matrix supplied: %v\n", m)
+		return nil, fmt.Errorf("invalid matrix supplied: %v", m)
 	}
 	rows, cols := m.Dims()
 	return withValidDims(rows, cols, func() (*mat64.Dense, error) {
@@ -130,23 +130,23 @@ func withValidDim(dim string, count int, m *mat64.Dense,
 	fn func(mat64.Matrix) float64) ([]float64, error) {
 	// matrix can't be nil
 	if m == nil {
-		return nil, fmt.Errorf("Invalid matrix supplied: %v\n", m)
+		return nil, fmt.Errorf("invalid matrix supplied: %v", m)
 	}
 	rows, cols := m.Dims()
 	switch dim {
 	case "rows":
 		if rows == 0 {
-			return nil, fmt.Errorf("Invalid number of rows supplied: %v\n", m)
+			return nil, fmt.Errorf("invalid number of rows supplied: %v", m)
 		}
 		if count > rows {
-			return nil, fmt.Errorf("Row count exceeds matrix rows: %d\n", count)
+			return nil, fmt.Errorf("row count exceeds matrix rows: %d", count)
 		}
 	case "cols":
 		if cols == 0 {
-			return nil, fmt.Errorf("Invalid number of columns supplied: %v\n", m)
+			return nil, fmt.Errorf("invalid number of columns supplied: %v", m)
 		}
 		if count > cols {
-			return nil, fmt.Errorf("Column count exceeds matrix columns: %d\n", count)
+			return nil, fmt.Errorf("column count exceeds matrix columns: %d", count)
 		}
 	}
 	return dimFn(dim, count, m, fn), nil
@@ -157,10 +157,10 @@ func withValidDim(dim string, count int, m *mat64.Dense,
 func withValidDims(rows, cols int, fn func() (*mat64.Dense, error)) (*mat64.Dense, error) {
 	// can not create matrix with negative dimensions
 	if rows <= 0 {
-		return nil, fmt.Errorf("Invalid number of rows: %d\n", rows)
+		return nil, fmt.Errorf("invalid number of rows: %d", rows)
 	}
 	if cols <= 0 {
-		return nil, fmt.Errorf("Invalid number of columns: %d\n", cols)
+		return nil, fmt.Errorf("invalid number of columns: %d", cols)
 	}
 	return fn()
 }

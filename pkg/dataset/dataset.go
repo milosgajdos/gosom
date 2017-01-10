@@ -56,7 +56,7 @@ func New(dataPath string, clsPath string) (*DataSet, error) {
 	fileType := filepath.Ext(dataPath)
 	loadData, ok := loadFuncs[fileType]
 	if !ok {
-		return nil, fmt.Errorf("Unsupported file type: %s\n", fileType)
+		return nil, fmt.Errorf("unsupported file type: %s", fileType)
 	}
 	// Check if the training data file exists
 	if _, err := os.Stat(dataPath); os.IsNotExist(err) {
@@ -80,7 +80,7 @@ func New(dataPath string, clsPath string) (*DataSet, error) {
 		clsFileType := filepath.Ext(clsPath)
 		loadCls, ok := loadClsFuncs[clsFileType]
 		if !ok {
-			return nil, fmt.Errorf("Unsupported type of classification file: %s", clsFileType)
+			return nil, fmt.Errorf("unsupported type of classification file: %s", clsFileType)
 		}
 		// Check if the classification file exists
 		if _, err := os.Stat(clsPath); os.IsNotExist(err) {
@@ -180,7 +180,7 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 			if headerRow == LrnHeaderSize { // rows
 				rows64, err := strconv.ParseInt(headerLine, 10, 64)
 				if err != nil {
-					return nil, fmt.Errorf("Dataset size information missing")
+					return nil, fmt.Errorf("dataset size information missing")
 				}
 				rows = int(rows64)
 			} else if headerRow == LrnHeaderCols { // cols
@@ -206,28 +206,28 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 			headerRow++
 		} else { // data
 			if headerRow < LrnHeaderRows {
-				return nil, fmt.Errorf("Invalid header")
+				return nil, fmt.Errorf("invalid header")
 			}
 			if valueRow >= rows {
-				return nil, fmt.Errorf("Too many data rows")
+				return nil, fmt.Errorf("too many data rows")
 			}
 			vals := strings.Split(line, "\t")
 			valueIndex := 0
 			for i, val := range vals {
 				if i > len(columnTypes) {
-					return nil, fmt.Errorf("Too many columns")
+					return nil, fmt.Errorf("too many columns")
 				}
 				if columnTypes[i] == DataCol {
 					if valueIndex < cols {
 						f, err := strconv.ParseFloat(val, 64)
 						if err != nil {
-							return nil, fmt.Errorf("Problem parsing value at line %d, col %d", valueRow, i)
+							return nil, fmt.Errorf("problem parsing value at line %d, col %d", valueRow, i)
 						}
 						mxData[valueRow*cols+valueIndex] = f
 						valueIndex++
 						continue
 					}
-					return nil, fmt.Errorf("Too many data columns")
+					return nil, fmt.Errorf("too many data columns")
 				}
 			}
 			valueRow++
@@ -255,33 +255,33 @@ func LoadCLS(reader io.Reader) (map[int]int, error) {
 			continue
 		} else if strings.HasPrefix(line, "%") { // header
 			if rows != nil {
-				return nil, fmt.Errorf("Unsupported header")
+				return nil, fmt.Errorf("unsupported header")
 			}
 			headerLine := strings.TrimPrefix(line, "% ")
 			rows64, err := strconv.ParseInt(headerLine, 10, 64)
 			if err != nil {
 				fmt.Println(err)
-				return nil, fmt.Errorf("Classification data size information missing")
+				return nil, fmt.Errorf("classification data size information missing")
 			}
 			rowsTmp := int(rows64)
 			rows = &rowsTmp
 		} else { // classes
 			if rows == nil {
-				return nil, fmt.Errorf("Invalid header")
+				return nil, fmt.Errorf("invalid header")
 			}
 			if valueRow >= *rows {
-				return nil, fmt.Errorf("Too many classification rows")
+				return nil, fmt.Errorf("too many classification rows")
 			}
 			vals := strings.Split(line, "\t")
 			// classes come in pairs: index -> class
 			var index, class *int
 			for i, val := range vals {
 				if i > 1 {
-					return nil, fmt.Errorf("Too many classification columns")
+					return nil, fmt.Errorf("too many classification columns")
 				}
 				num64, err := strconv.ParseInt(val, 10, 64)
 				if err != nil {
-					return nil, fmt.Errorf("Problem parsing value at line %d, col %d", valueRow, i)
+					return nil, fmt.Errorf("problem parsing value at line %d, col %d", valueRow, i)
 				}
 				num := int(num64)
 
@@ -292,7 +292,7 @@ func LoadCLS(reader io.Reader) (map[int]int, error) {
 				}
 			}
 			if index == nil || class == nil {
-				return nil, fmt.Errorf("Incomplete classification row")
+				return nil, fmt.Errorf("incomplete classification row")
 			}
 
 			// CLS indexes are 1-based, but we're using 0-based

@@ -18,7 +18,7 @@ func TestNewHeap(t *testing.T) {
 		&float64Item{val: 8.0, index: 0}}
 	// can't have negative capacity
 	cap := -4
-	errString := "Invalid capacity supplied: %d\n"
+	errString := "invalid capacity supplied: %d"
 	h, err := newFloat64Heap(cap)
 	assert.Nil(h)
 	assert.EqualError(err, fmt.Sprintf(errString, cap))

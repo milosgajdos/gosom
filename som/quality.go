@@ -15,11 +15,11 @@ import (
 func QuantError(data, codebook *mat64.Dense) (float64, error) {
 	// data can't be nil
 	if data == nil {
-		return -1.0, fmt.Errorf("Invalid data supplied: %v\n", data)
+		return -1.0, fmt.Errorf("invalid data supplied: %v", data)
 	}
 	// codebook can't be nil
 	if codebook == nil {
-		return -1.0, fmt.Errorf("Invalid codebook supplied: %v\n", codebook)
+		return -1.0, fmt.Errorf("invalid codebook supplied: %v", codebook)
 	}
 	var qErr float64
 	metric := "euclidean"
@@ -47,17 +47,17 @@ func QuantError(data, codebook *mat64.Dense) (float64, error) {
 func TopoProduct(codebook, grid *mat64.Dense) (float64, error) {
 	// codebook can't be nil
 	if codebook == nil {
-		return 0.0, fmt.Errorf("Invalid codebook supplied: %v\n", codebook)
+		return 0.0, fmt.Errorf("invalid codebook supplied: %v", codebook)
 	}
 	// grid can't be nil
 	if grid == nil {
-		return 0.0, fmt.Errorf("Invalid grid supplied: %v\n", grid)
+		return 0.0, fmt.Errorf("invalid grid supplied: %v", grid)
 	}
 	// if grid and codebook don't match, throw error
 	gRows, _ := grid.Dims()
 	cRows, _ := codebook.Dims()
 	if gRows != cRows {
-		return 0.0, fmt.Errorf("Grid and codebook dimension mismatch\n")
+		return 0.0, fmt.Errorf("Grid and codebook dimension mismatch")
 	}
 	// unit and codebook distance matrices -- no need to check for error here
 	uDistMx, _ := DistanceMx("euclidean", grid)
@@ -107,15 +107,15 @@ func TopoProduct(codebook, grid *mat64.Dense) (float64, error) {
 func TopoError(data, codebook, grid *mat64.Dense) (float64, error) {
 	// data can't be nil
 	if data == nil {
-		return -1.0, fmt.Errorf("Invalid data supplied: %v\n", data)
+		return -1.0, fmt.Errorf("invalid data supplied: %v", data)
 	}
 	// codebook can't be nil
 	if codebook == nil {
-		return -1.0, fmt.Errorf("Invalid codebook supplied: %v\n", codebook)
+		return -1.0, fmt.Errorf("invalid codebook supplied: %v", codebook)
 	}
 	// grid can't be nil
 	if grid == nil {
-		return -1.0, fmt.Errorf("Invalid grid supplied: %v\n", grid)
+		return -1.0, fmt.Errorf("invalid grid supplied: %v", grid)
 	}
 	// unit distance matrix -- no need to check for error
 	uDistMx, _ := DistanceMx("euclidean", grid)

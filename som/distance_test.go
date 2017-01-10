@@ -136,7 +136,7 @@ func TestClosestVec(t *testing.T) {
 	// nil vector returns error
 	v := []float64{}
 	m := new(mat64.Dense)
-	errString := "Invalid vector: %v\n"
+	errString := "invalid vector: %v"
 	closest, err := ClosestVec(metric, v, m)
 	assert.Error(err)
 	assert.EqualError(err, fmt.Sprintf(errString, v))
@@ -144,7 +144,7 @@ func TestClosestVec(t *testing.T) {
 	// nil matrix returns error
 	v = []float64{1.0}
 	m = nil
-	errString = "Invalid matrix: %v\n"
+	errString = "invalid matrix: %v"
 	closest, err = ClosestVec(metric, v, m)
 	assert.Error(err)
 	assert.EqualError(err, fmt.Sprintf(errString, m))
@@ -166,20 +166,20 @@ func TestClosestNVec(t *testing.T) {
 	m := new(mat64.Dense)
 	n := 2
 	// nil vector returns error
-	errString := "Invalid vector: %v\n"
+	errString := "invalid vector: %v"
 	closest, err := ClosestNVec(metric, n, v, m)
 	assert.EqualError(err, fmt.Sprintf(errString, v))
 	assert.Nil(closest)
 	// nil matrix returns error
 	v = []float64{1.0}
 	m = nil
-	errString = "Invalid matrix: %v\n"
+	errString = "invalid matrix: %v"
 	closest, err = ClosestNVec(metric, n, v, m)
 	assert.EqualError(err, fmt.Sprintf(errString, m))
 	// incorrect number of n closest vectors
 	m = new(mat64.Dense)
 	n = -5
-	errString = "Invalid number of closest vectors requested: %d\n"
+	errString = "invalid number of closest vectors requested: %d"
 	closest, err = ClosestNVec(metric, n, v, m)
 	assert.EqualError(err, fmt.Sprintf(errString, n))
 	assert.Nil(closest)
@@ -218,12 +218,12 @@ func TestBMUs(t *testing.T) {
 		[]float64{5.1, 3.5, 1.4, 0.1,
 			5.0, 3.6, 1.4, 0.5})
 	// nil data returns error
-	errString := "Invalid data supplied: %v\n"
+	errString := "invalid data supplied: %v"
 	bmus, err := BMUs(nil, cbook)
 	assert.EqualError(err, fmt.Sprintf(errString, nil))
 	assert.Nil(bmus)
 	// nil codebook returns error
-	errString = "Invalid codebook supplied: %v\n"
+	errString = "invalid codebook supplied: %v"
 	bmus, err = BMUs(data, nil)
 	assert.EqualError(err, fmt.Sprintf(errString, nil))
 	assert.Nil(bmus)
