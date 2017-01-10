@@ -7,16 +7,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	// Init map to default config
-	mc = &MapConfig{
-		Dims:     []int{2, 3},
-		Grid:     "planar",
-		InitFunc: RandInit,
-		UShape:   "hexagon",
+func makeDefaultMapCfg() *MapConfig {
+	grid := &GridConfig{
+		Dims:   []int{2, 3},
+		Type:   "planar",
+		UShape: "hexagon",
 	}
-	// default training configuration
-	tr = &TrainConfig{
+
+	cb := &CbConfig{
+		Dim:      5,
+		InitFunc: RandInit,
+	}
+
+	return &MapConfig{
+		Grid: grid,
+		Cb:   cb,
+	}
+}
+
+func makeDefaultTrainConfig() *TrainConfig {
+	return &TrainConfig{
 		Method:   "seq",
 		Radius:   10.0,
 		RDecay:   "lin",
@@ -24,14 +34,16 @@ var (
 		LRate:    0.5,
 		LDecay:   "lin",
 	}
-)
+}
 
-func TestValidateDims(t *testing.T) {
+func TestValidateGridDims(t *testing.T) {
 	assert := assert.New(t)
 
-	errDimLen := "Incorrect number of dimensions supplied: %d\n"
-	errDimVal := "Incorrect SOM dimensions supplied: %v\n"
+	mc := makeDefaultMapCfg()
+	errDimLen := "Unsupported number of SOM grid dimensions supplied: %d\n"
+	errDimVal := "Incorrect SOM grid dimensions supplied: %v\n"
 	wrongDims := []int{-1, 2}
+	singDims := []int{1, 1}
 	testCases := []struct {
 		dims   []int
 		expErr bool
@@ -40,25 +52,27 @@ func TestValidateDims(t *testing.T) {
 		{[]int{1}, true, fmt.Sprintf(errDimLen, 1)},
 		{[]int{}, true, fmt.Sprintf(errDimLen, 0)},
 		{[]int{1, 2}, false, ""},
+		{singDims, true, fmt.Sprintf(errDimVal, singDims)},
 		{wrongDims, true, fmt.Sprintf(errDimVal, wrongDims)},
 	}
 
-	origDims := mc.Dims
+	dims := mc.Grid.Dims
 	for _, tc := range testCases {
-		mc.Dims = tc.dims
-		err := validateMapConfig(mc)
+		mc.Grid.Dims = tc.dims
+		err := validateGridConfig(mc.Grid)
 		if tc.expErr {
 			assert.EqualError(err, tc.errStr)
 		} else {
 			assert.NoError(err)
 		}
 	}
-	mc.Dims = origDims
+	mc.Grid.Dims = dims
 }
 
-func TestValidateGrid(t *testing.T) {
+func TestValidateGridType(t *testing.T) {
 	assert := assert.New(t)
 
+	mc := makeDefaultMapCfg()
 	errString := "Unsupported SOM grid type: %s\n"
 	testCases := []struct {
 		grid   string
@@ -68,48 +82,23 @@ func TestValidateGrid(t *testing.T) {
 		{"foobar", true},
 	}
 
-	origGrid := mc.Grid
+	grid := mc.Grid.Type
 	for _, tc := range testCases {
-		mc.Grid = tc.grid
-		err := validateMapConfig(mc)
+		mc.Grid.Type = tc.grid
+		err := validateGridConfig(mc.Grid)
 		if tc.expErr {
-			assert.EqualError(err, fmt.Sprintf(errString, mc.Grid))
+			assert.EqualError(err, fmt.Sprintf(errString, mc.Grid.Type))
 		} else {
 			assert.NoError(err)
 		}
 	}
-	mc.Grid = origGrid
+	mc.Grid.Type = grid
 }
 
-func TestValidateInitFunc(t *testing.T) {
+func TestValidateGridUshape(t *testing.T) {
 	assert := assert.New(t)
 
-	errString := "Invalid InitFunc: %v"
-	testCases := []struct {
-		initFunc CodebookInitFunc
-		expErr   bool
-	}{
-		{RandInit, false},
-		{nil, true},
-		{LinInit, false},
-	}
-
-	origInitFunc := mc.InitFunc
-	for _, tc := range testCases {
-		mc.InitFunc = tc.initFunc
-		err := validateMapConfig(mc)
-		if tc.expErr {
-			assert.EqualError(err, fmt.Sprintf(errString, mc.InitFunc))
-		} else {
-			assert.NoError(err)
-		}
-	}
-	mc.InitFunc = origInitFunc
-}
-
-func TestValidateUshape(t *testing.T) {
-	assert := assert.New(t)
-
+	mc := makeDefaultMapCfg()
 	errString := "Unsupported SOM unit shape: %s\n"
 	testCases := []struct {
 		ushape string
@@ -120,22 +109,50 @@ func TestValidateUshape(t *testing.T) {
 		{"rectangle", false},
 	}
 
-	origUShape := mc.UShape
+	uShape := mc.Grid.UShape
 	for _, tc := range testCases {
-		mc.UShape = tc.ushape
-		err := validateMapConfig(mc)
+		mc.Grid.UShape = tc.ushape
+		err := validateGridConfig(mc.Grid)
 		if tc.expErr {
-			assert.EqualError(err, fmt.Sprintf(errString, mc.UShape))
+			assert.EqualError(err, fmt.Sprintf(errString, mc.Grid.UShape))
 		} else {
 			assert.NoError(err)
 		}
 	}
-	mc.UShape = origUShape
+	mc.Grid.UShape = uShape
+}
+
+func TestValidateCbInitFunc(t *testing.T) {
+	assert := assert.New(t)
+
+	mc := makeDefaultMapCfg()
+	errString := "Invalid InitFunc: %v"
+	testCases := []struct {
+		initFunc CodebookInitFunc
+		expErr   bool
+	}{
+		{RandInit, false},
+		{nil, true},
+		{LinInit, false},
+	}
+
+	initFunc := mc.Cb.InitFunc
+	for _, tc := range testCases {
+		mc.Cb.InitFunc = tc.initFunc
+		err := validateCbConfig(mc.Cb)
+		if tc.expErr {
+			assert.EqualError(err, fmt.Sprintf(errString, mc.Cb.InitFunc))
+		} else {
+			assert.NoError(err)
+		}
+	}
+	mc.Cb.InitFunc = initFunc
 }
 
 func TestValidateMethod(t *testing.T) {
 	assert := assert.New(t)
 
+	tr := makeDefaultTrainConfig()
 	errString := "Invalid SOM training method: %s\n"
 	testCases := []struct {
 		method string
@@ -162,6 +179,7 @@ func TestValidateMethod(t *testing.T) {
 func TestValidateRadius(t *testing.T) {
 	assert := assert.New(t)
 
+	tr := makeDefaultTrainConfig()
 	errString := "Invalid SOM unit radius: %f\n"
 	testCases := []struct {
 		radius float64
@@ -188,6 +206,7 @@ func TestValidateRadius(t *testing.T) {
 func TestValidateRDecay(t *testing.T) {
 	assert := assert.New(t)
 
+	tr := makeDefaultTrainConfig()
 	errString := "Unsupported Radius decay strategy: %s\n"
 	testCases := []struct {
 		decay  string
@@ -215,6 +234,7 @@ func TestValidateRDecay(t *testing.T) {
 func TestValidateNeighbFn(t *testing.T) {
 	assert := assert.New(t)
 
+	tr := makeDefaultTrainConfig()
 	errString := "Unsupported Neighbourhood function: %s\n"
 	testCases := []struct {
 		neighbFn string
@@ -242,6 +262,7 @@ func TestValidateNeighbFn(t *testing.T) {
 func TestValidateLRate(t *testing.T) {
 	assert := assert.New(t)
 
+	tr := makeDefaultTrainConfig()
 	errString := "Invalid SOM learning rate: %f\n"
 	testCases := []struct {
 		lrate  float64
@@ -268,6 +289,7 @@ func TestValidateLRate(t *testing.T) {
 func TestValidateLDecay(t *testing.T) {
 	assert := assert.New(t)
 
+	tr := makeDefaultTrainConfig()
 	errString := "Unsupported Learning rate decay strategy: %s\n"
 	testCases := []struct {
 		decay  string

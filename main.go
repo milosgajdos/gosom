@@ -135,16 +135,24 @@ func main() {
 		log.Printf("Attempting feature scaling")
 		data = ds.Scale()
 	}
+	_, dim := data.Dims()
 	// SOM configuration
-	mapCfg := &som.MapConfig{
-		Dims:     mdims,
+	grid := &som.GridConfig{
+		Dims:   mdims,
+		Type:   grid,
+		UShape: ushape,
+	}
+	cb := &som.CbConfig{
+		Dim:      dim,
 		InitFunc: som.RandInit,
-		Grid:     grid,
-		UShape:   ushape,
+	}
+	mapCfg := &som.MapConfig{
+		Grid: grid,
+		Cb:   cb,
 	}
 	// create new SOM
-	log.Printf("Creating new SOM. Dimensions: %v, Grid: %s, Unit shape: %s",
-		mapCfg.Dims, mapCfg.Grid, mapCfg.UShape)
+	log.Printf("Creating new SOM. Dimensions: %v, Grid Type: %s, Unit shape: %s",
+		mapCfg.Grid.Dims, mapCfg.Grid.Type, mapCfg.Grid.UShape)
 	m, err := som.NewMap(mapCfg, data)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)

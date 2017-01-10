@@ -11,17 +11,7 @@ import (
 
 	"github.com/gonum/matrix/mat64"
 	"github.com/milosgajdos83/gosom/pkg/dataset"
-	"github.com/milosgajdos83/gosom/pkg/utils"
 )
-
-// CodebookInitFunc defines SOM codebook initialization function
-type CodebookInitFunc func(*mat64.Dense, []int) (*mat64.Dense, error)
-
-// CoordsInitFunc defines SOM grid coordinates initialization function
-type CoordsInitFunc func(string, []int) (*mat64.Dense, error)
-
-// NeighbFunc defines SOM neighbourhood function
-type NeighbFunc func(float64, float64) float64
 
 // Map is a Self Organizing Map (SOM)
 type Map struct {
@@ -33,12 +23,11 @@ type Map struct {
 	grid *mat64.Dense
 }
 
-// NewMap creates new SOM based on the provided configuration and input data
-// NewMap allows you to pass in SOM codebook init function that is used to initialize
-// SOM codebook vectors to initial values. If codebook InitFunc is nil, random initialization
-// is used. NewMap returns error if the provided configuration is not valid or if the data matrix
-// is nil or if the codebook matrix could not be initialized.
-// TODO: we should avoid initializing using data
+// NewMap creates new SOM based on the provided configuration.
+// It creates a map grid and initializes codebook vectors using the provided configuration parameter.
+// NewMap returns error if the provided configuration is not valid or if the data matrix is nil or
+// if the codebook matrix could not be initialized.
+// TODO: Avoid passing in data matrix when creating new map
 func NewMap(c *MapConfig, data *mat64.Dense) (*Map, error) {
 	// if input data is empty throw error
 	if data == nil {
@@ -48,18 +37,13 @@ func NewMap(c *MapConfig, data *mat64.Dense) (*Map, error) {
 	if err := validateMapConfig(c); err != nil {
 		return nil, err
 	}
-	// compute the number of map units
-	mUnits := utils.IntProduct(c.Dims)
-	if mUnits <= 1 {
-		return nil, fmt.Errorf("Incorrect map size dimensions: %v\n", c.Dims)
-	}
 	// initialize codebook
-	codebook, err := c.InitFunc(data, c.Dims)
+	codebook, err := c.Cb.InitFunc(data, c.Grid.Dims)
 	if err != nil {
 		return nil, err
 	}
 	// grid coordinates matrix
-	grid, err := GridCoords(c.UShape, c.Dims)
+	grid, err := GridCoords(c.Grid.UShape, c.Grid.Dims)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +141,7 @@ func (m Map) UMatrix(format, title string, c *MapConfig, ds *dataset.DataSet, w 
 				}
 			}
 
-			return UMatrixSVG(m.codebook, c.Dims, c.UShape, title, w, classes)
+			return UMatrixSVG(m.codebook, c.Grid.Dims, c.Grid.UShape, title, w, classes)
 		}
 	}
 	return fmt.Errorf("Invalid format %s", format)

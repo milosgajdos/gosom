@@ -18,12 +18,20 @@ var (
 )
 
 func setup() {
+	grid := &GridConfig{
+		Dims:   []int{2, 3},
+		Type:   "planar",
+		UShape: "hexagon",
+	}
+
+	cb := &CbConfig{
+		InitFunc: RandInit,
+	}
+
 	// Init to default config
 	mSom = &MapConfig{
-		Dims:     []int{2, 3},
-		Grid:     "planar",
-		InitFunc: RandInit,
-		UShape:   "hexagon",
+		Grid: grid,
+		Cb:   cb,
 	}
 	tSom = &TrainConfig{
 		Method:   "seq",
@@ -40,6 +48,8 @@ func setup() {
 		4.6, 3.1, 1.5, 0.4,
 		5.0, 3.6, 1.4, 0.5}
 	dataMx = mat64.NewDense(5, 4, data)
+	// set the Codebook dimension to number of data columns
+	mSom.Cb.Dim = 4
 }
 
 func TestMain(m *testing.M) {
@@ -63,35 +73,35 @@ func TestNewMap(t *testing.T) {
 	assert.NotNil(m)
 	assert.NoError(err)
 	// when nil init function, use RandInit
-	origInitFunc := mSom.InitFunc
-	mSom.InitFunc = nil
+	origInitFunc := mSom.Cb.InitFunc
+	mSom.Cb.InitFunc = nil
 	m, err = NewMap(mSom, dataMx)
 	assert.Nil(m)
 	assert.Error(err)
-	mSom.InitFunc = origInitFunc
+	mSom.Cb.InitFunc = origInitFunc
 	// incorrect init matrix
 	m, err = NewMap(mSom, nil)
 	assert.Nil(m)
 	assert.Error(err)
 	// incorrect number of map units
-	origDims := mSom.Dims
-	mSom.Dims = []int{0, 0}
+	origDims := mSom.Grid.Dims
+	mSom.Grid.Dims = []int{0, 0}
 	m, err = NewMap(mSom, dataMx)
 	assert.Nil(m)
 	assert.Error(err)
-	mSom.Dims = origDims
+	mSom.Grid.Dims = origDims
 	// init func that always returns error
-	mSom.InitFunc = mockInit
+	mSom.Cb.InitFunc = mockInit
 	m, err = NewMap(mSom, dataMx)
 	assert.Nil(m)
 	assert.Error(err)
-	mSom.InitFunc = RandInit
+	mSom.Cb.InitFunc = RandInit
 }
 
 func TestCodebook(t *testing.T) {
 	assert := assert.New(t)
 
-	mapUnits := utils.IntProduct(mSom.Dims)
+	mapUnits := utils.IntProduct(mSom.Grid.Dims)
 	_, cols := dataMx.Dims()
 	// default config should not throw any errors
 	m, err := NewMap(mSom, dataMx)
@@ -114,14 +124,14 @@ func TestGrid(t *testing.T) {
 	grid := m.Grid()
 	assert.NotNil(grid)
 	rows, cols := grid.Dims()
-	assert.Equal(cols, len(mSom.Dims))
-	assert.Equal(rows, mSom.Dims[0]*mSom.Dims[1])
+	assert.Equal(cols, len(mSom.Grid.Dims))
+	assert.Equal(rows, mSom.Grid.Dims[0]*mSom.Grid.Dims[1])
 }
 
 func TestUnitDist(t *testing.T) {
 	assert := assert.New(t)
 
-	mapUnits := utils.IntProduct(mSom.Dims)
+	mapUnits := utils.IntProduct(mSom.Grid.Dims)
 	// default config should not throw any errors
 	m, err := NewMap(mSom, dataMx)
 	assert.NotNil(m)

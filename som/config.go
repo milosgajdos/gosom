@@ -1,6 +1,10 @@
 package som
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/gonum/matrix/mat64"
+)
 
 // UShape contains supported SOM unit shapes
 var UShape = map[string]bool{
@@ -33,16 +37,39 @@ var Training = map[string]bool{
 	"batch": true,
 }
 
-// MapConfig holds SOM configuration
-type MapConfig struct {
-	// Dims specifies SOM dimensions
+// CodebookInitFunc defines SOM codebook initialization function
+type CodebookInitFunc func(*mat64.Dense, []int) (*mat64.Dense, error)
+
+// CoordsInitFunc defines SOM grid coordinates initialization function
+type CoordsInitFunc func(string, []int) (*mat64.Dense, error)
+
+// NeighbFunc defines SOM neighbourhood function
+type NeighbFunc func(float64, float64) float64
+
+// GridConfig holds SOM grid configuration
+type GridConfig struct {
+	// Dims specifies SOM grid dimensions
 	Dims []int
-	// Grid specifies the type of SOM grid: planar
-	Grid string
-	// InitFunc specifies codebook initialization function
-	InitFunc CodebookInitFunc
+	// Type specifies the type of SOM grid: planar
+	Type string
 	// UShape specifies SOM unit shape: hexagon, rectangle
 	UShape string
+}
+
+// CbConfig holds SOM codebook configuration
+type CbConfig struct {
+	// Dim defines number of codebook vector dimension
+	Dim int
+	// InitFunc specifies codebook initialization function
+	InitFunc CodebookInitFunc
+}
+
+// MapConfig holds SOM configuration
+type MapConfig struct {
+	// Grid is SOM grid config configuration
+	Grid *GridConfig
+	// Codebook holds SOM codebook configuration
+	Cb *CbConfig
 }
 
 // TrainConfig holds SOM training configuration
@@ -61,31 +88,62 @@ type TrainConfig struct {
 	LDecay string
 }
 
-// validateMapConfig validates SOM configuration.
-// It returns error if any of the config parameters are invalid
+// validateMapConfig validates SOm configuration
+// It returns error or if any of the configuration parameters are invalid
 func validateMapConfig(c *MapConfig) error {
+	// validate grid configuration
+	if err := validateGridConfig(c.Grid); err != nil {
+		return err
+	}
+	// validate codebook configuration
+	if err := validateCbConfig(c.Cb); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateGridConfig validates SOM grid configuration
+// It returns error if any of the config parameters are invalid
+func validateGridConfig(c *GridConfig) error {
 	// SOM must have 2 dimensions
 	// TODO: figure out 3D maps
-	if dimLen := len(c.Dims); dimLen != 2 {
-		return fmt.Errorf("Incorrect number of dimensions supplied: %d\n", dimLen)
+	if len(c.Dims) != 2 {
+		return fmt.Errorf("Unsupported number of SOM grid dimensions supplied: %d\n", len(c.Dims))
 	}
-	// check if the supplied dimensions are negative integers
+	// check if the supplied dimensions are negative integers or if they are single node
+	prod := 1
 	for _, dim := range c.Dims {
-		if dim < 0 {
-			return fmt.Errorf("Incorrect SOM dimensions supplied: %v\n", c.Dims)
+		if dim <= 0 {
+			return fmt.Errorf("Incorrect SOM grid dimensions supplied: %v\n", c.Dims)
 		}
+		prod *= dim
+	}
+	if prod == 1 {
+		return fmt.Errorf("Incorrect SOM grid dimensions supplied: %v\n", c.Dims)
 	}
 	// check if the supplied grid type is supported
-	if _, ok := CoordsInit[c.Grid]; !ok {
-		return fmt.Errorf("Unsupported SOM grid type: %s\n", c.Grid)
-	}
-	// check if the codebook init func is not nil
-	if c.InitFunc == nil {
-		return fmt.Errorf("Invalid InitFunc: %v", c.InitFunc)
+	if _, ok := CoordsInit[c.Type]; !ok {
+		return fmt.Errorf("Unsupported SOM grid type: %s\n", c.Type)
 	}
 	// check if the supplied unit shape type is supported
 	if _, ok := UShape[c.UShape]; !ok {
 		return fmt.Errorf("Unsupported SOM unit shape: %s\n", c.UShape)
+	}
+
+	return nil
+}
+
+// validateCbConfig validates SOM configuration.
+// It returns error if any of the config parameters are invalid
+func validateCbConfig(c *CbConfig) error {
+	// codebook vectors must have non-zero dimensions
+	if c.Dim <= 0 {
+		return fmt.Errorf("Incorrect SOM codebook dimension supplied: %v\n", c.Dim)
+	}
+	// check if the codebook init func is not nil
+	if c.InitFunc == nil {
+		return fmt.Errorf("Invalid InitFunc: %v", c.InitFunc)
 	}
 	return nil
 }
