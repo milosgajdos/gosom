@@ -6,11 +6,9 @@
 [![Go Report Card](https://goreportcard.com/badge/milosgajdos83/gosom)](https://goreportcard.com/report/github.com/milosgajdos83/gosom)
 [![codecov](https://codecov.io/gh/milosgajdos83/gosom/branch/master/graph/badge.svg)](https://codecov.io/gh/milosgajdos83/gosom)
 
-`gosom` is an implementation of [Self-Organizing Map](https://en.wikipedia.org/wiki/Self-organizing_map) (SOM) in Go. In addition to the main program, the project provides some useful `Go` packages which can be used independently of the main program.
+This project provides an implementation of [Self-Organizing Map](https://en.wikipedia.org/wiki/Self-organizing_map) (SOM) in Go. It implements the two most well known SOM training algorithms: `sequential` and `batch`. The `batch` training is faster than the `sequential` as it can be parallelized, taking advantage of as many cores as your machine provides. However it can be less accurate as it merely provides a resonable approximation of SOM, but still acceptable. The `sequential` algorithm is performed as its name implies, sequentially. Because of its sequential nature it's slower than `batch` training, but more accurate. You can read more about SOM training algorithms [here](http://www.scholarpedia.org/article/Kohonen_network).
 
-The project provides an implementation of the two most well known training algorithms: `sequential` and `batch`. The `batch` training algorithm is faster than the `sequential` as it can be parallelized taking advantage of as many cores as your machine provides. The `sequential` algorithm is performed as its name implies, sequentially. `Batch` training provides a resonable approximation of SOM and thus its results can be less accurate than the ones produced by `sequential` algorithm, but still acceptable. You can find more information about SOM training algorithms [here](http://www.scholarpedia.org/article/Kohonen_network).
-
-`gosom` also implements various SOM quality measures that can help you validate the results of the algorithm. In particular the project implements `quantization` and `topographic` error to measure both the projection and topography as well as `topographic product` which allows to help to make a decision about the size of the SOM grid.
+The goal of this project is to provide an API to build SOMs in `Go`. The project also implements various SOM quality measures which can help you validate the results of the training algorithm. In particular the project implements `quantization` and `topographic` error to measure both the projection and topography as well as `topographic product` which can help you make a decision about the size of the SOM grid.
 
 # Get started
 
@@ -26,25 +24,109 @@ Run the tests:
 $ make test
 ```
 
-Build and install in `$GOPATH/bin`:
+# Example
+
+You can see the simplest example of `SOM` below:
+
+```go
+func main() {
+	// make random data
+	d := []float64{5.1, 3.5, 1.4, 0.1,
+		4.9, 3.0, 1.4, 0.2,
+		4.7, 3.2, 1.3, 0.3,
+		4.6, 3.1, 1.5, 0.4,
+		5.0, 3.6, 1.4, 0.5}
+	data := mat64.NewDense(5, 4, d)
+	// SOM configuration
+	grid := &som.GridConfig{
+		Dims:   []int{2, 2},
+		Type:   "planar",
+		UShape: "hexagon",
+	}
+	cb := &som.CbConfig{
+		Dim:      4,
+		InitFunc: som.RandInit,
+	}
+	mapCfg := &som.MapConfig{
+		Grid: grid,
+		Cb:   cb,
+	}
+	// create new SOM§§
+	m, err := som.NewMap(mapCfg, data)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
+		os.Exit(1)
+	}
+	// training configuration
+	trainCfg := &som.TrainConfig{
+		Method:   "seq",
+		Radius:   500.0,
+		RDecay:   "exp",
+		NeighbFn: "gaussian",
+		LRate:    0.5,
+		LDecay:   "exp",
+	}
+	if err := m.Train(trainCfg, data, 300); err != nil {
+		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
+		os.Exit(1)
+	}
+	// check quantization error
+	qe, err := m.QuantError(data)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
+		os.Exit(1)
+	}
+	log.Printf("Quantization Error: %f\n", qe)
+}
+```
+
+If you build and run this program it will spit out `quantization` error. It's not that particularly exciting. You can find more interesting examples in `examples` directory.
+
+# Clustering
+
+SOMs are a very good tool to perform data clustering. Examples directory contains two more elaborate programs that illustrate the power of SOM clustering.
+
+## Colors example
+
+A classic schoolbook example of this is clustering of colors in arbitrary nosiy images. You can find a simple example program which does just this in the `colors` subdirectory of examples. When you build the program you can run it as follows:
 
 ```
-make install
+$ make examples
+$ $ ./colors -dims 40,40 -radius 500.0 -rdecay exp -lrate 0.5 -ldecay exp -ushape hexagon -iters 30000 -training seq -input ./examples/colors/testdata/colors.png -output som.png
+[ gosom ] Loading data set ./examples/colors/testdata/colors.png
+[ gosom ] Creating new SOM. Dimensions: [40 40], Grid Type: planar, Unit shape: hexagon
+[ gosom ] Starting SOM training. Method: seq, iterations: 30000
+[ gosom ] Training successfully completed. Duration: 3.849534927s
 ```
 
-Once the program has been successfully built you can inspect available command line options it provides:
+This will read in a sample nosiy image from the test data directory which looks like this:
+
+<img src="./examples/colors/testdata/colors.png" alt="Noisy image" width="200">
+
+The program will spit out a new image `som.png` which looks like this
+
+<img src="./examples/colors/som.png" alt="Sorted color image" width="200">
+
+## Arbitrary labeled data
+
+Even more elaborate example can be found in `fpcs` directory. It is used to demostrate that both implemented algorithm behave as expected according to the following [research](http://www.uni-marburg.de/fb12/arbeitsgruppen/datenbionik/data?language_sync=1). You can verify this yourself. First you have to build the `fcps` example program:
 
 ```
-$ gosom -h
+$ make examples
 ```
-# Examples
 
-To get you started quickly you can run the examples below. We will use [FCPS dataset]((http://www.uni-marburg.de/fb12/arbeitsgruppen/datenbionik/data?language_sync=1)). Change the `$D` environment variable to play with different example datasets. Both examples below output an `HTML` file with [U-matrix](https://en.wikipedia.org/wiki/U-matrix) rendered as `SVG` image.
-
-## Batch algorithm
+The program provides various cli options:
 
 ```
-$ D=Target; go run main.go -umatrix umatrix_batch.html -dims 30,30 -radius 500.0 -rdecay exp -ushape rectangle -iters 100 -training batch -input testdata/fcps/${D}.lrn -cls testdata/fcps/${D}.cls
+$ ./fcps -h
+```
+
+Examples of both `batch` and `sequential` training runs can be found below:
+
+### Batch algorithm
+
+```
+$ D=Target ./fcps -umatrix umatrix_batch.html -dims 30,30 -radius 500.0 -rdecay exp -ushape rectangle -iters 100 -training batch -input examples/fcps/testdata/fcps/${D}.lrn -cls examples/fcps/testdata/fcps/${D}.cls
 [ gosom ] Loading data set testdata/fcps/Target.lrn
 [ gosom ] Creating new SOM. Dimensions: [30 30], Grid: planar, Unit shape: rectangle
 [ gosom ] Starting SOM training. Method: batch, iterations: 100
@@ -55,10 +137,10 @@ $ D=Target; go run main.go -umatrix umatrix_batch.html -dims 30,30 -radius 500.0
 [ gosom ] Topographic Error: 0.015584
 ```
 
-## Sequential algorithm
+### Sequential algorithm
 
 ```
-$ D=Target; go run main.go -umatrix umatrix_seq.html -dims 30,30 -radius 500.0 -rdecay exp -lrate 0.5 -ldecay exp -ushape hexagon -iters 30000 -training seq -input testdata/fcps/${D}.lrn -cls testdata/fcps/${D}.cls
+$ D=Target ./fcps -umatrix umatrix_seq.html -dims 30,30 -radius 500.0 -rdecay exp -lrate 0.5 -ldecay exp -ushape hexagon -iters 30000 -training seq -input examples/fcps/testdata/fcps/${D}.lrn -cls examples/fcps/testdata/fcps/${D}.cls
 [ gosom ] Loading data set testdata/fcps/Target.lrn
 [ gosom ] Creating new SOM. Dimensions: [30 30], Grid: planar, Unit shape: hexagon
 [ gosom ] Starting SOM training. Method: seq, iterations: 30000
@@ -68,6 +150,11 @@ $ D=Target; go run main.go -umatrix umatrix_seq.html -dims 30,30 -radius 500.0 -
 [ gosom ] Topographic Product: 0.010281
 [ gosom ] Topographic Error: 0.014286
 ```
+
+### Results
+
+Both of the above mentioned runs generate a simple `umatrix` that displays the clustered data in `svg` format. You can now inspect the files to cmpare the both algorithms.
+
 # Acknowledgements
 
 Test data present in `fcps` subdirectory of `testdata` come from [Philipps University of Marburg](http://www.uni-marburg.de/fb12/arbeitsgruppen/datenbionik/data?language_sync=1):

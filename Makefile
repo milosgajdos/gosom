@@ -1,22 +1,25 @@
-BINARY=gosom
 BUILD=go build
 CLEAN=go clean
 INSTALL=go install
 BUILDPATH=./_build
-PACKAGES=$(shell go list ./... | grep -v /vendor/)
+PACKAGES=$(shell go list ./... | grep -v /vendor/ | grep -v /examples/)
+EXAMPLES=$(wildcard examples/*/*.go)
 
-build: builddir
-	$(BUILD) -v -o $(BUILDPATH)/gosom
+examples: builddir
+	for example in $(EXAMPLES); do \
+		go build $$example ; \
+	done
 
-all: builddir build
+all: examples
 
-install:
-	$(INSTALL) ./...
-clean:
-	rm -rf $(BUILDPATH)
-	rm -rf $(GOPATH)/bin/$(BINARY)
 builddir:
 	mkdir -p $(BUILDPATH)
+
+install:
+	$(INSTALL) ./$(EXDIR)/...
+
+clean:
+	rm -rf $(BUILDPATH)
 
 check:
 	for pkg in ${PACKAGES}; do \

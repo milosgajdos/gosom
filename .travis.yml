@@ -12,7 +12,7 @@ install:
 script:
   - make check
   - make test
-  - make build
+  - make all
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
