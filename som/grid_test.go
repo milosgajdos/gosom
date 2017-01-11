@@ -1,6 +1,7 @@
 package som
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/gonum/matrix/mat64"
@@ -50,17 +51,12 @@ func TestRandInit(t *testing.T) {
 	min2, max2 := 3.4, 6.7
 	data := []float64{min1, min2, max1, max2}
 	inMx := mat64.NewDense(2, 2, data)
-	assert.NotNil(inMx)
+	randMx := mat64.NewDense(2, 2, nil)
 
 	_, cols := inMx.Dims()
 	// initialize random matrix
-	xDim, yDim := 2, 2
-	randMx, err := RandInit(inMx, []int{xDim, yDim})
-	assert.NotNil(randMx)
+	err := RandInit(inMx, randMx)
 	assert.NoError(err)
-	r, c := randMx.Dims()
-	assert.Equal(xDim*yDim, r)
-	assert.Equal(cols, c)
 	for i := 0; i < cols; i++ {
 		inCol := inMx.ColView(i)
 		randCol := randMx.ColView(i)
@@ -69,22 +65,20 @@ func TestRandInit(t *testing.T) {
 	}
 
 	// nil input matrix
-	randMx, err = RandInit(nil, nil)
-	assert.Nil(randMx)
-	assert.Error(err)
-	// nil dimensions
-	randMx, err = RandInit(inMx, nil)
-	assert.Nil(randMx)
-	assert.Error(err)
+	errString := "invalid data matrix: %v"
+	err = RandInit(nil, nil)
+	assert.EqualError(err, fmt.Sprintf(errString, nil))
+	// nil codebook matrix
+	errString = "invalid codebook matrix: %v"
+	err = RandInit(inMx, nil)
+	assert.EqualError(err, fmt.Sprintf(errString, nil))
 	// negative number of rows
-	randMx, err = RandInit(inMx, []int{-4, 3})
-	assert.Nil(randMx)
-	assert.Error(err)
-	// empty matrix
-	emptyMx := mat64.NewDense(0, 0, nil)
-	randMx, err = RandInit(emptyMx, []int{2, 3})
-	assert.Nil(randMx)
-	assert.Error(err)
+	errString = "data and codebook dimension mismatched: %d != %d"
+	tmpMx := mat64.NewDense(2, 1, nil)
+	err = RandInit(tmpMx, randMx)
+	_, tCols := tmpMx.Dims()
+	_, rCols := randMx.Dims()
+	assert.EqualError(err, fmt.Sprintf(errString, tCols, rCols))
 }
 
 func TestLinInit(t *testing.T) {

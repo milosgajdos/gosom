@@ -12,6 +12,12 @@ import (
 	"github.com/milosgajdos83/gosom/pkg/utils"
 )
 
+// CodebookInitFunc defines SOM codebook initialization function
+type CodebookInitFunc func(*mat64.Dense, *mat64.Dense) error
+
+// CoordsInitFunc defines SOM grid coordinates initialization function
+type CoordsInitFunc func(string, []int) (*mat64.Dense, error)
+
 // GridDims tries to estimate the best dimensions of map from data matrix and given unit shape.
 // It determines the grid size from eigenvectors of input data: the grid dimensions are
 // calculated from the ratio of two highest input eigenvalues.
@@ -63,109 +69,112 @@ func GridDims(data *mat64.Dense, uShape string) ([]int, error) {
 	return []int{xDim, yDim}, nil
 }
 
-// RandInit returns a matrix initialized to uniformly distributed random values
-// in each column in range between [max, min] where max and min are maximum and minmum values
-// in particular matrix column. The returned matrix has product(dims) number of rows and
-// as many columns as the matrix passed in as a parameter.
+// RandInit initializes codebook to uniformly distributed random values using data matrix.
+// Each codebook column is from range between [max, min] where max and min are maximum and minmum values
+// stored in data matrix columns. RandInit modifies the codebook matrix in place.
 // It fails with error if the new matrix could not be initialized or if data is nil.
-func RandInit(data *mat64.Dense, dims []int) (*mat64.Dense, error) {
+func RandInit(data *mat64.Dense, codebook *mat64.Dense) error {
 	// if nil matrix is passed in, return error
 	if data == nil {
-		return nil, fmt.Errorf("invalid input matrix: %v", data)
+		return fmt.Errorf("invalid data matrix: %v", data)
 	}
-	// dims can't be nil
-	if dims == nil {
-		return nil, fmt.Errorf("invalid dimensions: %v", dims)
+	// if codebook is nil, we return error
+	if codebook == nil {
+		return fmt.Errorf("invalid codebook matrix: %v", codebook)
 	}
-	// dims can't be nil or negative
-	for _, dim := range dims {
-		if dim <= 0 {
-			return nil, fmt.Errorf("Non-Positive dimensions supplied: %v", dims)
-		}
-	}
-	// input matrix dimensions
+	// data matrix dimensions
 	_, cols := data.Dims()
+	cbRows, cbCols := codebook.Dims()
+	// codebook and data dimensions must match
+	if cols != cbCols {
+		return fmt.Errorf("data and codebook dimension mismatched: %d != %d", cols, cbCols)
+	}
 	// get max of each column
 	max, err := matrix.ColsMax(cols, data)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// get min of each column
 	min, err := matrix.ColsMin(cols, data)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	mUnits := utils.IntProduct(dims)
 	// initialize matrix to rand values between 0.0 and 1.0
-	codebook, err := matrix.MakeRandom(mUnits, cols, 0.0, 1.0)
+	randMx, err := matrix.MakeRandom(cbRows, cbCols, 0.0, 1.0)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	for i := 0; i < cols; i++ {
-		col := codebook.ColView(i)
-		for j := 0; j < mUnits; j++ {
+	for i := 0; i < cbCols; i++ {
+		col := randMx.ColView(i)
+		for j := 0; j < cbRows; j++ {
 			val := col.At(j, 0)
-			col.SetVec(j, val*(max[i]-min[i])+min[i])
+			codebook.Set(j, i, val*(max[i]-min[i])+min[i])
 		}
 	}
-	return codebook, nil
+	return nil
 }
 
-// LinInit returns a matrix initialized to values lying in a linear space
-// spanned by principal components of data stored in the data matrix passed in as parameter.
-// It fails with error if the new matrix could not be initialized or if data is nil.
-func LinInit(data *mat64.Dense, dims []int) (*mat64.Dense, error) {
-	if err := validateLinInit(data, dims); err != nil {
-		return nil, err
+// LinInit initialized codebook matrix to values lying in a linear space
+// spanned by top two principal components of data stored in the data matrix.
+// It fails with error if the codebook could not be initialized.
+func LinInit(data *mat64.Dense, codebook *mat64.Dense) error {
+	// if nil matrix is passed in, return error
+	if data == nil {
+		return fmt.Errorf("invalid data matrix: %v", data)
 	}
-	// Adjust map dimensions size to account for 1D cases
-	mapDim := len(dims)
-	for _, dim := range dims {
-		if dim == 1 {
-			mapDim--
-		}
+	// if codebook is nil, we return error
+	if codebook == nil {
+		return fmt.Errorf("invalid codebook matrix: %v", codebook)
 	}
-	// calculate linear space basis
-	mapVecs, err := getBaseVecs(data, mapDim)
+	// Linear initialization requires at least 2 samples
+	rows, cols := data.Dims()
+	if rows < 2 {
+		return fmt.Errorf("insufficient number of samples for linear init: %d", rows)
+	}
+	// codebook dimensions
+	cbRows, cbCols := codebook.Dims()
+	// codebook and data dimensions must match
+	if cols != cbCols {
+		return fmt.Errorf("data and codebook dimension mismatched: %d != %d", cols, cbCols)
+	}
+	// calculate linear space basis as data PCA
+	mapVecs, err := getBaseVecs(data, 2)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	_, dataDim := data.Dims()
-	mUnits := utils.IntProduct(dims)
 	// initialize codebook matrix
-	codebook := mat64.NewDense(mUnits, dataDim, nil)
+	linMx := mat64.NewDense(cbRows, cbCols, nil)
 	if dataDim > 1 {
 		// calculate mean values of all features in data matrix
 		colsMean, err := matrix.ColsMean(dataDim, data)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		// initialize codebok to feature/column means
 		for i := 0; i < mUnits; i++ {
-			codebook.SetRow(i, colsMean)
+			linMx.SetRow(i, colsMean)
 		}
 		// calculate normalized coordinates
 		coords, err := getLinMapCoords(mapDim, dims)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		// generate codebook vectors
-		cbRow := make([]float64, dataDim)
+		cbRow := make([]float64, cbRows)
 		// this can be confusing but mapVecs rows == dataDim == data cols
-		mapCol := make([]float64, dataDim)
-		for i := 0; i < mUnits; i++ {
-			for j := 0; j < mapDim; j++ {
+		mapCol := make([]float64, cbRows)
+		for i := 0; i < cbRows; i++ {
+			for j := 0; j < cbCols; j++ {
 				// grab 1st map eigenvector i.e. base vector
 				mat64.Col(mapCol, j, mapVecs)
 				floats.Scale(coords.At(i, j), mapCol)
 				// grab first codebook row
-				mat64.Row(cbRow, i, codebook)
+				mat64.Row(cbRow, i, linMx)
 				floats.Add(cbRow, mapCol)
 				codebook.SetRow(i, cbRow)
 			}
 		}
-		return codebook, nil
+		return nil
 	}
 	// calculate 1D option
 	min := mat64.Min(data)
@@ -175,31 +184,6 @@ func LinInit(data *mat64.Dense, dims []int) (*mat64.Dense, error) {
 		codebook.Set(i, 0, val)
 	}
 
-	return codebook, nil
-}
-
-// validateLinInit checks whether you can initialize SOM given the provided parameters
-// It returns error if at least one of the mandatory conditions fails to be satisfied
-func validateLinInit(data *mat64.Dense, dims []int) error {
-	// if nil matrix is passed in, return error
-	if data == nil {
-		return fmt.Errorf("invalid data matrix: %v", data)
-	}
-	// can't pass in nil dimensions
-	if dims == nil {
-		return fmt.Errorf("Incorrect dimensions: %v", dims)
-	}
-	// Check if any of the supplied dimensions are non-negative
-	for _, dim := range dims {
-		if dim <= 0 {
-			return fmt.Errorf("Non-Positive dimensions supplied: %v", dims)
-		}
-	}
-	// Linear initialization requires at least 2 samples
-	samples, _ := data.Dims()
-	if samples < 2 {
-		return fmt.Errorf("Insufficient number of samples: %d", samples)
-	}
 	return nil
 }
 

@@ -11,6 +11,7 @@ import (
 
 	"github.com/gonum/matrix/mat64"
 	"github.com/milosgajdos83/gosom/pkg/dataset"
+	"github.com/milosgajdos83/gosom/pkg/utils"
 )
 
 // Map is a Self Organizing Map (SOM)
@@ -21,27 +22,19 @@ type Map struct {
 	// grid is a matrix which contains SOM unit coordinages
 	// grid dimensions depend on chosen configuration
 	grid *mat64.Dense
+	// cbInitFunc is a codebook initialization function
+	cbInitFunc CodebookInitFunc
 }
 
-// NewMap creates new SOM based on the provided configuration.
-// It creates a map grid and initializes codebook vectors using the provided configuration parameter.
-// NewMap returns error if the provided configuration is not valid or if the data matrix is nil or
-// if the codebook matrix could not be initialized.
-// TODO: Avoid passing in data matrix when creating new map
-func NewMap(c *MapConfig, data *mat64.Dense) (*Map, error) {
-	// if input data is empty throw error
-	if data == nil {
-		return nil, fmt.Errorf("invalid input data: %v", data)
-	}
+// NewMap creates new Self Organizing Map (SOM) based on the provided configuration parameters.
+// NewMap returns error if the provided configuration is invalid or if the could noet be initialized
+func NewMap(c *MapConfig) (*Map, error) {
 	// validate the map configuration
 	if err := validateMapConfig(c); err != nil {
 		return nil, err
 	}
-	// initialize codebook
-	codebook, err := c.Cb.InitFunc(data, c.Grid.Dims)
-	if err != nil {
-		return nil, err
-	}
+	// codebook is initialized to zero values
+	codebook := mat64.NewDense(utils.IntProduct(c.Grid.Dims), c.Cb.Dim, nil)
 	// grid coordinates matrix
 	grid, err := GridCoords(c.Grid.UShape, c.Grid.Dims)
 	if err != nil {
@@ -49,8 +42,9 @@ func NewMap(c *MapConfig, data *mat64.Dense) (*Map, error) {
 	}
 	// return pointer to new map
 	return &Map{
-		codebook: codebook,
-		grid:     grid,
+		codebook:   codebook,
+		grid:       grid,
+		cbInitFunc: c.Cb.InitFunc,
 	}, nil
 }
 
@@ -149,18 +143,22 @@ func (m Map) UMatrix(format, title string, c *MapConfig, ds *dataset.DataSet, w 
 
 // Train runs a SOM training for a given data set and training configuration parameters.
 // It modifies the map codebook vectors based on the chosen training algorithm.
-// It returns error if the supplied training configuration is invalid or training fails
+// It returns error if the supplied training configuration is invalid or training fails.
 func (m *Map) Train(c *TrainConfig, data *mat64.Dense, iters int) error {
-	// number of iterations must be a positive integer
-	if iters <= 0 {
-		return fmt.Errorf("invalid number of iterations: %d", iters)
-	}
 	// nil data passed in
 	if data == nil {
 		return fmt.Errorf("invalid data supplied: %v", data)
 	}
+	// number of iterations must be a positive integer
+	if iters <= 0 {
+		return fmt.Errorf("invalid number of iterations: %d", iters)
+	}
 	// validate the training configuration
 	if err := validateTrainConfig(c); err != nil {
+		return err
+	}
+	// initialize codebook matrix
+	if err := m.cbInitFunc(data, m.codebook); err != nil {
 		return err
 	}
 	// run the training

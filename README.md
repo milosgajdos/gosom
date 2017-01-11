@@ -6,11 +6,9 @@
 [![Go Report Card](https://goreportcard.com/badge/milosgajdos83/gosom)](https://goreportcard.com/report/github.com/milosgajdos83/gosom)
 [![codecov](https://codecov.io/gh/milosgajdos83/gosom/branch/master/graph/badge.svg)](https://codecov.io/gh/milosgajdos83/gosom)
 
-`gosom` is an implementation of [Self-Organizing Map](https://en.wikipedia.org/wiki/Self-organizing_map) (SOM) in Go. In addition to the main program, the project provides some useful `Go` packages which can be used independently of the main program.
+This project provides an implementation of [Self-Organizing Map](https://en.wikipedia.org/wiki/Self-organizing_map) (SOM) in Go. It implements the two most well known SOM training algorithms: `sequential` and `batch`. The `batch` training algorithm is faster than the `sequential` as it can be parallelized, taking advantage of as many cores as your machine provides, however it can be less accurate. `Batch` training provides a resonable approximation of SOM and thus its results can be less accurate than the ones produced by `sequential` algorithm, but still acceptable. The `sequential` algorithm is performed as its name implies, sequentially and therefore it's slower, but more accurate. You can find more information about SOM training algorithms [here](http://www.scholarpedia.org/article/Kohonen_network).
 
-The project provides an implementation of the two most well known training algorithms: `sequential` and `batch`. The `batch` training algorithm is faster than the `sequential` as it can be parallelized taking advantage of as many cores as your machine provides. The `sequential` algorithm is performed as its name implies, sequentially. `Batch` training provides a resonable approximation of SOM and thus its results can be less accurate than the ones produced by `sequential` algorithm, but still acceptable. You can find more information about SOM training algorithms [here](http://www.scholarpedia.org/article/Kohonen_network).
-
-`gosom` also implements various SOM quality measures that can help you validate the results of the algorithm. In particular the project implements `quantization` and `topographic` error to measure both the projection and topography as well as `topographic product` which allows to help to make a decision about the size of the SOM grid.
+The goal of the project is to provide a simple API to build SOM in `Go`. Apart from the SOM API build packages, the project` also implements various SOM quality measures which can help you validate the results of the training algorithm. In particular the project implements `quantization` and `topographic` error to measure both the projection and topography as well as `topographic product` which can help you make a decision about the size of the SOM grid.
 
 # Get started
 
@@ -26,18 +24,13 @@ Run the tests:
 $ make test
 ```
 
-Build and install in `$GOPATH/bin`:
+# Example
+
+You can see the simplest example of `SOM` below:
+
+```go
 
 ```
-make install
-```
-
-Once the program has been successfully built you can inspect available command line options it provides:
-
-```
-$ gosom -h
-```
-# Examples
 
 To get you started quickly you can run the examples below. We will use [FCPS dataset]((http://www.uni-marburg.de/fb12/arbeitsgruppen/datenbionik/data?language_sync=1)). Change the `$D` environment variable to play with different example datasets. Both examples below output an `HTML` file with [U-matrix](https://en.wikipedia.org/wiki/U-matrix) rendered as `SVG` image.
 

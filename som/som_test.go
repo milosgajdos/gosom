@@ -61,38 +61,34 @@ func TestMain(m *testing.M) {
 	os.Exit(retCode)
 }
 
-func mockInit(d *mat64.Dense, dims []int) (*mat64.Dense, error) {
-	return nil, errors.New("Test error")
+func mockInit(d *mat64.Dense, cb *mat64.Dense) error {
+	return errors.New("Test error")
 }
 
 func TestNewMap(t *testing.T) {
 	assert := assert.New(t)
 
 	// default config should not throw any errors
-	m, err := NewMap(mSom, dataMx)
+	m, err := NewMap(mSom)
 	assert.NotNil(m)
 	assert.NoError(err)
 	// when nil init function, use RandInit
 	origInitFunc := mSom.Cb.InitFunc
 	mSom.Cb.InitFunc = nil
-	m, err = NewMap(mSom, dataMx)
+	m, err = NewMap(mSom)
 	assert.Nil(m)
 	assert.Error(err)
 	mSom.Cb.InitFunc = origInitFunc
-	// incorrect init matrix
-	m, err = NewMap(mSom, nil)
-	assert.Nil(m)
-	assert.Error(err)
 	// incorrect number of map units
 	origDims := mSom.Grid.Dims
 	mSom.Grid.Dims = []int{0, 0}
-	m, err = NewMap(mSom, dataMx)
+	m, err = NewMap(mSom)
 	assert.Nil(m)
 	assert.Error(err)
 	mSom.Grid.Dims = origDims
 	// init func that always returns error
 	mSom.Cb.InitFunc = mockInit
-	m, err = NewMap(mSom, dataMx)
+	m, err = NewMap(mSom)
 	assert.Nil(m)
 	assert.Error(err)
 	mSom.Cb.InitFunc = RandInit
@@ -102,27 +98,30 @@ func TestCodebook(t *testing.T) {
 	assert := assert.New(t)
 
 	mapUnits := utils.IntProduct(mSom.Grid.Dims)
-	_, cols := dataMx.Dims()
 	// default config should not throw any errors
-	m, err := NewMap(mSom, dataMx)
+	m, err := NewMap(mSom)
 	assert.NotNil(m)
 	assert.NoError(err)
+	// retrieve codebook
 	codebook := m.Codebook()
 	assert.NotNil(codebook)
+	// check the expected dimensions
 	cbRows, cbCols := codebook.Dims()
 	assert.Equal(mapUnits, cbRows)
-	assert.Equal(cols, cbCols)
+	assert.Equal(mSom.Cb.Dim, cbCols)
 }
 
 func TestGrid(t *testing.T) {
 	assert := assert.New(t)
 
 	// default config should not throw any errors
-	m, err := NewMap(mSom, dataMx)
+	m, err := NewMap(mSom)
 	assert.NotNil(m)
 	assert.NoError(err)
+	// retrieve grid
 	grid := m.Grid()
 	assert.NotNil(grid)
+	// check expected dimensions: we are testing 2D map
 	rows, cols := grid.Dims()
 	assert.Equal(cols, len(mSom.Grid.Dims))
 	assert.Equal(rows, mSom.Grid.Dims[0]*mSom.Grid.Dims[1])
@@ -133,12 +132,14 @@ func TestUnitDist(t *testing.T) {
 
 	mapUnits := utils.IntProduct(mSom.Grid.Dims)
 	// default config should not throw any errors
-	m, err := NewMap(mSom, dataMx)
+	m, err := NewMap(mSom)
 	assert.NotNil(m)
 	assert.NoError(err)
+	// retrieve Unit distances
 	unitDist, err := m.UnitDist()
 	assert.NotNil(unitDist)
 	assert.NoError(err)
+	// check expected dimensions
 	cbRows, cbCols := unitDist.Dims()
 	assert.Equal(mapUnits, cbRows)
 	assert.Equal(mapUnits, cbCols)
@@ -148,13 +149,15 @@ func TestMapBmus(t *testing.T) {
 	assert := assert.New(t)
 
 	// default config should not throw any errors
-	m, err := NewMap(mSom, dataMx)
+	m, err := NewMap(mSom)
 	assert.NotNil(m)
 	assert.NoError(err)
+	// retrieve BMUs
 	bmus, err := m.BMUs(dataMx)
 	assert.NoError(err)
 	assert.NotNil(bmus)
 	rows, _ := dataMx.Dims()
+	// each data sample has a BMU
 	assert.Equal(rows, len(bmus))
 }
 
@@ -163,7 +166,7 @@ func TestTrain(t *testing.T) {
 
 	iters := 100
 	// default config should not throw any errors
-	m, err := NewMap(mSom, dataMx)
+	m, err := NewMap(mSom)
 	assert.NotNil(m)
 	assert.NoError(err)
 	// incorrect number of iterations
@@ -197,7 +200,7 @@ func TestMapQuantError(t *testing.T) {
 	assert := assert.New(t)
 
 	// default config should not throw any errors
-	m, err := NewMap(mSom, dataMx)
+	m, err := NewMap(mSom)
 	assert.NotNil(m)
 	assert.NoError(err)
 	// get quant error

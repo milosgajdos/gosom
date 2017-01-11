@@ -1,10 +1,6 @@
 package som
 
-import (
-	"fmt"
-
-	"github.com/gonum/matrix/mat64"
-)
+import "fmt"
 
 // UShape contains supported SOM unit shapes
 var UShape = map[string]bool{
@@ -36,12 +32,6 @@ var Training = map[string]bool{
 	"seq":   true,
 	"batch": true,
 }
-
-// CodebookInitFunc defines SOM codebook initialization function
-type CodebookInitFunc func(*mat64.Dense, []int) (*mat64.Dense, error)
-
-// CoordsInitFunc defines SOM grid coordinates initialization function
-type CoordsInitFunc func(string, []int) (*mat64.Dense, error)
 
 // NeighbFunc defines SOM neighbourhood function
 type NeighbFunc func(float64, float64) float64
