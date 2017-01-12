@@ -52,8 +52,7 @@ func TestDataSet(t *testing.T) {
 	assert.NotNil(ds)
 
 	// retrieve data and check dimensions
-	mx := ds.Data()
-	rows, cols := mx.Dims()
+	rows, cols := ds.Data.Dims()
 	assert.Equal(3, rows)
 	assert.Equal(2, cols)
 
@@ -67,7 +66,7 @@ func TestDataSet(t *testing.T) {
 	// scale data set in place
 	scaledDs := ds.Scale()
 	assert.True(mat64.Equal(scaledMx, scaledDs))
-	assert.True(mat64.Equal(scaledMx, ds.Data()))
+	assert.True(mat64.Equal(scaledMx, ds.Data))
 
 	// unsupported file format
 	ds, err = New("example", "")
@@ -111,12 +110,12 @@ func TestDataWithClasses(t *testing.T) {
 	ds, err := New(lrnPath, clsPath)
 	assert.NoError(err)
 	assert.NotNil(ds)
-	rows, cols := ds.Data().Dims()
+	rows, cols := ds.Data.Dims()
 	assert.Equal(4, rows)
 	assert.Equal(3, cols)
-	assert.Equal(2, len(ds.Classes()))
+	assert.Equal(2, len(ds.Classes))
 	// index is 0-based so '4' becomes '3' here
-	assert.Equal(2, ds.Classes()[3])
+	assert.Equal(2, ds.Classes[3])
 
 	// invalid classification file extension
 	ds, err = New(lrnPath, "somefile.class")
@@ -259,6 +258,6 @@ func TestScale(t *testing.T) {
 		1, 1.0776318121606494,
 	}
 	scaledMx := mat64.NewDense(3, 2, scaled)
-	scaledDs := Scale(ds.Data())
+	scaledDs := Scale(ds.Data)
 	assert.True(mat64.Equal(scaledDs, scaledMx))
 }

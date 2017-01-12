@@ -129,8 +129,8 @@ func ClosestNVec(metric string, n int, v []float64, m *mat64.Dense) ([]int, erro
 }
 
 // BMUs returns a slice which contains indices of Best Match Unit (BMU) codebook vectors for each
-// vector stored in data rows. The slice has as many items as there are rows in data matrix.
-// If some data row has more than one BMU the index of the first one found is used.
+// vector stored in data rows. Each item in the returned slice correspnds to index of BMU for
+// a particular data sample. If some data row has more than one BMU the index of the first one found is used.
 // It returns error if either the data or codebook are nil or if their dimensions are mismatched.
 func BMUs(data, codebook *mat64.Dense) ([]int, error) {
 	// data can't be nil

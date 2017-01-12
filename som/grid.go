@@ -12,6 +12,52 @@ import (
 	"github.com/milosgajdos83/gosom/pkg/utils"
 )
 
+// Grid is a SOM grid
+type Grid struct {
+	// dims holds grid dimensions
+	dims []int
+	// ushape holds grid unit shape
+	ushape string
+	// coords holds grid point coordinates
+	coords *mat64.Dense
+}
+
+// NewGrid creates new grid and returns it
+// It fails with error if the supplied configuration is incorrect
+func NewGrid(c *GridConfig) (*Grid, error) {
+	// validate the map configuration
+	if err := validateGridConfig(c); err != nil {
+		return nil, err
+	}
+
+	// grid coordinates matrix
+	coords, err := GridCoords(c.UShape, c.Dims)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Grid{
+		dims:   c.Dims,
+		ushape: c.UShape,
+		coords: coords,
+	}, nil
+}
+
+// Dims returns a slice that contains Grid dimensions
+func (g *Grid) Dims() []int {
+	return g.dims
+}
+
+// UShape returns grid unit shape
+func (g *Grid) UShape() string {
+	return g.ushape
+}
+
+// Coords returns a matrix that contains grid coordinates
+func (g *Grid) Coords() mat64.Matrix {
+	return g.coords
+}
+
 // GridDims tries to estimate the best dimensions of map from data matrix and given unit shape.
 // It determines the grid size from eigenvectors of input data: the grid dimensions are
 // calculated from the ratio of two highest input eigenvalues.

@@ -83,19 +83,19 @@ func TestNewMap(t *testing.T) {
 	m, err = NewMap(mSom, nil)
 	assert.Nil(m)
 	assert.Error(err)
-	// incorrect number of map units
-	origDims := mSom.Grid.Dims
-	mSom.Grid.Dims = []int{0, 0}
-	m, err = NewMap(mSom, dataMx)
-	assert.Nil(m)
-	assert.Error(err)
-	mSom.Grid.Dims = origDims
 	// init func that always returns error
 	mSom.Cb.InitFunc = mockInit
 	m, err = NewMap(mSom, dataMx)
 	assert.Nil(m)
 	assert.Error(err)
 	mSom.Cb.InitFunc = RandInit
+	// map dim must be positive number
+	origDim := mSom.Cb.Dim
+	mSom.Cb.Dim = -10
+	m, err = NewMap(mSom, dataMx)
+	assert.Nil(m)
+	assert.Error(err)
+	mSom.Cb.Dim = origDim
 }
 
 func TestCodebook(t *testing.T) {
@@ -123,7 +123,7 @@ func TestGrid(t *testing.T) {
 	assert.NoError(err)
 	grid := m.Grid()
 	assert.NotNil(grid)
-	rows, cols := grid.Dims()
+	rows, cols := grid.Coords().Dims()
 	assert.Equal(cols, len(mSom.Grid.Dims))
 	assert.Equal(rows, mSom.Grid.Dims[0]*mSom.Grid.Dims[1])
 }

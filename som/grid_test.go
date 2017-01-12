@@ -7,6 +7,48 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNewGrid(t *testing.T) {
+	assert := assert.New(t)
+
+	gCfg := &GridConfig{
+		Dims:   []int{2, 3},
+		Type:   "planar",
+		UShape: "hexagon",
+	}
+	// returns grid
+	g, err := NewGrid(gCfg)
+	assert.NotNil(g)
+	assert.NoError(err)
+	// test dims
+	gDims := g.Dims()
+	assert.EqualValues(gCfg.Dims, gDims)
+	// test UShape
+	uShape := g.UShape()
+	assert.Equal(gCfg.UShape, uShape)
+	// test coords
+	coords := g.Coords()
+	rows, cols := coords.Dims()
+	assert.Equal(cols, len(gCfg.Dims))
+	assert.Equal(rows, gCfg.Dims[0]*gCfg.Dims[1])
+	// test error cases
+	origDims := gCfg.Dims
+	gCfg.Dims = []int{1}
+	g, err = NewGrid(gCfg)
+	assert.Nil(g)
+	assert.Error(err)
+	// negative dimensions
+	gCfg.Dims = []int{-2, 2}
+	g, err = NewGrid(gCfg)
+	assert.Nil(g)
+	assert.Error(err)
+	// unit dimension given
+	gCfg.Dims = []int{-2, 2}
+	g, err = NewGrid(gCfg)
+	assert.Nil(g)
+	assert.Error(err)
+	gCfg.Dims = origDims
+}
+
 func TestGridDims(t *testing.T) {
 	assert := assert.New(t)
 

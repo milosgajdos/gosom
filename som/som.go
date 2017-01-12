@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gonum/matrix/mat64"
-	"github.com/milosgajdos83/gosom/pkg/dataset"
 )
 
 // Map is a Self Organizing Map (SOM)
@@ -20,7 +19,7 @@ type Map struct {
 	codebook *mat64.Dense
 	// grid is a matrix which contains SOM unit coordinages
 	// grid dimensions depend on chosen configuration
-	grid *mat64.Dense
+	grid *Grid
 }
 
 // NewMap creates new SOM based on the provided configuration.
@@ -33,8 +32,8 @@ func NewMap(c *MapConfig, data *mat64.Dense) (*Map, error) {
 	if data == nil {
 		return nil, fmt.Errorf("invalid input data: %v", data)
 	}
-	// validate the map configuration
-	if err := validateMapConfig(c); err != nil {
+	// validate codebook config
+	if err := validateCbConfig(c.Cb); err != nil {
 		return nil, err
 	}
 	// initialize codebook
@@ -42,8 +41,8 @@ func NewMap(c *MapConfig, data *mat64.Dense) (*Map, error) {
 	if err != nil {
 		return nil, err
 	}
-	// grid coordinates matrix
-	grid, err := GridCoords(c.Grid.UShape, c.Grid.Dims)
+	// make new grid
+	grid, err := NewGrid(c.Grid)
 	if err != nil {
 		return nil, err
 	}
@@ -59,14 +58,14 @@ func (m Map) Codebook() mat64.Matrix {
 	return m.codebook
 }
 
-// Grid returns a matrix with SOM map unit coordinages
-func (m Map) Grid() mat64.Matrix {
+// Grid returns SOM grid
+func (m Map) Grid() *Grid {
 	return m.grid
 }
 
 // UnitDist returns a matrix which contains Euclidean distances between SOM units
 func (m Map) UnitDist() (*mat64.Dense, error) {
-	return DistanceMx("euclidean", m.grid)
+	return DistanceMx("euclidean", m.grid.coords)
 }
 
 // BMUs returns a slice which contains indices of Best Match Unit vectors to the map
@@ -90,44 +89,26 @@ func (m *Map) MarshalTo(format string, w io.Writer) (int, error) {
 
 // UMatrix generates SOM u-matrix in a given format and writes the output to w.
 // At the moment only SVG format is supported. It fails with error if the write to w fails.
-func (m Map) UMatrix(format, title string, c *MapConfig, ds *dataset.DataSet, w io.Writer) error {
+func (m Map) UMatrix(w io.Writer, data *mat64.Dense, classMap map[int]int, format, title string) error {
 	switch format {
 	case "svg":
 		{
-			classes := make(map[int]int)
-			// This is a rough method to assign a class to each codebook vector based
-			// on the classes of the data samples.
-			// First we go through all data samples and add their classes
-			// to the list of classes of their respective BMUs.
-			// Then we go through each BMU and assign it the most frequent class.
-			if len(ds.Classes()) > 0 {
-				data := ds.Data()
-				rows, _ := data.Dims()
-
-				bmuClasses := make(map[int][]int)
-				for row := 0; row < rows; row++ {
-					cbi, err := ClosestVec("euclidean", data.RawRowView(row), m.codebook)
-					if err != nil {
-						return err
-					}
-					class, ok := ds.Classes()[row]
-					if ok {
-						clsList, ok := bmuClasses[cbi]
-						if !ok {
-							clsList = []int{}
-						}
-						clsList = append(clsList, class)
-						bmuClasses[cbi] = clsList
-					}
+			// map that contains most frequent BMU class of all of its classes
+			bmuClassMap := make(map[int]int)
+			// only do this if we supply data class map
+			if len(classMap) > 0 {
+				bmuClasses, err := m.mapBMUclasses(data, classMap)
+				if err != nil {
+					return err
 				}
 
 				// find the most frequent class for each codebook vector
-				for cbi, clss := range bmuClasses {
-					sort.Ints(clss)
+				for cbi, class := range bmuClasses {
+					sort.Ints(class)
 					count := 1
 					currentIndex := 0
-					for i := 1; i < len(clss); i++ {
-						if clss[i] == clss[currentIndex] {
+					for i := 1; i < len(class); i++ {
+						if class[i] == class[currentIndex] {
 							count++
 						} else {
 							count--
@@ -137,14 +118,43 @@ func (m Map) UMatrix(format, title string, c *MapConfig, ds *dataset.DataSet, w 
 							count = 1
 						}
 					}
-					classes[cbi] = clss[currentIndex]
+					bmuClassMap[cbi] = class[currentIndex]
 				}
 			}
 
-			return UMatrixSVG(m.codebook, c.Grid.Dims, c.Grid.UShape, title, w, classes)
+			return UMatrixSVG(m.codebook, m.grid.dims, m.grid.ushape, title, w, bmuClassMap)
 		}
 	}
+
 	return fmt.Errorf("invalid format %s", format)
+}
+
+// mapBMUclasses returns a map which contains a list of classes to which this BMUs input samples are members of
+// We go through all data samples and add their classes to the list of classes of their respective BMUs.
+func (m Map) mapBMUclasses(data *mat64.Dense, classes map[int]int) (map[int][]int, error) {
+	rows, _ := data.Dims()
+	// map of all classes for each BMU
+	bmuClasses := make(map[int][]int)
+	for row := 0; row < rows; row++ {
+		// find BMU
+		cbi, err := ClosestVec("euclidean", data.RawRowView(row), m.codebook)
+		if err != nil {
+			return nil, err
+		}
+		// lookup input sample class
+		class, ok := classes[row]
+		if ok {
+			classList, ok := bmuClasses[cbi]
+			if !ok {
+				classList = []int{}
+			}
+			// append class to BMU list of classes
+			classList = append(classList, class)
+			bmuClasses[cbi] = classList
+		}
+	}
+
+	return bmuClasses, nil
 }
 
 // Train runs a SOM training for a given data set and training configuration parameters.
@@ -185,13 +195,13 @@ func (m Map) QuantError(data *mat64.Dense) (float64, error) {
 // TopoProduct computes SOM topographic product
 // It returns a single number or fails with error if the product could not be computed
 func (m Map) TopoProduct() (float64, error) {
-	return TopoProduct(m.codebook, m.grid)
+	return TopoProduct(m.codebook, m.grid.coords)
 }
 
 // TopoError computes SOM topographic error for a given data set.
 // It returns a single number or fails with error if the error could not be computed
 func (m Map) TopoError(data *mat64.Dense) (float64, error) {
-	return TopoError(data, m.codebook, m.grid)
+	return TopoError(data, m.codebook, m.grid.coords)
 }
 
 // seqTrain runs sequential SOM training algorithm on a given data set

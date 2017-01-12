@@ -49,7 +49,7 @@ var colors = [][]int{{255, 0, 0}, {0, 255, 0}, {0, 0, 255}, {255, 255, 0}, {255,
 // title    - the title of the output SVG
 // writer   - the io.Writter to write the output SVG to.
 // classes  - if the classes are known (i.e. these are test data) they can be displayed providing the information in this map.
-// The map is: codebook vector row -> class number. When classes are not known (i.e. running with real data), just provide an empty map.
+// The map is: codebook vector row -> class number. When classes are not known (i.e. running with real data), just provide an empty map
 func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape, title string, writer io.Writer, classes map[int]int) error {
 	xmlEncoder := xml.NewEncoder(writer)
 	// array to hold the xml elements

@@ -105,7 +105,7 @@ func saveUMatrix(m *som.Map, format, title, path string, c *som.MapConfig, d *da
 	}
 	defer file.Close()
 
-	return m.UMatrix(format, title, c, d, file)
+	return m.UMatrix(file, d.Data, d.Classes, format, title)
 }
 
 func main() {
@@ -130,7 +130,7 @@ func main() {
 	}
 
 	// scale features in input data if requested
-	data := ds.Data()
+	data := ds.Data
 	if scale {
 		log.Printf("Attempting feature scaling")
 		data = ds.Scale()

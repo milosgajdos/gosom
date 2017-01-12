@@ -41,8 +41,8 @@ var loadClsFuncs = map[string]func(io.Reader) (map[int]int, error){
 
 // DataSet represents training data set
 type DataSet struct {
-	data    *mat64.Dense
-	classes map[int]int
+	Data    *mat64.Dense
+	Classes map[int]int
 }
 
 // New returns pointer to dataset or fails with error if either the file
@@ -99,25 +99,15 @@ func New(dataPath string, clsPath string) (*DataSet, error) {
 	}
 	// Return Data
 	return &DataSet{
-		data:    data,
-		classes: classes,
+		Data:    data,
+		Classes: classes,
 	}, nil
-}
-
-// Data returns the data stored in a matrix
-func (ds DataSet) Data() *mat64.Dense {
-	return ds.data
-}
-
-// Classes returns classification information stored in a map
-func (ds DataSet) Classes() map[int]int {
-	return ds.classes
 }
 
 // Scale normalizes data in each column based on its mean and standard deviation and returns it.
 // It modifies the underlying daata. If this is not desirable use the standalone Scale function.
 func (ds *DataSet) Scale() *mat64.Dense {
-	return scale(ds.data, true)
+	return scale(ds.Data, true)
 }
 
 // LoadCSV loads data set from the path supplied as a parameter.

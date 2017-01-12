@@ -80,7 +80,7 @@ func main() {
 }
 ```
 
-If you build and run this program it will spit out `quantization` error. It's not that particularly exciting. You can find more interesting examples in `examples` directory.
+If you build and run this program it will spit out `quantization` error. It's not that particularly exciting. You could generate a `u-matrix`, but since the data set is very simple, it would not be particularly interesting either. If you want to see more elaboarate and moreinteresting stuff you can do, check out the samples programs in `examples` directory.
 
 # Clustering
 
@@ -92,20 +92,25 @@ A classic schoolbook example of this is clustering of colors in arbitrary nosiy 
 
 ```
 $ make examples
-$ $ ./colors -dims 40,40 -radius 500.0 -rdecay exp -lrate 0.5 -ldecay exp -ushape hexagon -iters 30000 -training seq -input ./examples/colors/testdata/colors.png -output som.png
+$ ./colors -umatrix umatrix.html -dims 40,40 -radius 500.0 -rdecay exp -lrate 0.5 -ldecay exp -ushape hexagon -iters 30000 -training seq -input ./examples/colors/testdata/colors.png -output som.png
 [ gosom ] Loading data set ./examples/colors/testdata/colors.png
 [ gosom ] Creating new SOM. Dimensions: [40 40], Grid Type: planar, Unit shape: hexagon
 [ gosom ] Starting SOM training. Method: seq, iterations: 30000
-[ gosom ] Training successfully completed. Duration: 3.849534927s
+[ gosom ] Training successfully completed. Duration: 3.843383347s
+[ gosom ] Saving U-Matrix to umatrix.html
 ```
 
-This will read in a sample nosiy image from the test data directory which looks like this:
+This program reads in a sample "noisy" image from the test data directory which looks like this:
 
 <img src="./examples/colors/testdata/colors.png" alt="Noisy image" width="200">
 
-The program will spit out a new image `som.png` which looks like this
+It will spit out a new image `som.png` which looks like this:
 
 <img src="./examples/colors/som.png" alt="Sorted color image" width="200">
+
+Lastly, it will generate a `u-matrix` which looks like this:
+
+<img src="./examples/colors/umatrix.png" alt="u-matriz" width="200">
 
 ## Arbitrary labeled data
 

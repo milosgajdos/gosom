@@ -14,6 +14,7 @@ import (
 	"image/png"
 
 	"github.com/gonum/matrix/mat64"
+	"github.com/milosgajdos83/gosom/pkg/dataset"
 	"github.com/milosgajdos83/gosom/pkg/utils"
 	"github.com/milosgajdos83/gosom/som"
 )
@@ -43,6 +44,8 @@ var (
 	ldecay string
 	// path to saved model
 	output string
+	// path to umatrix visualization
+	umatrix string
 	// training method: seq, batch
 	training string
 	// number of training iterations
@@ -59,6 +62,7 @@ func init() {
 	flag.StringVar(&rdecay, "rdecay", "lin", "Radius decay strategy")
 	flag.Float64Var(&lrate, "lrate", 0.0, "SOM initial learning rate")
 	flag.StringVar(&ldecay, "ldecay", "lin", "Learning rate decay strategy")
+	flag.StringVar(&umatrix, "umatrix", "", "Path to u-matrix output visualization")
 	flag.StringVar(&output, "output", "", "Path to store trained SOM model")
 	flag.StringVar(&training, "training", "seq", "SOM training method")
 	flag.IntVar(&iters, "iters", 1000, "Number of training iterations")
@@ -160,6 +164,16 @@ func Data2Image(data *mat64.Dense, w, h int) image.Image {
 	return img
 }
 
+func saveUMatrix(m *som.Map, format, title, path string, c *som.MapConfig, d *dataset.DataSet) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return m.UMatrix(file, d.Data, d.Classes, format, title)
+}
+
 func main() {
 	// parse cli flags
 	if err := parseCliFlags(); err != nil {
@@ -223,6 +237,17 @@ func main() {
 	}
 	d := time.Since(t0)
 	log.Printf("Training successfully completed. Duration: %v", d)
+	// if umatrix provided create U-matrix
+	ds := &dataset.DataSet{
+		Data: data,
+	}
+	if umatrix != "" {
+		log.Printf("Saving U-Matrix to %s", umatrix)
+		if err := saveUMatrix(m, "svg", "U-Matrix", umatrix, mapCfg, ds); err != nil {
+			fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
+			os.Exit(1)
+		}
+	}
 	// codebook vectors contains sorted colors
 	imgData := m.Codebook().(*mat64.Dense)
 	somImg := Data2Image(imgData, mdims[0], mdims[1])

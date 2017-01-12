@@ -88,21 +88,6 @@ type TrainConfig struct {
 	LDecay string
 }
 
-// validateMapConfig validates SOm configuration
-// It returns error or if any of the configuration parameters are invalid
-func validateMapConfig(c *MapConfig) error {
-	// validate grid configuration
-	if err := validateGridConfig(c.Grid); err != nil {
-		return err
-	}
-	// validate codebook configuration
-	if err := validateCbConfig(c.Cb); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // validateGridConfig validates SOM grid configuration
 // It returns error if any of the config parameters are invalid
 func validateGridConfig(c *GridConfig) error {
