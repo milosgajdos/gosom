@@ -3,14 +3,20 @@ CLEAN=go clean
 INSTALL=go install
 BUILDPATH=./_build
 PACKAGES=$(shell go list ./... | grep -v /vendor/ | grep -v /examples/)
-EXAMPLES=$(wildcard examples/*/*.go)
+EXAMPLES=$(shell find examples/* -maxdepth 0 -type d -exec basename {} \;)
 
 examples: builddir
 	for example in $(EXAMPLES); do \
-		go build $$example ; \
+		go build -o "$(BUILDPATH)/$$example" "examples/$$example/$$example.go"; \
 	done
 
 all: examples
+
+colors: builddir
+	go build -o "$(BUILDPATH)/colors" "examples/colors/colors.go"
+
+fcps: builddir
+	go build -o "$(BUILDPATH)/fcps" "examples/fcps/fcps.go"
 
 builddir:
 	mkdir -p $(BUILDPATH)

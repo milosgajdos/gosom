@@ -91,8 +91,8 @@ SOMs are a very good tool to perform data clustering. Examples directory contain
 A classic schoolbook example of this is clustering of colors in arbitrary nosiy images. You can find a simple example program which does just this in the `colors` subdirectory of examples. When you build the program you can run it as follows:
 
 ```
-$ make examples
-$ ./colors -umatrix umatrix.html -dims 40,40 -radius 500.0 -rdecay exp -lrate 0.5 -ldecay exp -ushape hexagon -iters 30000 -training seq -input ./examples/colors/testdata/colors.png -output som.png
+$ make colors
+$ ./_build/colors -umatrix umatrix.html -dims 40,40 -radius 500.0 -rdecay exp -lrate 0.5 -ldecay exp -ushape hexagon -iters 30000 -training seq -input ./examples/colors/testdata/colors.png -output som.png
 [ gosom ] Loading data set ./examples/colors/testdata/colors.png
 [ gosom ] Creating new SOM. Dimensions: [40 40], Grid Type: planar, Unit shape: hexagon
 [ gosom ] Starting SOM training. Method: seq, iterations: 30000
@@ -117,13 +117,13 @@ Lastly, it will generate a `u-matrix` which looks like this:
 Even more elaborate example can be found in `fpcs` directory. It is used to demostrate that both implemented algorithm behave as expected according to the following [research](http://www.uni-marburg.de/fb12/arbeitsgruppen/datenbionik/data?language_sync=1). You can verify this yourself. First you have to build the `fcps` example program:
 
 ```
-$ make examples
+$ make fcps
 ```
 
 The program provides various cli options:
 
 ```
-$ ./fcps -h
+$ ./_build/fcps -h
 ```
 
 Examples of both `batch` and `sequential` training runs can be found below:
@@ -131,7 +131,7 @@ Examples of both `batch` and `sequential` training runs can be found below:
 ### Batch algorithm
 
 ```
-$ D=Target ./fcps -umatrix umatrix_batch.html -dims 30,30 -radius 500.0 -rdecay exp -ushape rectangle -iters 100 -training batch -input examples/fcps/testdata/fcps/${D}.lrn -cls examples/fcps/testdata/fcps/${D}.cls
+$ D=Target ./_build/fcps -umatrix umatrix_batch.html -dims 30,30 -radius 500.0 -rdecay exp -ushape rectangle -iters 100 -training batch -input examples/fcps/testdata/fcps/${D}.lrn -cls examples/fcps/testdata/fcps/${D}.cls
 [ gosom ] Loading data set testdata/fcps/Target.lrn
 [ gosom ] Creating new SOM. Dimensions: [30 30], Grid: planar, Unit shape: rectangle
 [ gosom ] Starting SOM training. Method: batch, iterations: 100
@@ -145,7 +145,7 @@ $ D=Target ./fcps -umatrix umatrix_batch.html -dims 30,30 -radius 500.0 -rdecay 
 ### Sequential algorithm
 
 ```
-$ D=Target ./fcps -umatrix umatrix_seq.html -dims 30,30 -radius 500.0 -rdecay exp -lrate 0.5 -ldecay exp -ushape hexagon -iters 30000 -training seq -input examples/fcps/testdata/fcps/${D}.lrn -cls examples/fcps/testdata/fcps/${D}.cls
+$ D=Target ./_build/fcps -umatrix umatrix_seq.html -dims 30,30 -radius 500.0 -rdecay exp -lrate 0.5 -ldecay exp -ushape hexagon -iters 30000 -training seq -input examples/fcps/testdata/fcps/${D}.lrn -cls examples/fcps/testdata/fcps/${D}.cls
 [ gosom ] Loading data set testdata/fcps/Target.lrn
 [ gosom ] Creating new SOM. Dimensions: [30 30], Grid: planar, Unit shape: hexagon
 [ gosom ] Starting SOM training. Method: seq, iterations: 30000
