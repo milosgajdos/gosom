@@ -6,45 +6,38 @@ import (
 	"github.com/gonum/matrix/mat64"
 )
 
-// UShape contains supported SOM unit shapes
-var UShape = map[string]bool{
+// uShapes maps supported SOM unit shapes
+var uShapes = map[string]bool{
 	"hexagon":   true,
 	"rectangle": true,
 }
 
-// CoordsInit maps supported grid coordinates function types to their implementations
-var CoordsInit = map[string]CoordsInitFunc{
+// gridTypes maps supported grid types
+var coordsInitFns = map[string]coordsInitFunc{
 	"planar": GridCoords,
 }
 
-// Neighb maps supported neighbourhood functions to their implementations
-var Neighb = map[string]NeighbFunc{
-	"gaussian": Gaussian,
-	"bubble":   Bubble,
-	"mexican":  Mexican,
-}
-
-// Decay maps supported decay strategies
-var Decay = map[string]bool{
+// decays maps supported decay strategies
+var decays = map[string]bool{
 	"lin": true,
 	"exp": true,
 	"inv": true,
 }
 
-// Training maps supported training methods
-var Training = map[string]bool{
+// trainings maps supported training algorithms
+var trainingAlgs = map[string]bool{
 	"seq":   true,
 	"batch": true,
 }
 
-// CodebookInitFunc defines SOM codebook initialization function
-type CodebookInitFunc func(*mat64.Dense, []int) (*mat64.Dense, error)
-
-// CoordsInitFunc defines SOM grid coordinates initialization function
-type CoordsInitFunc func(string, []int) (*mat64.Dense, error)
+// coordsInitFunc defines SOM grid coordinates initialization function
+type coordsInitFunc func(string, []int) (*mat64.Dense, error)
 
 // NeighbFunc defines SOM neighbourhood function
 type NeighbFunc func(float64, float64) float64
+
+// CbInitFunc defines SOM codebook initialization function
+type CbInitFunc func(*mat64.Dense, []int) (*mat64.Dense, error)
 
 // GridConfig holds SOM grid configuration
 type GridConfig struct {
@@ -61,7 +54,7 @@ type CbConfig struct {
 	// Dim defines number of codebook vector dimension
 	Dim int
 	// InitFunc specifies codebook initialization function
-	InitFunc CodebookInitFunc
+	InitFunc CbInitFunc
 }
 
 // MapConfig holds SOM configuration
@@ -81,7 +74,7 @@ type TrainConfig struct {
 	// RDecay specifies radius decay strategy: lin, exp
 	RDecay string
 	// NeighbFn specifies SOM neighbourhood function: gaussian, bubble, mexican
-	NeighbFn string
+	NeighbFn NeighbFunc
 	// LRate specifies initial SOM learning rate
 	LRate float64
 	// LDecay specifies learning rate decay strategy: lin, exp
@@ -109,11 +102,11 @@ func validateGridConfig(c *GridConfig) error {
 		return fmt.Errorf("incorrect SOM grid dimensions supplied: %v", c.Size)
 	}
 	// check if the supplied grid type is supported
-	if _, ok := CoordsInit[c.Type]; !ok {
+	if _, ok := coordsInitFns[c.Type]; !ok {
 		return fmt.Errorf("unsupported SOM grid type: %s", c.Type)
 	}
 	// check if the supplied unit shape type is supported
-	if _, ok := UShape[c.UShape]; !ok {
+	if _, ok := uShapes[c.UShape]; !ok {
 		return fmt.Errorf("unsupported SOM unit shape: %s", c.UShape)
 	}
 
@@ -138,7 +131,7 @@ func validateCbConfig(c *CbConfig) error {
 // It returns error if any of the training config parameters are invalid
 func validateTrainConfig(c *TrainConfig) error {
 	// training method must be supported
-	if _, ok := Training[c.Algorithm]; !ok {
+	if _, ok := trainingAlgs[c.Algorithm]; !ok {
 		return fmt.Errorf("invalid SOM training algorithm: %s", c.Algorithm)
 	}
 	// initial SOM unit radius must be greater than zero
@@ -146,19 +139,19 @@ func validateTrainConfig(c *TrainConfig) error {
 		return fmt.Errorf("invalid SOM unit radius: %f", c.Radius)
 	}
 	// check Radius decay strategy
-	if _, ok := Decay[c.RDecay]; !ok {
+	if _, ok := decays[c.RDecay]; !ok {
 		return fmt.Errorf("unsupported Radius decay strategy: %s", c.RDecay)
 	}
-	// check the supplied neighbourhood function
-	if _, ok := Neighb[c.NeighbFn]; !ok {
-		return fmt.Errorf("unsupported Neighbourhood function: %s", c.NeighbFn)
+	// check the supplied is not nil
+	if c.NeighbFn == nil {
+		return fmt.Errorf("invalid Neighbourhood function: %v", c.NeighbFn)
 	}
 	// initial SOM learning rate must be greater than zero
 	if c.LRate < 0 {
 		return fmt.Errorf("invalid SOM learning rate: %f", c.LRate)
 	}
 	// check Learning rate decay strategy
-	if _, ok := Decay[c.LDecay]; !ok {
+	if _, ok := decays[c.LDecay]; !ok {
 		return fmt.Errorf("unsupported Learning rate decay strategy: %s", c.LDecay)
 	}
 	return nil

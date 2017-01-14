@@ -37,7 +37,7 @@ func setup() {
 		Algorithm: "seq",
 		Radius:    10.0,
 		RDecay:    "lin",
-		NeighbFn:  "gaussian",
+		NeighbFn:  Gaussian,
 		LRate:     0.5,
 		LDecay:    "lin",
 	}

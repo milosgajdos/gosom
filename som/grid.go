@@ -387,7 +387,7 @@ func GridCoords(uShape string, dims []int) (*mat64.Dense, error) {
 // given the provided parameters. It returns error if the validation fails
 func validateGridCoords(uShape string, dims []int) error {
 	// unsupported SOM unit shape
-	if _, ok := UShape[uShape]; !ok {
+	if _, ok := uShapes[uShape]; !ok {
 		return fmt.Errorf("unsupported unit shape: %s", uShape)
 	}
 	// map dims can't be nil

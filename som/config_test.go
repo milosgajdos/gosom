@@ -30,7 +30,7 @@ func makeDefaultTrainConfig() *TrainConfig {
 		Algorithm: "seq",
 		Radius:    10.0,
 		RDecay:    "lin",
-		NeighbFn:  "gaussian",
+		NeighbFn:  Gaussian,
 		LRate:     0.5,
 		LDecay:    "lin",
 	}
@@ -128,7 +128,7 @@ func TestValidateCbInitFunc(t *testing.T) {
 	mc := makeDefaultMapCfg()
 	errString := "invalid InitFunc: %v"
 	testCases := []struct {
-		initFunc CodebookInitFunc
+		initFunc CbInitFunc
 		expErr   bool
 	}{
 		{RandInit, false},
@@ -235,15 +235,15 @@ func TestValidateNeighbFn(t *testing.T) {
 	assert := assert.New(t)
 
 	tr := makeDefaultTrainConfig()
-	errString := "unsupported Neighbourhood function: %s"
+	errString := "invalid Neighbourhood function: %v"
 	testCases := []struct {
-		neighbFn string
+		neighbFn NeighbFunc
 		expErr   bool
 	}{
-		{"gaussian", false},
-		{"foobar", true},
-		{"mexican", false},
-		{"bubble", false},
+		{Gaussian, false},
+		{nil, true},
+		{Bubble, false},
+		{Mexican, false},
 	}
 
 	origNeighbFn := tr.NeighbFn

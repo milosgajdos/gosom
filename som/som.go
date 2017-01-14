@@ -216,7 +216,7 @@ func (m *Map) seqTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 		return err
 	}
 	// retrieve Neighbourhood function
-	neighbFn := Neighb[tc.NeighbFn]
+	nFn := tc.NeighbFn
 	// perform iters number of learning iterations
 	for i := 0; i < iters; i++ {
 		// pick a random sample from dataset
@@ -237,7 +237,7 @@ func (m *Map) seqTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 			// we are within BMU radius
 			if dist < radius {
 				// update particular codebook vector
-				m.seqUpdateCbVec(i, sample, lRate, radius, dist, neighbFn)
+				m.seqUpdateCbVec(i, sample, lRate, radius, dist, nFn)
 			}
 		}
 	}
@@ -362,7 +362,7 @@ func (m Map) processBatch(res chan<- *batchResult, wg *sync.WaitGroup,
 	vecs := make([][]float64, rows)
 	nghbs := make([]float64, rows)
 	// retrieve Neighbourhood function
-	neighbFn := Neighb[bc.tc.NeighbFn]
+	nFn := bc.tc.NeighbFn
 	// iterate through the whole batch
 	for i := from; i < count+from; i++ {
 		row := data.RawRowView(i)
@@ -378,7 +378,7 @@ func (m Map) processBatch(res chan<- *batchResult, wg *sync.WaitGroup,
 			// when in BMU radius, scale and add to all neighbourhood vecs
 			if dist < radius {
 				// calculate neighbourhood function
-				nghb := neighbFn(dist, radius)
+				nghb := nFn(dist, radius)
 				if vecs[j] != nil {
 					for k := 0; k < len(vecs[j]); k++ {
 						vecs[j][k] += nghb * row[k]

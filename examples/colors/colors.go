@@ -50,6 +50,8 @@ var (
 	training string
 	// number of training iterations
 	iters int
+	// NeighbFuncs maps neighbourhood functions to their implemenbtations
+	NeighbFuncs map[string]som.NeighbFunc
 )
 
 func init() {
@@ -57,7 +59,6 @@ func init() {
 	flag.StringVar(&dims, "dims", "", "comma-separated SOM grid dimensions")
 	flag.StringVar(&grid, "grid", "planar", "Type of SOM grid")
 	flag.StringVar(&ushape, "ushape", "hexagon", "SOM map unit shape")
-	flag.StringVar(&neighb, "neighb", "gaussian", "SOM neighbourhood function")
 	flag.Float64Var(&radius, "radius", 0.0, "SOM neighbourhood initial radius")
 	flag.StringVar(&rdecay, "rdecay", "lin", "Radius decay strategy")
 	flag.Float64Var(&lrate, "lrate", 0.0, "SOM initial learning rate")
@@ -224,7 +225,7 @@ func main() {
 		Algorithm: training,
 		Radius:    radius,
 		RDecay:    rdecay,
-		NeighbFn:  neighb,
+		NeighbFn:  som.Gaussian,
 		LRate:     lrate,
 		LDecay:    ldecay,
 	}
