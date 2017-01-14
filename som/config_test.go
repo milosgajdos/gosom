@@ -9,7 +9,7 @@ import (
 
 func makeDefaultMapCfg() *MapConfig {
 	grid := &GridConfig{
-		Dims:   []int{2, 3},
+		Size:   []int{2, 3},
 		Type:   "planar",
 		UShape: "hexagon",
 	}
@@ -27,16 +27,16 @@ func makeDefaultMapCfg() *MapConfig {
 
 func makeDefaultTrainConfig() *TrainConfig {
 	return &TrainConfig{
-		Method:   "seq",
-		Radius:   10.0,
-		RDecay:   "lin",
-		NeighbFn: "gaussian",
-		LRate:    0.5,
-		LDecay:   "lin",
+		Algorithm: "seq",
+		Radius:    10.0,
+		RDecay:    "lin",
+		NeighbFn:  "gaussian",
+		LRate:     0.5,
+		LDecay:    "lin",
 	}
 }
 
-func TestValidateGridDims(t *testing.T) {
+func TestValidateGridSize(t *testing.T) {
 	assert := assert.New(t)
 
 	mc := makeDefaultMapCfg()
@@ -45,7 +45,7 @@ func TestValidateGridDims(t *testing.T) {
 	wrongDims := []int{-1, 2}
 	singDims := []int{1, 1}
 	testCases := []struct {
-		dims   []int
+		size   []int
 		expErr bool
 		errStr string
 	}{
@@ -56,9 +56,9 @@ func TestValidateGridDims(t *testing.T) {
 		{wrongDims, true, fmt.Sprintf(errDimVal, wrongDims)},
 	}
 
-	dims := mc.Grid.Dims
+	size := mc.Grid.Size
 	for _, tc := range testCases {
-		mc.Grid.Dims = tc.dims
+		mc.Grid.Size = tc.size
 		err := validateGridConfig(mc.Grid)
 		if tc.expErr {
 			assert.EqualError(err, tc.errStr)
@@ -66,7 +66,7 @@ func TestValidateGridDims(t *testing.T) {
 			assert.NoError(err)
 		}
 	}
-	mc.Grid.Dims = dims
+	mc.Grid.Size = size
 }
 
 func TestValidateGridType(t *testing.T) {
@@ -149,11 +149,11 @@ func TestValidateCbInitFunc(t *testing.T) {
 	mc.Cb.InitFunc = initFunc
 }
 
-func TestValidateMethod(t *testing.T) {
+func TestValidateAlgorithm(t *testing.T) {
 	assert := assert.New(t)
 
 	tr := makeDefaultTrainConfig()
-	errString := "invalid SOM training method: %s"
+	errString := "invalid SOM training algorithm: %s"
 	testCases := []struct {
 		method string
 		expErr bool
@@ -163,17 +163,17 @@ func TestValidateMethod(t *testing.T) {
 		{"batch", false},
 	}
 
-	origMethod := tr.Method
+	origAlgorithm := tr.Algorithm
 	for _, tc := range testCases {
-		tr.Method = tc.method
+		tr.Algorithm = tc.method
 		err := validateTrainConfig(tr)
 		if tc.expErr {
-			assert.EqualError(err, fmt.Sprintf(errString, tr.Method))
+			assert.EqualError(err, fmt.Sprintf(errString, tr.Algorithm))
 		} else {
 			assert.NoError(err)
 		}
 	}
-	tr.Method = origMethod
+	tr.Algorithm = origAlgorithm
 }
 
 func TestValidateRadius(t *testing.T) {

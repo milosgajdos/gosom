@@ -199,7 +199,7 @@ func main() {
 	_, dim := data.Dims()
 	// SOM configuration
 	grid := &som.GridConfig{
-		Dims:   mdims,
+		Size:   mdims,
 		Type:   grid,
 		UShape: ushape,
 	}
@@ -213,7 +213,7 @@ func main() {
 	}
 	// create new SOM
 	log.Printf("Creating new SOM. Dimensions: %v, Grid Type: %s, Unit shape: %s",
-		mapCfg.Grid.Dims, mapCfg.Grid.Type, mapCfg.Grid.UShape)
+		mapCfg.Grid.Size, mapCfg.Grid.Type, mapCfg.Grid.UShape)
 	m, err := som.NewMap(mapCfg, data)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
@@ -221,15 +221,15 @@ func main() {
 	}
 	// training configuration
 	trainCfg := &som.TrainConfig{
-		Method:   training,
-		Radius:   radius,
-		RDecay:   rdecay,
-		NeighbFn: neighb,
-		LRate:    lrate,
-		LDecay:   ldecay,
+		Algorithm: training,
+		Radius:    radius,
+		RDecay:    rdecay,
+		NeighbFn:  neighb,
+		LRate:     lrate,
+		LDecay:    ldecay,
 	}
 	// run SOM training
-	log.Printf("Starting SOM training. Method: %s, iterations: %d", trainCfg.Method, iters)
+	log.Printf("Starting SOM training. Algorithm: %s, iterations: %d", trainCfg.Algorithm, iters)
 	t0 := time.Now()
 	if err := m.Train(trainCfg, data, iters); err != nil {
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)

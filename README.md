@@ -39,7 +39,7 @@ func main() {
 	data := mat64.NewDense(5, 4, d)
 	// SOM configuration
 	grid := &som.GridConfig{
-		Dims:   []int{2, 2},
+		Size:   []int{2, 2},
 		Type:   "planar",
 		UShape: "hexagon",
 	}
@@ -51,7 +51,7 @@ func main() {
 		Grid: grid,
 		Cb:   cb,
 	}
-	// create new SOM§§
+	// create new SOM
 	m, err := som.NewMap(mapCfg, data)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
@@ -59,12 +59,12 @@ func main() {
 	}
 	// training configuration
 	trainCfg := &som.TrainConfig{
-		Method:   "seq",
-		Radius:   500.0,
-		RDecay:   "exp",
-		NeighbFn: "gaussian",
-		LRate:    0.5,
-		LDecay:   "exp",
+		Algorithm: "seq",
+		Radius:    500.0,
+		RDecay:    "exp",
+		NeighbFn:  "gaussian",
+		LRate:     0.5,
+		LDecay:    "exp",
 	}
 	if err := m.Train(trainCfg, data, 300); err != nil {
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)

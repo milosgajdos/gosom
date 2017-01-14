@@ -19,7 +19,7 @@ var (
 
 func setup() {
 	grid := &GridConfig{
-		Dims:   []int{2, 3},
+		Size:   []int{2, 3},
 		Type:   "planar",
 		UShape: "hexagon",
 	}
@@ -34,12 +34,12 @@ func setup() {
 		Cb:   cb,
 	}
 	tSom = &TrainConfig{
-		Method:   "seq",
-		Radius:   10.0,
-		RDecay:   "lin",
-		NeighbFn: "gaussian",
-		LRate:    0.5,
-		LDecay:   "lin",
+		Algorithm: "seq",
+		Radius:    10.0,
+		RDecay:    "lin",
+		NeighbFn:  "gaussian",
+		LRate:     0.5,
+		LDecay:    "lin",
 	}
 	// Create input data matrix
 	data := []float64{5.1, 3.5, 1.4, 0.1,
@@ -101,7 +101,7 @@ func TestNewMap(t *testing.T) {
 func TestCodebook(t *testing.T) {
 	assert := assert.New(t)
 
-	mapUnits := utils.IntProduct(mSom.Grid.Dims)
+	mapUnits := utils.IntProduct(mSom.Grid.Size)
 	_, cols := dataMx.Dims()
 	// default config should not throw any errors
 	m, err := NewMap(mSom, dataMx)
@@ -124,14 +124,14 @@ func TestGrid(t *testing.T) {
 	grid := m.Grid()
 	assert.NotNil(grid)
 	rows, cols := grid.Coords().Dims()
-	assert.Equal(cols, len(mSom.Grid.Dims))
-	assert.Equal(rows, mSom.Grid.Dims[0]*mSom.Grid.Dims[1])
+	assert.Equal(cols, len(mSom.Grid.Size))
+	assert.Equal(rows, mSom.Grid.Size[0]*mSom.Grid.Size[1])
 }
 
 func TestUnitDist(t *testing.T) {
 	assert := assert.New(t)
 
-	mapUnits := utils.IntProduct(mSom.Grid.Dims)
+	mapUnits := utils.IntProduct(mSom.Grid.Size)
 	// default config should not throw any errors
 	m, err := NewMap(mSom, dataMx)
 	assert.NotNil(m)
@@ -186,11 +186,11 @@ func TestTrain(t *testing.T) {
 	err = m.Train(tSom, dataMx, iters)
 	assert.NoError(err)
 	// batch training with default settings
-	origMethod := tSom.Method
-	tSom.Method = "batch"
+	origAlgorithm := tSom.Algorithm
+	tSom.Algorithm = "batch"
 	err = m.Train(tSom, dataMx, iters)
 	assert.NoError(err)
-	tSom.Method = origMethod
+	tSom.Algorithm = origAlgorithm
 }
 
 func TestMapQuantError(t *testing.T) {

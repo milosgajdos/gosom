@@ -48,8 +48,8 @@ type NeighbFunc func(float64, float64) float64
 
 // GridConfig holds SOM grid configuration
 type GridConfig struct {
-	// Dims specifies SOM grid dimensions
-	Dims []int
+	// Size specifies SOM grid dimensions
+	Size []int
 	// Type specifies the type of SOM grid: planar
 	Type string
 	// UShape specifies SOM unit shape: hexagon, rectangle
@@ -74,8 +74,8 @@ type MapConfig struct {
 
 // TrainConfig holds SOM training configuration
 type TrainConfig struct {
-	// Method specifies training method: seq or batch
-	Method string
+	// Algorithm specifies training method: seq or batch
+	Algorithm string
 	// Radius specifies initial SOM units radius
 	Radius float64
 	// RDecay specifies radius decay strategy: lin, exp
@@ -93,19 +93,20 @@ type TrainConfig struct {
 func validateGridConfig(c *GridConfig) error {
 	// SOM must have 2 dimensions
 	// TODO: figure out 3D maps
-	if len(c.Dims) != 2 {
-		return fmt.Errorf("unsupported number of SOM grid dimensions supplied: %d", len(c.Dims))
+	if len(c.Size) != 2 {
+		return fmt.Errorf("unsupported number of SOM grid dimensions supplied: %d", len(c.Size))
 	}
 	// check if the supplied dimensions are negative integers or if they are single node
-	prod := 1
-	for _, dim := range c.Dims {
+	product := 1
+	for _, dim := range c.Size {
 		if dim <= 0 {
-			return fmt.Errorf("incorrect SOM grid dimensions supplied: %v", c.Dims)
+			return fmt.Errorf("incorrect SOM grid dimensions supplied: %v", c.Size)
 		}
-		prod *= dim
+		product *= dim
 	}
-	if prod == 1 {
-		return fmt.Errorf("incorrect SOM grid dimensions supplied: %v", c.Dims)
+	// 1D dimensions supplied: [1,1,1...]
+	if product == 1 {
+		return fmt.Errorf("incorrect SOM grid dimensions supplied: %v", c.Size)
 	}
 	// check if the supplied grid type is supported
 	if _, ok := CoordsInit[c.Type]; !ok {
@@ -137,8 +138,8 @@ func validateCbConfig(c *CbConfig) error {
 // It returns error if any of the training config parameters are invalid
 func validateTrainConfig(c *TrainConfig) error {
 	// training method must be supported
-	if _, ok := Training[c.Method]; !ok {
-		return fmt.Errorf("invalid SOM training method: %s", c.Method)
+	if _, ok := Training[c.Algorithm]; !ok {
+		return fmt.Errorf("invalid SOM training algorithm: %s", c.Algorithm)
 	}
 	// initial SOM unit radius must be greater than zero
 	if c.Radius < 0 {

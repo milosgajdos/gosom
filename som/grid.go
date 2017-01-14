@@ -14,8 +14,8 @@ import (
 
 // Grid is a SOM grid
 type Grid struct {
-	// dims holds grid dimensions
-	dims []int
+	// size holds grid dimensions
+	size []int
 	// ushape holds grid unit shape
 	ushape string
 	// coords holds grid point coordinates
@@ -31,21 +31,21 @@ func NewGrid(c *GridConfig) (*Grid, error) {
 	}
 
 	// grid coordinates matrix
-	coords, err := GridCoords(c.UShape, c.Dims)
+	coords, err := GridCoords(c.UShape, c.Size)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Grid{
-		dims:   c.Dims,
+		size:   c.Size,
 		ushape: c.UShape,
 		coords: coords,
 	}, nil
 }
 
-// Dims returns a slice that contains Grid dimensions
-func (g *Grid) Dims() []int {
-	return g.dims
+// Size returns a slice that contains Grid dimensions
+func (g *Grid) Size() []int {
+	return g.size
 }
 
 // UShape returns grid unit shape
@@ -58,11 +58,11 @@ func (g *Grid) Coords() mat64.Matrix {
 	return g.coords
 }
 
-// GridDims tries to estimate the best dimensions of map from data matrix and given unit shape.
+// GridSize tries to estimate the best dimensions of map from data matrix and given unit shape.
 // It determines the grid size from eigenvectors of input data: the grid dimensions are
 // calculated from the ratio of two highest input eigenvalues.
 // It returns error if the map dimensions could not be calculated.
-func GridDims(data *mat64.Dense, uShape string) ([]int, error) {
+func GridSize(data *mat64.Dense, uShape string) ([]int, error) {
 	// data matrix can't be nil
 	if data == nil {
 		return nil, fmt.Errorf("invalid data matrix: %v", data)
@@ -324,10 +324,11 @@ func getLinMapCoords(mapDim int, dims []int) (*mat64.Dense, error) {
 	return m, nil
 }
 
-// GridCoords returns a matrix which contains coordinates of all SOM unitsstored by row.
-// Returned matrix will have as many columns as the length of dims slice.
-// It fails with error if the requested unit shape is unsupported or if the incorrect
-// dimensions are supplied: sims slice can't be nil nor can its length be bigger than 3
+// GridCoords returns a matrix which contains coordinates of all SOM units stored row by row.
+// dims specify the size of the Grid, so the returned matrix has as many rows as is the
+// product of the numbers stored in dims slice and as many columns as is the length of dims slice.
+// GridCoords fails with error if the requested unit shape is unsupported or if the incorrect
+// dimensions are supplied: dims slice can't be nil nor can its length be bigger than 3
 func GridCoords(uShape string, dims []int) (*mat64.Dense, error) {
 	// validate passed in parameter
 	if err := validateGridCoords(uShape, dims); err != nil {

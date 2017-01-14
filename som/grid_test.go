@@ -11,7 +11,7 @@ func TestNewGrid(t *testing.T) {
 	assert := assert.New(t)
 
 	gCfg := &GridConfig{
-		Dims:   []int{2, 3},
+		Size:   []int{2, 3},
 		Type:   "planar",
 		UShape: "hexagon",
 	}
@@ -20,47 +20,47 @@ func TestNewGrid(t *testing.T) {
 	assert.NotNil(g)
 	assert.NoError(err)
 	// test dims
-	gDims := g.Dims()
-	assert.EqualValues(gCfg.Dims, gDims)
+	gSize := g.Size()
+	assert.EqualValues(gCfg.Size, gSize)
 	// test UShape
 	uShape := g.UShape()
 	assert.Equal(gCfg.UShape, uShape)
 	// test coords
 	coords := g.Coords()
 	rows, cols := coords.Dims()
-	assert.Equal(cols, len(gCfg.Dims))
-	assert.Equal(rows, gCfg.Dims[0]*gCfg.Dims[1])
+	assert.Equal(cols, len(gCfg.Size))
+	assert.Equal(rows, gCfg.Size[0]*gCfg.Size[1])
 	// test error cases
-	origDims := gCfg.Dims
-	gCfg.Dims = []int{1}
+	origDims := gCfg.Size
+	gCfg.Size = []int{1}
 	g, err = NewGrid(gCfg)
 	assert.Nil(g)
 	assert.Error(err)
 	// negative dimensions
-	gCfg.Dims = []int{-2, 2}
+	gCfg.Size = []int{-2, 2}
 	g, err = NewGrid(gCfg)
 	assert.Nil(g)
 	assert.Error(err)
 	// unit dimension given
-	gCfg.Dims = []int{-2, 2}
+	gCfg.Size = []int{-2, 2}
 	g, err = NewGrid(gCfg)
 	assert.Nil(g)
 	assert.Error(err)
-	gCfg.Dims = origDims
+	gCfg.Size = origDims
 }
 
-func TestGridDims(t *testing.T) {
+func TestGridSize(t *testing.T) {
 	assert := assert.New(t)
 
 	uShape := "hexagon"
 	// 1D data with more than one sample
 	data := mat64.NewDense(2, 1, []float64{2, 3})
-	dims, err := GridDims(data, uShape)
+	dims, err := GridSize(data, uShape)
 	assert.NoError(err)
 	assert.EqualValues(dims, []int{1, 8})
 	// 2D data with one sample
 	data = mat64.NewDense(1, 2, []float64{2, 3})
-	dims, err = GridDims(data, uShape)
+	dims, err = GridSize(data, uShape)
 	assert.NoError(err)
 	assert.EqualValues(dims, []int{2, 2})
 	// 2D+ data with more than one sample and hexagon uShape
@@ -72,15 +72,15 @@ func TestGridDims(t *testing.T) {
 		5.0, 3.6, 1.4, 0.2,
 		5.4, 3.9, 1.7, 0.4,
 	})
-	dims, err = GridDims(data, uShape)
+	dims, err = GridSize(data, uShape)
 	assert.NoError(err)
 	assert.EqualValues(dims, []int{4, 3})
 	// 2D+ data with more than one sample and rectangle uShape
-	dims, err = GridDims(data, "rectangle")
+	dims, err = GridSize(data, "rectangle")
 	assert.NoError(err)
 	assert.EqualValues(dims, []int{4, 3})
 	// data matrix can't be nil
-	dims, err = GridDims(nil, uShape)
+	dims, err = GridSize(nil, uShape)
 	assert.Nil(dims)
 	assert.Error(err)
 }

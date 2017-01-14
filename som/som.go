@@ -37,7 +37,7 @@ func NewMap(c *MapConfig, data *mat64.Dense) (*Map, error) {
 		return nil, err
 	}
 	// initialize codebook
-	codebook, err := c.Cb.InitFunc(data, c.Grid.Dims)
+	codebook, err := c.Cb.InitFunc(data, c.Grid.Size)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (m Map) UMatrix(w io.Writer, data *mat64.Dense, classMap map[int]int, forma
 				}
 			}
 
-			return UMatrixSVG(m.codebook, m.grid.dims, m.grid.ushape, title, w, bmuClassMap)
+			return UMatrixSVG(m.codebook, m.grid.size, m.grid.ushape, title, w, bmuClassMap)
 		}
 	}
 
@@ -174,7 +174,7 @@ func (m *Map) Train(c *TrainConfig, data *mat64.Dense, iters int) error {
 		return err
 	}
 	// run the training
-	switch c.Method {
+	switch c.Algorithm {
 	case "seq":
 		return m.seqTrain(c, data, iters)
 	case "batch":
