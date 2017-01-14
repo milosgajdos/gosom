@@ -5,7 +5,6 @@
 // Som package allows you to choose different map and training configuration
 // paramters that can help you tune the output to discover undelrying data
 // features. You can also visualize the trained SOM using umatrix function.
-
-// Package som also provides a handful of  useful functions which can
+// The package also provides a handful of useful functions which can
 // be use spearately outside the SOM realm.
 package som
