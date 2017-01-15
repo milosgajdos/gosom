@@ -38,4 +38,4 @@ test:
 		go test -coverprofile="../../../$$pkg/coverage.txt" -covermode=atomic $$pkg || exit; \
 	done
 
-.PHONY: clean build
+.PHONY: clean examples

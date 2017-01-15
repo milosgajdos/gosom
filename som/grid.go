@@ -80,14 +80,16 @@ func GridSize(data *mat64.Dense, uShape string) ([]int, error) {
 		gDim := math.Sqrt(mUnits)
 		return []int{int(gDim), int(gDim)}, nil
 	}
-	// We have more than 2 samples and more than 1D data
+	// We have more than 2 samples and at least 2D data
 	// Calculate eigenvalue ie. SVD singular values
-	// eigVals returned here are actually their square values -
+	// Vars() returned here are actually their square values -
 	// this does not matter as we are using them to compute their ratios
-	_, eigVals, ok := stat.PrincipalComponents(data, nil)
+	var pc stat.PC
+	ok := pc.PrincipalComponents(data, nil)
 	if !ok {
 		return nil, fmt.Errorf("Could not determine Principal Components")
 	}
+	eigVals := pc.Vars(nil)
 	// by default we use 1:1 ratio of the map
 	ratio := 1.0
 	// pick first two components: we only support 2D data maps
@@ -261,10 +263,14 @@ func getBaseVecs(data *mat64.Dense, mapDim int) (*mat64.Dense, error) {
 	samples, dataDim := data.Dims()
 	if dataDim > 1 && (dataDim >= mapDim) {
 		// calculate Principal components of the input data
-		vecs, vals, ok := stat.PrincipalComponents(data, nil)
+		var pc stat.PC
+		ok := pc.PrincipalComponents(data, nil)
 		if !ok {
 			return nil, fmt.Errorf("Could not determine Principal Components")
 		}
+		// principal components and their eigen values
+		vecs := pc.Vectors(nil)
+		vals := pc.Vars(nil)
 		// normalize the eigenvectors
 		for i := 0; i < mapDim; i++ {
 			vec := vecs.ColView(i)
