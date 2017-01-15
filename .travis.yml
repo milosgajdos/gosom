@@ -4,10 +4,11 @@ go:
   - 1.7
 
 before_install:
+  - go get github.com/stretchr/testify/assert
   - go get github.com/golang/lint/golint
 
 install:
-  - go build -v ./...
+  - go get -d -v ./... && go build -v ./...
 
 script:
   - make check

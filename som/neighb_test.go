@@ -17,15 +17,15 @@ func TestGaussian(t *testing.T) {
 	assert.InDelta(t, 1/math.E, Gaussian(1.0, 1.0/math.Sqrt2), 0.01)
 }
 
-func TestMexican(t *testing.T) {
+func TestMexicanHat(t *testing.T) {
 	radius := 5.0
 
-	atRadius := Mexican(radius, radius)
+	atRadius := MexicanHat(radius, radius)
 
 	// radius * (1.0 +- 1.0/100.0) is there to be 100% sure we never land on the radius if rand.Float64()==0
 	insideRadius := make([]float64, 100)
 	for i := 0; i < len(insideRadius); i++ {
-		insideRadius[i] = Mexican((rand.Float64()-0.5)*2*radius*(1.0-1.0/100.0), radius)
+		insideRadius[i] = MexicanHat((rand.Float64()-0.5)*2*radius*(1.0-1.0/100.0), radius)
 	}
 
 	outsideRadius := make([]float64, 100)
@@ -34,7 +34,7 @@ func TestMexican(t *testing.T) {
 		if i%2 == 0 {
 			point = -point
 		}
-		outsideRadius[i] = Mexican(point, radius)
+		outsideRadius[i] = MexicanHat(point, radius)
 	}
 
 	assert.InDelta(t, 0.0, atRadius, 0.01)

@@ -15,7 +15,9 @@ func Bubble(distance float64, radius float64) float64 {
 	return 0.0
 }
 
-// Mexican calculates mexican hat neghbourhood
-func Mexican(distance float64, radius float64) float64 {
-	return 2 / (math.Sqrt(3*radius) * math.Pow(math.Pi, 0.25)) * (1 - (distance*distance)/(radius*radius)) * math.Exp(-(distance*distance)/(2*radius*radius))
+// MexicanHat calculates mexican hat neghbourhood
+func MexicanHat(distance float64, radius float64) float64 {
+	return 2 / (math.Sqrt(3*radius) * math.Pow(math.Pi, 0.25)) *
+		(1 - (distance*distance)/(radius*radius)) *
+		math.Exp(-(distance*distance)/(2*radius*radius))
 }

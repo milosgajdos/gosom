@@ -2,7 +2,7 @@ BUILD=go build
 CLEAN=go clean
 INSTALL=go install
 BUILDPATH=./_build
-PACKAGES=$(shell go list ./... | grep -v /vendor/ | grep -v /examples/)
+PACKAGES=$(shell go list ./... | grep -v /examples/)
 EXAMPLES=$(shell find examples/* -maxdepth 0 -type d -exec basename {} \;)
 
 examples: builddir

@@ -243,7 +243,7 @@ func TestValidateNeighbFn(t *testing.T) {
 		{Gaussian, false},
 		{nil, true},
 		{Bubble, false},
-		{Mexican, false},
+		{MexicanHat, false},
 	}
 
 	origNeighbFn := tr.NeighbFn
