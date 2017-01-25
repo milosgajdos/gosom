@@ -10,6 +10,8 @@ This project provides an implementation of [Self-Organizing Map](https://en.wiki
 
 The goal of this project is to provide an API to build SOMs in `Go`. The project also implements various SOM quality measures which can help you validate the results of the training algorithm. In particular the project implements `quantization` and `topographic` error to measure both the projection and topography as well as `topographic product` which can help you make a decision about the size of the SOM grid.
 
+See the accompanying introductory [blog post](http://mlexplore.org/2017/01/13/self-organizing-maps-in-go/).
+
 # Get started
 
 Get the source code:
