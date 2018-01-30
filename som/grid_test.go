@@ -3,8 +3,8 @@ package som
 import (
 	"testing"
 
-	"github.com/gonum/matrix/mat64"
 	"github.com/stretchr/testify/assert"
+	"gonum.org/v1/gonum/mat"
 )
 
 func TestNewGrid(t *testing.T) {
@@ -54,17 +54,17 @@ func TestGridSize(t *testing.T) {
 
 	uShape := "hexagon"
 	// 1D data with more than one sample
-	data := mat64.NewDense(2, 1, []float64{2, 3})
+	data := mat.NewDense(2, 1, []float64{2, 3})
 	dims, err := GridSize(data, uShape)
 	assert.NoError(err)
 	assert.EqualValues(dims, []int{1, 8})
 	// 2D data with one sample
-	data = mat64.NewDense(1, 2, []float64{2, 3})
+	data = mat.NewDense(1, 2, []float64{2, 3})
 	dims, err = GridSize(data, uShape)
 	assert.NoError(err)
 	assert.EqualValues(dims, []int{2, 2})
 	// 2D+ data with more than one sample and hexagon uShape
-	data = mat64.NewDense(6, 4, []float64{
+	data = mat.NewDense(6, 4, []float64{
 		5.1, 3.5, 1.4, 0.2,
 		4.9, 3.0, 1.4, 0.2,
 		4.7, 3.2, 1.3, 0.2,
@@ -91,7 +91,7 @@ func TestRandInit(t *testing.T) {
 	min1, max1 := 1.2, 4.5
 	min2, max2 := 3.4, 6.7
 	data := []float64{min1, min2, max1, max2}
-	inMx := mat64.NewDense(2, 2, data)
+	inMx := mat.NewDense(2, 2, data)
 	assert.NotNil(inMx)
 
 	_, cols := inMx.Dims()
@@ -106,8 +106,8 @@ func TestRandInit(t *testing.T) {
 	for i := 0; i < cols; i++ {
 		inCol := inMx.ColView(i)
 		randCol := randMx.ColView(i)
-		assert.True(mat64.Min(inCol) <= mat64.Min(randCol))
-		assert.True(mat64.Max(inCol) >= mat64.Max(randCol))
+		assert.True(mat.Min(inCol) <= mat.Min(randCol))
+		assert.True(mat.Max(inCol) >= mat.Max(randCol))
 	}
 
 	// nil input matrix
@@ -123,7 +123,7 @@ func TestRandInit(t *testing.T) {
 	assert.Nil(randMx)
 	assert.Error(err)
 	// empty matrix
-	emptyMx := mat64.NewDense(0, 0, nil)
+	emptyMx := mat.NewDense(0, 0, nil)
 	randMx, err = RandInit(emptyMx, []int{2, 3})
 	assert.Nil(randMx)
 	assert.Error(err)
@@ -132,7 +132,7 @@ func TestRandInit(t *testing.T) {
 func TestLinInit(t *testing.T) {
 	assert := assert.New(t)
 
-	inMx := mat64.NewDense(6, 4, []float64{
+	inMx := mat.NewDense(6, 4, []float64{
 		5.1, 3.5, 1.4, 0.2,
 		4.9, 3.0, 1.4, 0.2,
 		4.7, 3.2, 1.3, 0.2,
@@ -163,7 +163,7 @@ func TestLinInit(t *testing.T) {
 	assert.Nil(linMx)
 	assert.Error(err)
 	// insufficient number of samples
-	inMx = mat64.NewDense(1, 2, []float64{1, 1})
+	inMx = mat.NewDense(1, 2, []float64{1, 1})
 	linMx, err = LinInit(inMx, []int{5, 2})
 	assert.Nil(linMx)
 	assert.Error(err)
@@ -176,7 +176,7 @@ func TestGridCoords(t *testing.T) {
 	dims := []int{4, 2}
 	mUnits := dims[0] * dims[1]
 	mDims := len(dims)
-	expMx := mat64.NewDense(mUnits, mDims, []float64{
+	expMx := mat.NewDense(mUnits, mDims, []float64{
 		0.0, 0.0,
 		0.5, 0.866,
 		0.0, 1.732,
@@ -188,12 +188,12 @@ func TestGridCoords(t *testing.T) {
 	coords, err := GridCoords("hexagon", dims)
 	assert.NotNil(coords)
 	assert.NoError(err)
-	assert.True(mat64.EqualApprox(coords, expMx, 0.01))
+	assert.True(mat.EqualApprox(coords, expMx, 0.01))
 	// rectangle shape
 	dims = []int{3, 2}
 	mUnits = dims[0] * dims[1]
 	mDims = len(dims)
-	expMx = mat64.NewDense(mUnits, mDims, []float64{
+	expMx = mat.NewDense(mUnits, mDims, []float64{
 		0.0, 0.0,
 		0.0, 1.0,
 		0.0, 2.0,
@@ -203,7 +203,7 @@ func TestGridCoords(t *testing.T) {
 	coords, err = GridCoords("rectangle", dims)
 	assert.NotNil(coords)
 	assert.NoError(err)
-	assert.True(mat64.EqualApprox(coords, expMx, 0.01))
+	assert.True(mat.EqualApprox(coords, expMx, 0.01))
 	// incorrect units shape
 	coords, err = GridCoords("fooshape", []int{2, 2})
 	assert.Nil(coords)

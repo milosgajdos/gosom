@@ -3,7 +3,7 @@ package som
 import (
 	"fmt"
 
-	"github.com/gonum/matrix/mat64"
+	"gonum.org/v1/gonum/mat"
 )
 
 // uShapes maps supported SOM unit shapes
@@ -31,13 +31,13 @@ var trainingAlgs = map[string]bool{
 }
 
 // coordsInitFunc defines SOM grid coordinates initialization function
-type coordsInitFunc func(string, []int) (*mat64.Dense, error)
+type coordsInitFunc func(string, []int) (*mat.Dense, error)
 
 // NeighbFunc defines SOM neighbourhood function
 type NeighbFunc func(float64, float64) float64
 
 // CbInitFunc defines SOM codebook initialization function
-type CbInitFunc func(*mat64.Dense, []int) (*mat64.Dense, error)
+type CbInitFunc func(*mat.Dense, []int) (*mat.Dense, error)
 
 // GridConfig holds SOM grid configuration
 type GridConfig struct {

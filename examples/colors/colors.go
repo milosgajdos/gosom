@@ -13,10 +13,10 @@ import (
 	"image/jpeg"
 	"image/png"
 
-	"github.com/gonum/matrix/mat64"
 	"github.com/milosgajdos83/gosom/pkg/dataset"
 	"github.com/milosgajdos83/gosom/pkg/utils"
 	"github.com/milosgajdos83/gosom/som"
+	"gonum.org/v1/gonum/mat"
 )
 
 const (
@@ -124,12 +124,12 @@ func SaveImage(path string, img image.Image) error {
 	return fmt.Errorf("Unsupported image format: %s\n", filepath.Ext(path))
 }
 
-func Image2Data(img image.Image) *mat64.Dense {
+func Image2Data(img image.Image) *mat.Dense {
 	// get image bounds
 	b := img.Bounds()
 	w, h := b.Dx(), b.Dy()
 	// 4 dimensions: R, G, B, A
-	data := mat64.NewDense(w*h, 4, nil)
+	data := mat.NewDense(w*h, 4, nil)
 	i := 0
 	for y := b.Min.Y; y < b.Max.Y; y++ {
 		for x := b.Min.X; x < b.Max.X; x++ {
@@ -146,7 +146,7 @@ func Image2Data(img image.Image) *mat64.Dense {
 	return data
 }
 
-func Data2Image(data *mat64.Dense, w, h int) image.Image {
+func Data2Image(data *mat.Dense, w, h int) image.Image {
 	// create new RGB image
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 	b := img.Bounds()
@@ -250,7 +250,7 @@ func main() {
 		}
 	}
 	// codebook vectors contains sorted colors
-	imgData := m.Codebook().(*mat64.Dense)
+	imgData := m.Codebook().(*mat.Dense)
 	somImg := Data2Image(imgData, mdims[0], mdims[1])
 	// save imaee
 	if err := SaveImage(output, somImg); err != nil {

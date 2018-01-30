@@ -31,3 +31,4 @@ gosom
 
 # ignore HTML files produced by gosom
 *.html
+vendor/

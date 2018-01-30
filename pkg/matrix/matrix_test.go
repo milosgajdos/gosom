@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gonum/floats"
-	"github.com/gonum/matrix/mat64"
 	"github.com/stretchr/testify/assert"
+	"gonum.org/v1/gonum/floats"
+	"gonum.org/v1/gonum/mat"
 )
 
 var (
@@ -23,7 +23,7 @@ func TestRowsColsMax(t *testing.T) {
 	data := []float64{1.2, 3.4, 4.5, 6.7, 8.9, 10.0}
 	colsMax := []float64{8.9, 10.0}
 	rowsMax := []float64{3.4, 6.7, 10.0}
-	mx := mat64.NewDense(3, 2, data)
+	mx := mat.NewDense(3, 2, data)
 	assert.NotNil(mx)
 
 	rows, cols := mx.Dims()
@@ -55,7 +55,7 @@ func TestRowsColsMax(t *testing.T) {
 	assert.EqualError(err, fmt.Sprintf(errInvMx, mx))
 	// zero elements in matrix
 	data = []float64{}
-	mx = mat64.NewDense(0, 0, data)
+	mx = mat.NewDense(0, 0, data)
 	assert.NotNil(mx)
 	max, err = ColsMax(cols, mx)
 	assert.Nil(max)
@@ -71,7 +71,7 @@ func TestColsMin(t *testing.T) {
 	data := []float64{1.2, 3.4, 4.5, 6.7, 8.9, 10.0}
 	colsMin := []float64{1.2, 3.4}
 	rowsMin := []float64{1.2, 4.5, 8.9}
-	mx := mat64.NewDense(3, 2, data)
+	mx := mat.NewDense(3, 2, data)
 	assert.NotNil(mx)
 
 	rows, cols := mx.Dims()
@@ -103,7 +103,7 @@ func TestColsMin(t *testing.T) {
 	assert.EqualError(err, fmt.Sprintf(errInvMx, mx))
 	// zero elements in matrix
 	data = []float64{}
-	mx = mat64.NewDense(0, 0, data)
+	mx = mat.NewDense(0, 0, data)
 	assert.NotNil(mx)
 	min, err = ColsMin(cols, mx)
 	assert.Nil(min)
@@ -117,7 +117,7 @@ func TestColsMean(t *testing.T) {
 	assert := assert.New(t)
 
 	data := []float64{1.2, 3.4, 4.5, 6.7, 8.9, 10.0}
-	mx := mat64.NewDense(3, 2, data)
+	mx := mat.NewDense(3, 2, data)
 	assert.NotNil(mx)
 	colsMean := []float64{4.8667, 6.7000}
 
@@ -133,7 +133,7 @@ func TestColsStdev(t *testing.T) {
 	assert := assert.New(t)
 
 	data := []float64{1.2, 3.4, 4.5, 6.7, 8.9, 10.0}
-	mx := mat64.NewDense(3, 2, data)
+	mx := mat.NewDense(3, 2, data)
 	assert.NotNil(mx)
 	colsStdev := []float64{3.8631, 3.3000}
 
@@ -159,8 +159,8 @@ func TestMakeRandom(t *testing.T) {
 	assert.Equal(c, cols)
 	for i := 0; i < c; i++ {
 		col := randMx.ColView(i)
-		assert.True(max >= mat64.Max(col))
-		assert.True(min <= mat64.Min(col))
+		assert.True(max >= mat.Max(col))
+		assert.True(min <= mat.Min(col))
 	}
 	// Can't create new matrix
 	randMx, err = MakeRandom(rows, -6, min, max)
@@ -177,10 +177,10 @@ func TestMakeConstant(t *testing.T) {
 
 	// all elements must be equal to 1.0
 	constVec := []float64{1.0, 1.0, 1.0, 1.0}
-	constMx := mat64.NewDense(2, 2, constVec)
+	constMx := mat.NewDense(2, 2, constVec)
 	mx, err := MakeConstant(2, 2, 1.0)
 	assert.NotNil(mx)
-	assert.True(mat64.Equal(constMx, mx))
+	assert.True(mat.Equal(constMx, mx))
 	// Can't create new matrix
 	constMx, err = MakeConstant(3, -6, 1.0)
 	assert.Nil(constMx)
@@ -196,13 +196,13 @@ func TestAddConstant(t *testing.T) {
 
 	// all elements must be equal to 1.0
 	val := 0.5
-	mx := mat64.NewDense(2, 2, []float64{1.0, 2.0, 2.5, 2.5})
-	mc := mat64.NewDense(2, 2, []float64{1.5, 2.5, 3.0, 3.0})
+	mx := mat.NewDense(2, 2, []float64{1.0, 2.0, 2.5, 2.5})
+	mc := mat.NewDense(2, 2, []float64{1.5, 2.5, 3.0, 3.0})
 
 	mx, err := AddConst(val, mx)
 	assert.NotNil(mx)
 	assert.NoError(err)
-	assert.True(mat64.EqualApprox(mx, mc, 0.01))
+	assert.True(mat.EqualApprox(mx, mc, 0.01))
 	// incorrect matrix passed in
 	mx, err = AddConst(val, nil)
 	assert.Nil(mx)

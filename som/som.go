@@ -9,14 +9,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gonum/matrix/mat64"
+	"gonum.org/v1/gonum/mat"
 )
 
 // Map is a Self Organizing Map (SOM)
 type Map struct {
 	// codebook is a matrix which contains SOM codebook vectors
 	// codebook dimensions: SOM units x data features
-	codebook *mat64.Dense
+	codebook *mat.Dense
 	// grid is a matrix which contains SOM unit coordinages
 	// grid dimensions depend on chosen configuration
 	grid *Grid
@@ -27,7 +27,7 @@ type Map struct {
 // NewMap returns error if the provided configuration is not valid or if the data matrix is nil or
 // if the codebook matrix could not be initialized.
 // TODO: Avoid passing in data matrix when creating new map
-func NewMap(c *MapConfig, data *mat64.Dense) (*Map, error) {
+func NewMap(c *MapConfig, data *mat.Dense) (*Map, error) {
 	// if input data is empty throw error
 	if data == nil {
 		return nil, fmt.Errorf("invalid input data: %v", data)
@@ -54,7 +54,7 @@ func NewMap(c *MapConfig, data *mat64.Dense) (*Map, error) {
 }
 
 // Codebook returns a matrix which contains SOM codebook vectors
-func (m Map) Codebook() mat64.Matrix {
+func (m Map) Codebook() mat.Matrix {
 	return m.codebook
 }
 
@@ -64,14 +64,14 @@ func (m Map) Grid() *Grid {
 }
 
 // UnitDist returns a matrix which contains Euclidean distances between SOM units
-func (m Map) UnitDist() (*mat64.Dense, error) {
+func (m Map) UnitDist() (*mat.Dense, error) {
 	return DistanceMx("euclidean", m.grid.coords)
 }
 
 // BMUs returns a slice which contains indices of Best Match Unit vectors to the map
 // codebook for each vector stored in data rows.
 // It returns error if the data dimension and map codebook dimensions are not the same.
-func (m Map) BMUs(data *mat64.Dense) ([]int, error) {
+func (m Map) BMUs(data *mat.Dense) ([]int, error) {
 	return BMUs(data, m.codebook)
 }
 
@@ -89,7 +89,7 @@ func (m *Map) MarshalTo(format string, w io.Writer) (int, error) {
 
 // UMatrix generates SOM u-matrix in a given format and writes the output to w.
 // At the moment only SVG format is supported. It fails with error if the write to w fails.
-func (m Map) UMatrix(w io.Writer, data *mat64.Dense, classMap map[int]int, format, title string) error {
+func (m Map) UMatrix(w io.Writer, data *mat.Dense, classMap map[int]int, format, title string) error {
 	switch format {
 	case "svg":
 		{
@@ -131,7 +131,7 @@ func (m Map) UMatrix(w io.Writer, data *mat64.Dense, classMap map[int]int, forma
 
 // mapBMUclasses returns a map which contains a list of classes to which this BMUs input samples are members of
 // We go through all data samples and add their classes to the list of classes of their respective BMUs.
-func (m Map) mapBMUclasses(data *mat64.Dense, classes map[int]int) (map[int][]int, error) {
+func (m Map) mapBMUclasses(data *mat.Dense, classes map[int]int) (map[int][]int, error) {
 	rows, _ := data.Dims()
 	// map of all classes for each BMU
 	bmuClasses := make(map[int][]int)
@@ -160,7 +160,7 @@ func (m Map) mapBMUclasses(data *mat64.Dense, classes map[int]int) (map[int][]in
 // Train runs a SOM training for a given data set and training configuration parameters.
 // It modifies the map codebook vectors based on the chosen training algorithm.
 // It returns error if the supplied training configuration is invalid or training fails
-func (m *Map) Train(c *TrainConfig, data *mat64.Dense, iters int) error {
+func (m *Map) Train(c *TrainConfig, data *mat.Dense, iters int) error {
 	// number of iterations must be a positive integer
 	if iters <= 0 {
 		return fmt.Errorf("invalid number of iterations: %d", iters)
@@ -188,7 +188,7 @@ func (m *Map) Train(c *TrainConfig, data *mat64.Dense, iters int) error {
 // It returns the quantization error or fails with error if the passed in data is nil
 // or the distance betweent vectors could not be calculated.
 // When the error is returned, quantization error is set to -1.0.
-func (m Map) QuantError(data *mat64.Dense) (float64, error) {
+func (m Map) QuantError(data *mat.Dense) (float64, error) {
 	return QuantError(data, m.codebook)
 }
 
@@ -200,12 +200,12 @@ func (m Map) TopoProduct() (float64, error) {
 
 // TopoError computes SOM topographic error for a given data set.
 // It returns a single number or fails with error if the error could not be computed
-func (m Map) TopoError(data *mat64.Dense) (float64, error) {
+func (m Map) TopoError(data *mat.Dense) (float64, error) {
 	return TopoError(data, m.codebook, m.grid.coords)
 }
 
 // seqTrain runs sequential SOM training algorithm on a given data set
-func (m *Map) seqTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
+func (m *Map) seqTrain(tc *TrainConfig, data *mat.Dense, iters int) error {
 	rows, _ := data.Dims()
 	// create random number generator
 	rSrc := rand.NewSource(time.Now().UnixNano())
@@ -278,7 +278,7 @@ type batchResult struct {
 }
 
 // batchTrain runs batch SOM training on a given data set
-func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
+func (m *Map) batchTrain(tc *TrainConfig, data *mat.Dense, iters int) error {
 	cbRows, _ := m.codebook.Dims()
 	rows, _ := data.Dims()
 	// batchConfig holds training config and number of iterations
@@ -356,7 +356,7 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat64.Dense, iters int) error {
 
 // processRow processes data rows and sends tehm down the results channel
 func (m Map) processBatch(res chan<- *batchResult, wg *sync.WaitGroup,
-	bc *batchConfig, unitDist, data *mat64.Dense, from, count, iter int) {
+	bc *batchConfig, unitDist, data *mat.Dense, from, count, iter int) {
 	// allocate codebook vectors and neighbourhoods
 	rows, _ := m.codebook.Dims()
 	vecs := make([][]float64, rows)

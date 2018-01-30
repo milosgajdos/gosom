@@ -5,14 +5,14 @@ import (
 	"math"
 	"sort"
 
-	"github.com/gonum/matrix/mat64"
+	"gonum.org/v1/gonum/mat"
 )
 
 // QuantError computes SOM quantization error for the supplied data set and codebook and returns it.
 // It fails with error if either data or codebook are nil or the distance between the codebook and
 // data vectors could not be calculated. This could be because the dimensions of passed in data and
 // codebook matrix are not the same. When the error is returned, quantization error is set to -1.0
-func QuantError(data, codebook *mat64.Dense) (float64, error) {
+func QuantError(data, codebook *mat.Dense) (float64, error) {
 	// data can't be nil
 	if data == nil {
 		return -1.0, fmt.Errorf("invalid data supplied: %v", data)
@@ -44,7 +44,7 @@ func QuantError(data, codebook *mat64.Dense) (float64, error) {
 // TopoProduct returns error if either codebook or grid are nil or if number of codebook rows
 // is not the same as the number of grid rows. If any two codebooks turn out to be the same
 // TopoProduct returns +Inf - this can happen when map is trained using batch algorithm.
-func TopoProduct(codebook, grid *mat64.Dense) (float64, error) {
+func TopoProduct(codebook, grid *mat.Dense) (float64, error) {
 	// codebook can't be nil
 	if codebook == nil {
 		return 0.0, fmt.Errorf("invalid codebook supplied: %v", codebook)
@@ -104,7 +104,7 @@ func TopoProduct(codebook, grid *mat64.Dense) (float64, error) {
 
 // TopoError calculate topographice error for given data set, codebook and grid and returns it
 // It returns error if either data, codebook or grid are nil or if their dimensions are mismatched.
-func TopoError(data, codebook, grid *mat64.Dense) (float64, error) {
+func TopoError(data, codebook, grid *mat.Dense) (float64, error) {
 	// data can't be nil
 	if data == nil {
 		return -1.0, fmt.Errorf("invalid data supplied: %v", data)

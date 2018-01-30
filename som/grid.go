@@ -5,11 +5,11 @@ import (
 	"math"
 	"strings"
 
-	"github.com/gonum/floats"
-	"github.com/gonum/matrix/mat64"
-	"github.com/gonum/stat"
 	"github.com/milosgajdos83/gosom/pkg/matrix"
 	"github.com/milosgajdos83/gosom/pkg/utils"
+	"gonum.org/v1/gonum/floats"
+	"gonum.org/v1/gonum/mat"
+	"gonum.org/v1/gonum/stat"
 )
 
 // Grid is a SOM grid
@@ -19,7 +19,7 @@ type Grid struct {
 	// ushape holds grid unit shape
 	ushape string
 	// coords holds grid point coordinates
-	coords *mat64.Dense
+	coords *mat.Dense
 }
 
 // NewGrid creates new grid and returns it
@@ -54,7 +54,7 @@ func (g *Grid) UShape() string {
 }
 
 // Coords returns a matrix that contains grid coordinates
-func (g *Grid) Coords() mat64.Matrix {
+func (g *Grid) Coords() mat.Matrix {
 	return g.coords
 }
 
@@ -62,7 +62,7 @@ func (g *Grid) Coords() mat64.Matrix {
 // It determines the grid size from eigenvectors of input data: the grid dimensions are
 // calculated from the ratio of two highest input eigenvalues.
 // It returns error if the map dimensions could not be calculated.
-func GridSize(data *mat64.Dense, uShape string) ([]int, error) {
+func GridSize(data *mat.Dense, uShape string) ([]int, error) {
 	// data matrix can't be nil
 	if data == nil {
 		return nil, fmt.Errorf("invalid data matrix: %v", data)
@@ -89,7 +89,7 @@ func GridSize(data *mat64.Dense, uShape string) ([]int, error) {
 	if !ok {
 		return nil, fmt.Errorf("Could not determine Principal Components")
 	}
-	eigVals := pc.Vars(nil)
+	eigVals := pc.VarsTo(nil)
 	// by default we use 1:1 ratio of the map
 	ratio := 1.0
 	// pick first two components: we only support 2D data maps
@@ -116,7 +116,7 @@ func GridSize(data *mat64.Dense, uShape string) ([]int, error) {
 // in particular matrix column. The returned matrix has product(dims) number of rows and
 // as many columns as the matrix passed in as a parameter.
 // It fails with error if the new matrix could not be initialized or if data is nil.
-func RandInit(data *mat64.Dense, dims []int) (*mat64.Dense, error) {
+func RandInit(data *mat.Dense, dims []int) (*mat.Dense, error) {
 	// if nil matrix is passed in, return error
 	if data == nil {
 		return nil, fmt.Errorf("invalid input matrix: %v", data)
@@ -143,26 +143,29 @@ func RandInit(data *mat64.Dense, dims []int) (*mat64.Dense, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	mUnits := utils.IntProduct(dims)
 	// initialize matrix to rand values between 0.0 and 1.0
 	codebook, err := matrix.MakeRandom(mUnits, cols, 0.0, 1.0)
 	if err != nil {
 		return nil, err
 	}
+
 	for i := 0; i < cols; i++ {
-		col := codebook.ColView(i)
+		col := codebook.ColView(i).(*mat.VecDense)
 		for j := 0; j < mUnits; j++ {
-			val := col.At(j, 0)
+			val := col.AtVec(j)
 			col.SetVec(j, val*(max[i]-min[i])+min[i])
 		}
 	}
+
 	return codebook, nil
 }
 
 // LinInit returns a matrix initialized to values lying in a linear space
 // spanned by principal components of data stored in the data matrix passed in as parameter.
 // It fails with error if the new matrix could not be initialized or if data is nil.
-func LinInit(data *mat64.Dense, dims []int) (*mat64.Dense, error) {
+func LinInit(data *mat.Dense, dims []int) (*mat.Dense, error) {
 	if err := validateLinInit(data, dims); err != nil {
 		return nil, err
 	}
@@ -182,7 +185,7 @@ func LinInit(data *mat64.Dense, dims []int) (*mat64.Dense, error) {
 	_, dataDim := data.Dims()
 	mUnits := utils.IntProduct(dims)
 	// initialize codebook matrix
-	codebook := mat64.NewDense(mUnits, dataDim, nil)
+	codebook := mat.NewDense(mUnits, dataDim, nil)
 	if dataDim > 1 {
 		// calculate mean values of all features in data matrix
 		colsMean, err := matrix.ColsMean(dataDim, data)
@@ -205,10 +208,10 @@ func LinInit(data *mat64.Dense, dims []int) (*mat64.Dense, error) {
 		for i := 0; i < mUnits; i++ {
 			for j := 0; j < mapDim; j++ {
 				// grab 1st map eigenvector i.e. base vector
-				mat64.Col(mapCol, j, mapVecs)
+				mat.Col(mapCol, j, mapVecs)
 				floats.Scale(coords.At(i, j), mapCol)
 				// grab first codebook row
-				mat64.Row(cbRow, i, codebook)
+				mat.Row(cbRow, i, codebook)
 				floats.Add(cbRow, mapCol)
 				codebook.SetRow(i, cbRow)
 			}
@@ -216,8 +219,8 @@ func LinInit(data *mat64.Dense, dims []int) (*mat64.Dense, error) {
 		return codebook, nil
 	}
 	// calculate 1D option
-	min := mat64.Min(data)
-	max := mat64.Max(data)
+	min := mat.Min(data)
+	max := mat.Max(data)
 	for i := 0; i < mUnits; i++ {
 		val := (float64(i)/(float64(mUnits)-1))*(max-min) + min
 		codebook.Set(i, 0, val)
@@ -228,7 +231,7 @@ func LinInit(data *mat64.Dense, dims []int) (*mat64.Dense, error) {
 
 // validateLinInit checks whether you can initialize SOM given the provided parameters
 // It returns error if at least one of the mandatory conditions fails to be satisfied
-func validateLinInit(data *mat64.Dense, dims []int) error {
+func validateLinInit(data *mat.Dense, dims []int) error {
 	// if nil matrix is passed in, return error
 	if data == nil {
 		return fmt.Errorf("invalid data matrix: %v", data)
@@ -254,9 +257,9 @@ func validateLinInit(data *mat64.Dense, dims []int) error {
 // getBaseVecs calculates linear space base vectors from the provided data
 // It returns a matrix that contains the linear space base vectors.
 // It fails with error if the principal components could not be found
-func getBaseVecs(data *mat64.Dense, mapDim int) (*mat64.Dense, error) {
+func getBaseVecs(data *mat.Dense, mapDim int) (*mat.Dense, error) {
 	// mapVecs is a matrix that holds the map linear base vectors
-	baseVecs := new(mat64.Dense)
+	baseVecs := new(mat.Dense)
 	// If both data dimension and requested map dimensions are >1 do PCA
 	// In other words we only do PCA if the map has at least 2 dimensions
 	// and if the real map dimensions are at most the same as data dimensions
@@ -269,21 +272,24 @@ func getBaseVecs(data *mat64.Dense, mapDim int) (*mat64.Dense, error) {
 			return nil, fmt.Errorf("Could not determine Principal Components")
 		}
 		// principal components and their eigen values
-		vecs := pc.Vectors(nil)
-		vals := pc.Vars(nil)
+		vecs := pc.VectorsTo(nil)
+		vals := pc.VarsTo(nil)
 		// normalize the eigenvectors
 		for i := 0; i < mapDim; i++ {
-			vec := vecs.ColView(i)
-			vec.ScaleVec(math.Sqrt(vals[i])/mat64.Norm(vec, 2), vec)
+			vec := vecs.ColView(i).(*mat.VecDense)
+			vec.ScaleVec(math.Sqrt(vals[i])/mat.Norm(vec, 2), vec)
 		}
-		//fb = mat64.Formatted(vecs, mat64.Prefix("    "))
-		//fmt.Printf("NORMALIZED PCA vecs:a = %v", fb)
+		fb := mat.Formatted(vecs, mat.Prefix("    "))
+		fmt.Printf("NORMALIZED PCA vecs:a = %v\n", fb)
+		r, c := vecs.Dims()
+		fmt.Printf("Rows: %d, Cols: %d\n", r, c)
+		fmt.Printf("dataDim: %d, mapDim %d\n", dataDim, mapDim)
 		// pick first m eigenvectors
-		baseVecs.Clone(vecs.View(0, 0, dataDim, mapDim))
+		baseVecs.Clone(vecs.Slice(0, dataDim, 0, mapDim))
 	} else {
 		// we have only 1D data i.e. 1 column - let's get standard deviation
 		col := make([]float64, samples)
-		stdev := stat.StdDev(mat64.Col(col, 0, data), nil)
+		stdev := stat.StdDev(mat.Col(col, 0, data), nil)
 		baseVecs.Grow(1, 1)
 		baseVecs.Set(0, 0, stdev)
 	}
@@ -292,7 +298,7 @@ func getBaseVecs(data *mat64.Dense, mapDim int) (*mat64.Dense, error) {
 
 // getLinMapCoords calculates map coordinates and normalizes them to unit values
 // It returns error if it can't calculate coordinates
-func getLinMapCoords(mapDim int, dims []int) (*mat64.Dense, error) {
+func getLinMapCoords(mapDim int, dims []int) (*mat.Dense, error) {
 	// calculate unit coordinates
 	coords, err := GridCoords("rectangle", dims)
 	if err != nil {
@@ -302,14 +308,14 @@ func getLinMapCoords(mapDim int, dims []int) (*mat64.Dense, error) {
 	mUnits := utils.IntProduct(dims)
 	x := make([]float64, mUnits)
 	y := make([]float64, mUnits)
-	mat64.Col(x, 0, coords)
-	mat64.Col(y, 1, coords)
+	mat.Col(x, 0, coords)
+	mat.Col(y, 1, coords)
 	coords.SetCol(0, y)
 	coords.SetCol(1, x)
 	// normalize coordinates to unit values
 	c := make([]float64, mUnits)
 	for i := 0; i < mapDim; i++ {
-		c = mat64.Col(c, i, coords)
+		c = mat.Col(c, i, coords)
 		max := floats.Max(c)
 		min := floats.Min(c)
 		if max > min {
@@ -335,7 +341,7 @@ func getLinMapCoords(mapDim int, dims []int) (*mat64.Dense, error) {
 // product of the numbers stored in dims slice and as many columns as is the length of dims slice.
 // GridCoords fails with error if the requested unit shape is unsupported or if the incorrect
 // dimensions are supplied: dims slice can't be nil nor can its length be bigger than 3
-func GridCoords(uShape string, dims []int) (*mat64.Dense, error) {
+func GridCoords(uShape string, dims []int) (*mat.Dense, error) {
 	// validate passed in parameter
 	if err := validateGridCoords(uShape, dims); err != nil {
 		return nil, err
@@ -353,14 +359,14 @@ func GridCoords(uShape string, dims []int) (*mat64.Dense, error) {
 	counts = append([]int{1}, counts...)
 	// init grid coordinates matrix
 	mUnits := utils.IntProduct(dims)
-	coords := mat64.NewDense(mUnits, mDims, nil)
+	coords := mat.NewDense(mUnits, mDims, nil)
 	for i := 0; i < mDims; i++ {
 		seq := makeSeq(mUnits/counts[i+1], dims[i], counts[i])
 		coords.SetCol(i, seq)
 	}
 	// retrieve x and y coords
-	x := mat64.Col(make([]float64, mUnits), 0, coords)
-	y := mat64.Col(make([]float64, mUnits), 1, coords)
+	x := mat.Col(make([]float64, mUnits), 0, coords)
+	y := mat.Col(make([]float64, mUnits), 1, coords)
 	// swaps x and y coordinates: ij notation to xy
 	if mDims >= 2 {
 		coords.SetCol(1, x)
@@ -369,8 +375,8 @@ func GridCoords(uShape string, dims []int) (*mat64.Dense, error) {
 	// This will offset x-coordinates of every other unit by 0.5.
 	// This will make distances of a unit to all its six neighbors equal
 	if strings.EqualFold(uShape, "hexagon") {
-		x = mat64.Col(x, 0, coords)
-		y = mat64.Col(y, 1, coords)
+		x = mat.Col(x, 0, coords)
+		y = mat.Col(y, 1, coords)
 		// dims[1] was y-dim, before we swapped it for x-dim
 		xDim := dims[1]
 		repCount := mUnits / xDim

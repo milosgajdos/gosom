@@ -6,15 +6,15 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gonum/matrix/mat64"
 	"github.com/milosgajdos83/gosom/pkg/utils"
 	"github.com/stretchr/testify/assert"
+	"gonum.org/v1/gonum/mat"
 )
 
 var (
 	mSom   *MapConfig
 	tSom   *TrainConfig
-	dataMx *mat64.Dense
+	dataMx *mat.Dense
 )
 
 func setup() {
@@ -47,7 +47,7 @@ func setup() {
 		4.7, 3.2, 1.3, 0.3,
 		4.6, 3.1, 1.5, 0.4,
 		5.0, 3.6, 1.4, 0.5}
-	dataMx = mat64.NewDense(5, 4, data)
+	dataMx = mat.NewDense(5, 4, data)
 	// set the Codebook dimension to number of data columns
 	mSom.Cb.Dim = 4
 }
@@ -61,7 +61,7 @@ func TestMain(m *testing.M) {
 	os.Exit(retCode)
 }
 
-func mockInit(d *mat64.Dense, dims []int) (*mat64.Dense, error) {
+func mockInit(d *mat.Dense, dims []int) (*mat.Dense, error) {
 	return nil, errors.New("Test error")
 }
 

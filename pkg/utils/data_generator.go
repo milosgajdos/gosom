@@ -3,7 +3,7 @@ package utils
 import (
 	"math/rand"
 
-	"github.com/gonum/matrix/mat64"
+	"gonum.org/v1/gonum/mat"
 )
 
 // GenerateClusters generates random data samples clustered in the given number of clusters.
@@ -16,10 +16,10 @@ import (
 // max,min - maximum and minimum coordinates (applies to all dimensions)
 // maxOffset - this is the maximum distance of a sample from its cluster centre in any dimension.
 // randSeed - random seed
-func GenerateClusters(rows, cols, clusters int, max, min, maxOffset float64, randSeed int64) *mat64.Dense {
+func GenerateClusters(rows, cols, clusters int, max, min, maxOffset float64, randSeed int64) *mat.Dense {
 	rand.Seed(randSeed)
 
-	data := mat64.NewDense(rows, cols, nil)
+	data := mat.NewDense(rows, cols, nil)
 
 	// randomly pick cluster centres
 	clusterCentres := make([][]float64, clusters)
@@ -33,8 +33,8 @@ func GenerateClusters(rows, cols, clusters int, max, min, maxOffset float64, ran
 		cc := make([]float64, cols)
 		copy(cc, clusterCentres[clusterID])
 
-		dataPoint := mat64.NewVector(cols, cc)
-		rVec := mat64.NewVector(cols, rv)
+		dataPoint := mat.NewVecDense(cols, cc)
+		rVec := mat.NewVecDense(cols, rv)
 
 		dataPoint.AddVec(dataPoint, rVec)
 		data.SetRow(i, dataPoint.RawVector().Data)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/gonum/matrix/mat64"
+	"gonum.org/v1/gonum/mat"
 )
 
 // Distance calculates metric distance between vectors a and b.
@@ -32,7 +32,7 @@ func Distance(metric string, a, b []float64) (float64, error) {
 // DistanceMx returns a hollow symmetric matrix where an item x_ij contains the distance between
 // vectors stored in rows i and j.  If an unknown metric is supplied Euclidean distance is computed.
 // It returns error if the supplied matrix is nil.
-func DistanceMx(metric string, m *mat64.Dense) (*mat64.Dense, error) {
+func DistanceMx(metric string, m *mat.Dense) (*mat.Dense, error) {
 	if m == nil {
 		return nil, fmt.Errorf("invalid matrix supplied: %v", m)
 	}
@@ -51,7 +51,7 @@ func DistanceMx(metric string, m *mat64.Dense) (*mat64.Dense, error) {
 // If several vectors of the same distance are found, it returns the index of the first one found.
 // ClosestVec returns error if either v or m are nil or if the v dimension is different from
 // the number of m columns. When the ClosestVec fails with error returned index is set to -1.
-func ClosestVec(metric string, v []float64, m *mat64.Dense) (int, error) {
+func ClosestVec(metric string, v []float64, m *mat.Dense) (int, error) {
 	// vector can't be nil
 	if v == nil || len(v) == 0 {
 		return -1, fmt.Errorf("invalid vector: %v", v)
@@ -83,7 +83,7 @@ func ClosestVec(metric string, v []float64, m *mat64.Dense) (int, error) {
 // rows. The length of the slice is the same as number of requested closest vectors - n.
 // ClosestNVec fails in the same way as ClosestVec. If n is higher than the number of
 // rows in m, or if it is not a positive integer, it fails with error too.
-func ClosestNVec(metric string, n int, v []float64, m *mat64.Dense) ([]int, error) {
+func ClosestNVec(metric string, n int, v []float64, m *mat.Dense) ([]int, error) {
 	// vector can't be nil
 	if v == nil || len(v) == 0 {
 		return nil, fmt.Errorf("invalid vector: %v", v)
@@ -132,7 +132,7 @@ func ClosestNVec(metric string, n int, v []float64, m *mat64.Dense) ([]int, erro
 // vector stored in data rows. Each item in the returned slice correspnds to index of BMU for
 // a particular data sample. If some data row has more than one BMU the index of the first one found is used.
 // It returns error if either the data or codebook are nil or if their dimensions are mismatched.
-func BMUs(data, codebook *mat64.Dense) ([]int, error) {
+func BMUs(data, codebook *mat.Dense) ([]int, error) {
 	// data can't be nil
 	if data == nil {
 		return nil, fmt.Errorf("invalid data supplied: %v", data)
@@ -167,9 +167,9 @@ func euclideanVec(a, b []float64) float64 {
 }
 
 // euclideanMx computes a matrix of euclidean distances between each row in m
-func euclideanMx(m *mat64.Dense) *mat64.Dense {
+func euclideanMx(m *mat.Dense) *mat.Dense {
 	rows, _ := m.Dims()
-	out := mat64.NewDense(rows, rows, nil)
+	out := mat.NewDense(rows, rows, nil)
 
 	for row := 0; row < rows-1; row++ {
 		dist := 0.0

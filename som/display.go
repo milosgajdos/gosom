@@ -6,7 +6,7 @@ import (
 	"io"
 	"math"
 
-	"github.com/gonum/matrix/mat64"
+	"gonum.org/v1/gonum/mat"
 )
 
 type rowWithDist struct {
@@ -50,7 +50,7 @@ var colors = [][]int{{255, 0, 0}, {0, 255, 0}, {0, 0, 255}, {255, 255, 0}, {255,
 // writer   - the io.Writter to write the output SVG to.
 // classes  - if the classes are known (i.e. these are test data) they can be displayed providing the information in this map.
 // The map is: codebook vector row -> class number. When classes are not known (i.e. running with real data), just provide an empty map
-func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape, title string, writer io.Writer, classes map[int]int) error {
+func UMatrixSVG(codebook *mat.Dense, dims []int, uShape, title string, writer io.Writer, classes map[int]int) error {
 	xmlEncoder := xml.NewEncoder(writer)
 	// array to hold the xml elements
 	elems := []interface{}{h1{Title: title}}
@@ -170,9 +170,9 @@ func UMatrixSVG(codebook *mat64.Dense, dims []int, uShape, title string, writer 
 	return nil
 }
 
-func allRowsInRadius(selectedRow int, radius float64, distMatrix *mat64.Dense) []rowWithDist {
+func allRowsInRadius(selectedRow int, radius float64, distMatrix *mat.Dense) []rowWithDist {
 	rowsInRadius := []rowWithDist{}
-	for i, dist := range distMatrix.RowView(selectedRow).RawVector().Data {
+	for i, dist := range distMatrix.RawRowView(selectedRow) {
 		if dist < radius {
 			rowsInRadius = append(rowsInRadius, rowWithDist{Row: i, Dist: dist})
 		}

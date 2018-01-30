@@ -5,8 +5,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/gonum/matrix/mat64"
 	"github.com/stretchr/testify/assert"
+	"gonum.org/v1/gonum/mat"
 )
 
 func TestDistance(t *testing.T) {
@@ -51,13 +51,13 @@ func TestDistance(t *testing.T) {
 func TestDistanceMx(t *testing.T) {
 	assert := assert.New(t)
 
-	one := mat64.NewDense(2, 2, []float64{
+	one := mat.NewDense(2, 2, []float64{
 		0.0, 0.0,
 		1.0, 0.0,
 	})
 
 	oneR, _ := one.Dims()
-	oneOutExpected := mat64.NewDense(oneR, oneR, []float64{
+	oneOutExpected := mat.NewDense(oneR, oneR, []float64{
 		0.0, 1.0,
 		1.0, 0.0,
 	})
@@ -65,21 +65,21 @@ func TestDistanceMx(t *testing.T) {
 	oneOut, err := DistanceMx("euclidean", one)
 
 	assert.NoError(err)
-	assert.True(mat64.EqualApprox(oneOutExpected, oneOut, 0.01))
+	assert.True(mat.EqualApprox(oneOutExpected, oneOut, 0.01))
 
 	// test if default distance is computed for unknown matrix
 	oneOut, err = DistanceMx("foobar", one)
 
 	assert.NoError(err)
-	assert.True(mat64.EqualApprox(oneOutExpected, oneOut, 0.01))
+	assert.True(mat.EqualApprox(oneOutExpected, oneOut, 0.01))
 
-	zero := mat64.NewDense(2, 3, []float64{
+	zero := mat.NewDense(2, 3, []float64{
 		33.0, 33.0, 33.0,
 		33.0, 33.0, 33.0,
 	})
 
 	zeroR, _ := zero.Dims()
-	zeroOutExpected := mat64.NewDense(zeroR, zeroR, []float64{
+	zeroOutExpected := mat.NewDense(zeroR, zeroR, []float64{
 		0.0, 0.0,
 		0.0, 0.0,
 	})
@@ -87,15 +87,15 @@ func TestDistanceMx(t *testing.T) {
 	zeroOut, err := DistanceMx("euclidean", zero)
 
 	assert.NoError(err)
-	assert.True(mat64.EqualApprox(zeroOutExpected, zeroOut, 0.01))
+	assert.True(mat.EqualApprox(zeroOutExpected, zeroOut, 0.01))
 
-	negative := mat64.NewDense(2, 3, []float64{
+	negative := mat.NewDense(2, 3, []float64{
 		33.0, 33.0, 33.0,
 		133.0, 33.0, 33.0,
 	})
 
 	negativeR, _ := negative.Dims()
-	negativeOutExpected := mat64.NewDense(negativeR, negativeR, []float64{
+	negativeOutExpected := mat.NewDense(negativeR, negativeR, []float64{
 		0.0, 100.0,
 		100.0, 0.0,
 	})
@@ -103,7 +103,7 @@ func TestDistanceMx(t *testing.T) {
 	negativeOut, err := DistanceMx("euclidean", negative)
 
 	assert.NoError(err)
-	assert.True(mat64.EqualApprox(negativeOutExpected, negativeOut, 0.01))
+	assert.True(mat.EqualApprox(negativeOutExpected, negativeOut, 0.01))
 
 	nilMatrix, err := DistanceMx("euclidean", nil)
 
@@ -127,7 +127,7 @@ func TestClosestVec(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		m := mat64.NewDense(2, len(tc.v), tc.m)
+		m := mat.NewDense(2, len(tc.v), tc.m)
 		closest, err := ClosestVec(tc.metric, tc.v, m)
 		assert.NoError(err)
 		assert.Equal(tc.expected, closest)
@@ -135,7 +135,7 @@ func TestClosestVec(t *testing.T) {
 
 	// nil vector returns error
 	v := []float64{}
-	m := new(mat64.Dense)
+	m := new(mat.Dense)
 	errString := "invalid vector: %v"
 	closest, err := ClosestVec(metric, v, m)
 	assert.Error(err)
@@ -151,7 +151,7 @@ func TestClosestVec(t *testing.T) {
 	assert.Equal(-1, closest)
 	// mismatched dimensions return error
 	v = make([]float64, 3)
-	m = mat64.NewDense(2, 2, nil)
+	m = mat.NewDense(2, 2, nil)
 	closest, err = ClosestVec(metric, v, m)
 	assert.Error(err)
 	assert.Equal(-1, closest)
@@ -163,7 +163,7 @@ func TestClosestNVec(t *testing.T) {
 	metric := "euclidean"
 	// test failure cases
 	v := []float64{}
-	m := new(mat64.Dense)
+	m := new(mat.Dense)
 	n := 2
 	// nil vector returns error
 	errString := "invalid vector: %v"
@@ -177,7 +177,7 @@ func TestClosestNVec(t *testing.T) {
 	closest, err = ClosestNVec(metric, n, v, m)
 	assert.EqualError(err, fmt.Sprintf(errString, m))
 	// incorrect number of n closest vectors
-	m = new(mat64.Dense)
+	m = new(mat.Dense)
 	n = -5
 	errString = "invalid number of closest vectors requested: %d"
 	closest, err = ClosestNVec(metric, n, v, m)
@@ -186,7 +186,7 @@ func TestClosestNVec(t *testing.T) {
 	// when n==1, return BMU
 	n = 1
 	v, mData := []float64{0.0, 0.0}, []float64{0.0, 1.0, 0.0, 0.1}
-	m = mat64.NewDense(2, len(v), mData)
+	m = mat.NewDense(2, len(v), mData)
 	closest, err = ClosestNVec(metric, n, v, m)
 	assert.NotNil(closest)
 	assert.Equal(1, closest[0])
@@ -198,7 +198,7 @@ func TestClosestNVec(t *testing.T) {
 		0.0, 0.2,
 		0.1, 0.0,
 		0.0, 0.5}
-	m = mat64.NewDense(5, len(v), mData)
+	m = mat.NewDense(5, len(v), mData)
 	closest, err = ClosestNVec(metric, n, v, m)
 	assert.NoError(err)
 	sort.Ints(closest)
@@ -210,11 +210,11 @@ func TestBMUs(t *testing.T) {
 
 	// test data and codebook
 	rows := 3
-	data := mat64.NewDense(rows, 4,
+	data := mat.NewDense(rows, 4,
 		[]float64{5.1, 3.5, 1.4, 0.1,
 			4.6, 3.1, 1.5, 0.4,
 			5.0, 3.6, 1.4, 0.5})
-	cbook := mat64.NewDense(2, 4,
+	cbook := mat.NewDense(2, 4,
 		[]float64{5.1, 3.5, 1.4, 0.1,
 			5.0, 3.6, 1.4, 0.5})
 	// nil data returns error

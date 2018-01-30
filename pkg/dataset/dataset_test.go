@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gonum/matrix/mat64"
 	"github.com/stretchr/testify/assert"
+	"gonum.org/v1/gonum/mat"
 )
 
 var (
@@ -62,11 +62,11 @@ func TestDataSet(t *testing.T) {
 		0, -0.1796053020267749,
 		1, 1.0776318121606494,
 	}
-	scaledMx := mat64.NewDense(3, 2, scaled)
+	scaledMx := mat.NewDense(3, 2, scaled)
 	// scale data set in place
 	scaledDs := ds.Scale()
-	assert.True(mat64.Equal(scaledMx, scaledDs))
-	assert.True(mat64.Equal(scaledMx, ds.Data))
+	assert.True(mat.Equal(scaledMx, scaledDs))
+	assert.True(mat.Equal(scaledMx, ds.Data))
 
 	// unsupported file format
 	ds, err = New("example", "")
@@ -257,7 +257,7 @@ func TestScale(t *testing.T) {
 		0, -0.1796053020267749,
 		1, 1.0776318121606494,
 	}
-	scaledMx := mat64.NewDense(3, 2, scaled)
+	scaledMx := mat.NewDense(3, 2, scaled)
 	scaledDs := Scale(ds.Data)
-	assert.True(mat64.Equal(scaledDs, scaledMx))
+	assert.True(mat.Equal(scaledDs, scaledMx))
 }

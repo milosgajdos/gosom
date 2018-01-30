@@ -4,18 +4,18 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gonum/matrix/mat64"
 	"github.com/stretchr/testify/assert"
+	"gonum.org/v1/gonum/mat"
 )
 
 var (
-	qData = mat64.NewDense(5, 4,
+	qData = mat.NewDense(5, 4,
 		[]float64{5.1, 3.5, 1.4, 0.1,
 			4.9, 3.0, 1.4, 0.2,
 			4.7, 3.2, 1.3, 0.3,
 			4.6, 3.1, 1.5, 0.4,
 			5.0, 3.6, 1.4, 0.5})
-	qCbook = mat64.NewDense(3, 4,
+	qCbook = mat.NewDense(3, 4,
 		[]float64{5.1, 3.5, 1.4, 0.1,
 			4.9, 3.0, 1.4, 0.2,
 			5.0, 3.6, 1.4, 0.5})
@@ -35,7 +35,7 @@ func TestQuantError(t *testing.T) {
 	assert.EqualError(err, fmt.Sprintf(errString, nil))
 	assert.Equal(-1.0, qe)
 	// incorrect dimensions of codebook and data
-	qCbookTmp := mat64.NewDense(1, 3, []float64{5.1, 3.5, 1.4})
+	qCbookTmp := mat.NewDense(1, 3, []float64{5.1, 3.5, 1.4})
 	qe, err = QuantError(qData, qCbookTmp)
 	assert.Error(err)
 	assert.Equal(-1.0, qe)
@@ -93,7 +93,7 @@ func TestTopoError(t *testing.T) {
 	assert.EqualError(err, fmt.Sprintf(errString, nil))
 	assert.Equal(-1.0, te)
 	// incorrect dimensions of codebook and data
-	qCbookTmp := mat64.NewDense(1, 3, []float64{5.1, 3.5, 1.4})
+	qCbookTmp := mat.NewDense(1, 3, []float64{5.1, 3.5, 1.4})
 	te, err = TopoError(qData, qCbookTmp, qGrid)
 	assert.Error(err)
 	assert.Equal(-1.0, te)

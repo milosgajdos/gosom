@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gonum/matrix/mat64"
-	"github.com/gonum/stat"
+	"gonum.org/v1/gonum/mat"
+	"gonum.org/v1/gonum/stat"
 )
 
 // LRN data format constants
@@ -29,7 +29,7 @@ const (
 )
 
 // load data funcs
-var loadFuncs = map[string]func(io.Reader) (*mat64.Dense, error){
+var loadFuncs = map[string]func(io.Reader) (*mat.Dense, error){
 	".csv": LoadCSV,
 	".lrn": LoadLRN,
 }
@@ -41,7 +41,7 @@ var loadClsFuncs = map[string]func(io.Reader) (map[int]int, error){
 
 // DataSet represents training data set
 type DataSet struct {
-	Data    *mat64.Dense
+	Data    *mat.Dense
 	Classes map[int]int
 }
 
@@ -106,7 +106,7 @@ func New(dataPath string, clsPath string) (*DataSet, error) {
 
 // Scale normalizes data in each column based on its mean and standard deviation and returns it.
 // It modifies the underlying daata. If this is not desirable use the standalone Scale function.
-func (ds *DataSet) Scale() *mat64.Dense {
+func (ds *DataSet) Scale() *mat.Dense {
 	return scale(ds.Data, true)
 }
 
@@ -114,7 +114,7 @@ func (ds *DataSet) Scale() *mat64.Dense {
 // It returns data matrix that contains particular CSV fields in columns.
 // It returns error if the supplied data set contains corrrupted data or
 // if the data can not be converted to float numbers
-func LoadCSV(r io.Reader) (*mat64.Dense, error) {
+func LoadCSV(r io.Reader) (*mat.Dense, error) {
 	// data matrix dimensions: rows x cols
 	var rows, cols int
 	// mxData contains ALL data read field by field
@@ -147,12 +147,12 @@ func LoadCSV(r io.Reader) (*mat64.Dense, error) {
 		rows++
 	}
 	// return data matrix
-	return mat64.NewDense(rows, cols, mxData), nil
+	return mat.NewDense(rows, cols, mxData), nil
 }
 
 // LoadLRN reads data from a .lrn file.
 // See the specification here: http://databionic-esom.sourceforge.net/user.html#Data_files____lrn_
-func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
+func LoadLRN(reader io.Reader) (*mat.Dense, error) {
 	const DataCol = 1
 	var rows, cols int
 	var mxData []float64
@@ -227,7 +227,7 @@ func LoadLRN(reader io.Reader) (*mat64.Dense, error) {
 		return nil, fmt.Errorf("Wrong number of data rows.  Expecting %d, but was %d", rows, valueRow)
 	}
 
-	return mat64.NewDense(rows, cols, mxData), nil
+	return mat.NewDense(rows, cols, mxData), nil
 }
 
 // LoadCLS reads classification information from a .cls file.
@@ -295,13 +295,13 @@ func LoadCLS(reader io.Reader) (map[int]int, error) {
 
 // Scale centers the data set to zero mean values in each column and then normalizes them.
 // It does not modify the data stored in the matrix supplied as a parameter.
-func Scale(mx mat64.Matrix) *mat64.Dense {
+func Scale(mx mat.Matrix) *mat.Dense {
 	return scale(mx, false)
 }
 
 // scale centers the supplied data set to zero mean in each column and then normalizes them.
 // You can specify whether you want to scale data in place or return new data set
-func scale(mx mat64.Matrix, inPlace bool) *mat64.Dense {
+func scale(mx mat.Matrix, inPlace bool) *mat.Dense {
 	rows, cols := mx.Dims()
 	// mean/stdev store each column mean/stdev values
 	col := make([]float64, rows)
@@ -310,7 +310,7 @@ func scale(mx mat64.Matrix, inPlace bool) *mat64.Dense {
 	// calculate mean and standard deviation for each column
 	for i := 0; i < cols; i++ {
 		// copy i-th column to col
-		mat64.Col(col, i, mx)
+		mat.Col(col, i, mx)
 		mean[i], stdev[i] = stat.MeanStdDev(col, nil)
 	}
 	// initialize scale function
@@ -319,12 +319,12 @@ func scale(mx mat64.Matrix, inPlace bool) *mat64.Dense {
 	}
 	// if in place data should be modified
 	if inPlace {
-		mxDense := mx.(*mat64.Dense)
+		mxDense := mx.(*mat.Dense)
 		mxDense.Apply(scale, mxDense)
 		return mxDense
 	}
 	// otherwise allocate new data matrix
-	dataMx := new(mat64.Dense)
+	dataMx := new(mat.Dense)
 	dataMx.Clone(mx)
 	dataMx.Apply(scale, dataMx)
 	return dataMx
