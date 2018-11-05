@@ -246,8 +246,8 @@ func (m *Map) seqTrain(tc *TrainConfig, data *mat.Dense, iters int) error {
 }
 
 // seqUpdateCbVec updates codebook vector on row cbIdx given the learning rate l,
-// radius r, distance d and neihgbourhood function nFn
-func (m *Map) seqUpdateCbVec(cbIdx int, vec []float64, l, r, d float64, nFn NeighbFunc) {
+// radius r, distance d and neihgbourhood function nFn, provided sample data vector
+func (m *Map) seqUpdateCbVec(cbIdx int, sample []float64, l, r, d float64, nFn NeighbFunc) {
 	// pick codebook vector that should be updated
 	cbVec := m.codebook.RawRowView(cbIdx)
 	mul := l
@@ -257,7 +257,7 @@ func (m *Map) seqUpdateCbVec(cbIdx int, vec []float64, l, r, d float64, nFn Neig
 		if d > 0.0 {
 			mul *= nFn(d, r)
 		}
-		cbVec[i] = cbVec[i] + mul*(vec[i]-cbVec[i])
+		cbVec[i] = cbVec[i] + mul*(sample[i]-cbVec[i])
 	}
 }
 

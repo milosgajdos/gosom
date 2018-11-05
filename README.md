@@ -118,7 +118,7 @@ It will spit out a new image `som.png` which looks like this:
 
 Lastly, it will generate a `u-matrix` which looks like this:
 
-<img src="./examples/colors/umatrix.png" alt="u-matriz" width="200">
+<img src="./examples/colors/umatrix.png" alt="u-matrix" width="200">
 
 ## Arbitrary labeled data
 
