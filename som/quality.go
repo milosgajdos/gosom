@@ -94,8 +94,6 @@ func TopoProduct(codebook, grid *mat.Dense) (float64, error) {
 			p3 *= q1 * q2
 			// the actual P3 has to be square rooted
 			tp += math.Log(math.Pow(p3, 1/float64(2*(j+1))))
-			//fmt.Println("P1", math.Pow(p1, 1/float64((j+1))))
-			//fmt.Println("P2", math.Pow(p2, 1/float64((j+1))))
 		}
 	}
 

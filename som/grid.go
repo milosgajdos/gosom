@@ -279,11 +279,6 @@ func getBaseVecs(data *mat.Dense, mapDim int) (*mat.Dense, error) {
 			vec := vecs.ColView(i).(*mat.VecDense)
 			vec.ScaleVec(math.Sqrt(vals[i])/mat.Norm(vec, 2), vec)
 		}
-		fb := mat.Formatted(vecs, mat.Prefix("    "))
-		fmt.Printf("NORMALIZED PCA vecs:a = %v\n", fb)
-		r, c := vecs.Dims()
-		fmt.Printf("Rows: %d, Cols: %d\n", r, c)
-		fmt.Printf("dataDim: %d, mapDim %d\n", dataDim, mapDim)
 		// pick first m eigenvectors
 		baseVecs.Clone(vecs.Slice(0, dataDim, 0, mapDim))
 	} else {
