@@ -2,25 +2,32 @@
 
 
 [[projects]]
+  digest = "1:a2c1d0e43bd3baaa071d1b9ed72c27d78169b2b269f71c105ac4ba34b1be4a39"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
+  pruneopts = "UT"
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
 
 [[projects]]
+  digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
+  pruneopts = "UT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:f851adbf061d78e8927a16c7f2e87d63f5f1a36f5485fdea01b8ab9d46af356c"
   name = "github.com/stretchr/testify"
   packages = ["assert"]
+  pruneopts = "UT"
   revision = "b91bfb9ebec76498946beb6af7c0230c7cc7ba6c"
   version = "v1.2.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:e2f468f10ab6576bb2969c37246a12e39fecb5a7a42153653dd7b6ff1bfac2ef"
   name = "gonum.org/v1/gonum"
   packages = [
     "blas",
@@ -35,13 +42,19 @@
     "lapack/gonum",
     "lapack/lapack64",
     "mat",
-    "stat"
+    "stat",
   ]
+  pruneopts = "UT"
   revision = "870bcdceb64d7ebcf96f33e1c3d89eb1ec3bbd8a"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1522c4218bea28d96a677954048e65467b6a7b79ae32ddfd20dc12fbb6d4bf27"
+  input-imports = [
+    "github.com/stretchr/testify/assert",
+    "gonum.org/v1/gonum/floats",
+    "gonum.org/v1/gonum/mat",
+    "gonum.org/v1/gonum/stat",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

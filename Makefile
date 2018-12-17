@@ -28,10 +28,10 @@ clean:
 	rm -rf $(BUILDPATH)
 
 godep:
-	go get -u github.com/golang/dep/cmd/dep
+	wget -O- https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
-dep: godep
-	dep ensure
+dep:
+	dep ensure -v
 
 check:
 	for pkg in ${PACKAGES}; do \
