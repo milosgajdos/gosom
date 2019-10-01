@@ -4,7 +4,7 @@ go:
   - "1.13"
 
 before_install:
-  - go get github.com/golang/lint/golint
+  - go get golang.org/x/lint
 
 script:
   - make dep
