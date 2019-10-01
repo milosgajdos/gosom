@@ -5,7 +5,7 @@ go:
 env:
   - GO111MODULE=on
 before_install:
-  - go get golang.org/x/lint
+  - go get golang.org/x/lint/golint
 
 script:
   - make dep
