@@ -27,11 +27,8 @@ install:
 clean:
 	rm -rf $(BUILDPATH)
 
-godep:
-	wget -O- https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-
 dep:
-	dep ensure -v
+	go get ./...
 
 check:
 	for pkg in ${PACKAGES}; do \
