@@ -8,9 +8,6 @@ before_install:
   - go get golang.org/x/lint/golint
 
 script:
-  - make dep
-  - make check
-  - make test
   - make all
 
 after_success:

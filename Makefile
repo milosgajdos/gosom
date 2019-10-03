@@ -10,7 +10,7 @@ examples: builddir
 		go build -o "$(BUILDPATH)/$$example" "examples/$$example/$$example.go"; \
 	done
 
-all: examples
+all: dep check test examples
 
 colors: builddir
 	go build -o "$(BUILDPATH)/colors" "examples/colors/colors.go"
@@ -31,10 +31,7 @@ dep:
 	go get ./...
 
 check:
-	for pkg in ${PACKAGES}; do \
-		go vet $$pkg || exit ; \
-		golint $$pkg || exit ; \
-	done
+	go vet ./...
 
 test:
 	for pkg in ${PACKAGES}; do \
