@@ -1,4 +1,4 @@
-module github.com/milosgajdos83/gosom
+module github.com/milosgajdos/gosom
 
 go 1.13
 

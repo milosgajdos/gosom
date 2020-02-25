@@ -7,9 +7,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/milosgajdos83/gosom/pkg/dataset"
-	"github.com/milosgajdos83/gosom/pkg/utils"
-	"github.com/milosgajdos83/gosom/som"
+	"github.com/milosgajdos/gosom/pkg/dataset"
+	"github.com/milosgajdos/gosom/pkg/utils"
+	"github.com/milosgajdos/gosom/som"
 )
 
 const (

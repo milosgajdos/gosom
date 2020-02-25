@@ -1,10 +1,10 @@
 # gosom
 
-[![GoDoc](https://godoc.org/github.com/milosgajdos83/gosom?status.svg)](https://godoc.org/github.com/milosgajdos83/gosom)
+[![GoDoc](https://godoc.org/github.com/milosgajdos/gosom?status.svg)](https://godoc.org/github.com/milosgajdos/gosom)
 [![License](https://img.shields.io/:license-apache-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Travis CI](https://travis-ci.org/milosgajdos83/gosom.svg?branch=master)](https://travis-ci.org/milosgajdos83/gosom)
-[![Go Report Card](https://goreportcard.com/badge/milosgajdos83/gosom)](https://goreportcard.com/report/github.com/milosgajdos83/gosom)
-[![codecov](https://codecov.io/gh/milosgajdos83/gosom/branch/master/graph/badge.svg)](https://codecov.io/gh/milosgajdos83/gosom)
+[![Travis CI](https://travis-ci.org/milosgajdos/gosom.svg?branch=master)](https://travis-ci.org/milosgajdos/gosom)
+[![Go Report Card](https://goreportcard.com/badge/milosgajdos/gosom)](https://goreportcard.com/report/github.com/milosgajdos/gosom)
+[![codecov](https://codecov.io/gh/milosgajdos/gosom/branch/master/graph/badge.svg)](https://codecov.io/gh/milosgajdos/gosom)
 
 This project provides an implementation of [Self-Organizing Map](https://en.wikipedia.org/wiki/Self-organizing_map) (SOM) in Go. It implements the two most well known SOM training algorithms: `sequential` and `batch`. The `batch` training is faster than the `sequential` as it can be parallelized, taking advantage of as many cores as your machine provides. However it can be less accurate as it merely provides a resonable approximation of SOM, but still acceptable. The `sequential` algorithm is performed as its name implies, sequentially. Because of its sequential nature it's slower than `batch` training, but more accurate. You can read more about SOM training algorithms [here](http://www.scholarpedia.org/article/Kohonen_network).
 
@@ -17,7 +17,7 @@ See the accompanying introductory [blog post](http://mlexplore.org/2017/01/13/se
 Get the source code:
 
 ```
-$ go get -u github.com/milosgajdos83/gosom
+$ go get -u github.com/milosgajdos/gosom
 ```
 
 **Make sure you've got all the dependencies** (`go get -u` should retrieve them, but this project might use a specific version of `gonum` so make sure you run the following command):

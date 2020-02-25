@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/milosgajdos83/gosom/pkg/utils"
+	"github.com/milosgajdos/gosom/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"gonum.org/v1/gonum/mat"
 )
