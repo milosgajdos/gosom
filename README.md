@@ -4,7 +4,6 @@
 [![License](https://img.shields.io/:license-apache-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Travis CI](https://travis-ci.org/milosgajdos/gosom.svg?branch=master)](https://travis-ci.org/milosgajdos/gosom)
 [![Go Report Card](https://goreportcard.com/badge/milosgajdos/gosom)](https://goreportcard.com/report/github.com/milosgajdos/gosom)
-[![codecov](https://codecov.io/gh/milosgajdos/gosom/branch/master/graph/badge.svg)](https://codecov.io/gh/milosgajdos/gosom)
 
 This project provides an implementation of [Self-Organizing Map](https://en.wikipedia.org/wiki/Self-organizing_map) (SOM) in Go. It implements the two most well known SOM training algorithms: `sequential` and `batch`. The `batch` training is faster than the `sequential` as it can be parallelized, taking advantage of as many cores as your machine provides. However it can be less accurate as it merely provides a resonable approximation of SOM, but still acceptable. The `sequential` algorithm is performed as its name implies, sequentially. Because of its sequential nature it's slower than `batch` training, but more accurate. You can read more about SOM training algorithms [here](http://www.scholarpedia.org/article/Kohonen_network).
 
