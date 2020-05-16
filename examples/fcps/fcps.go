@@ -84,7 +84,7 @@ func parseCliFlags() error {
 }
 
 func saveModel(m *som.Map, format, path string) error {
-	file, err := os.Open(path)
+	file, err := os.Create(path)
 	if err != nil {
 		return err
 	}
