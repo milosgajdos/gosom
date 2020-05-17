@@ -86,7 +86,7 @@ func UMatrixSVG(codebook *mat.Dense, dims []int, uShape, title string, writer io
 		if avgDistance > maxDistance {
 			maxDistance = avgDistance
 		}
-		if avgDistance < maxDistance {
+		if avgDistance < minDistance {
 			minDistance = avgDistance
 		}
 	}
