@@ -56,7 +56,7 @@ func UMatrixSVG(codebook *mat.Dense, dims []int, uShape, title string, writer io
 	elems := []interface{}{h1{Title: title}}
 
 	rows, _ := codebook.Dims()
-	distMat, err := DistanceMx("euclidean", codebook)
+	distMat, err := DistanceMx(Euclidean, codebook)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func UMatrixSVG(codebook *mat.Dense, dims []int, uShape, title string, writer io
 	if err != nil {
 		return err
 	}
-	coordsDistMat, err := DistanceMx("euclidean", coords)
+	coordsDistMat, err := DistanceMx(Euclidean, coords)
 	if err != nil {
 		return err
 	}

@@ -65,7 +65,7 @@ func (m Map) Grid() *Grid {
 
 // UnitDist returns a matrix which contains Euclidean distances between SOM units
 func (m Map) UnitDist() (*mat.Dense, error) {
-	return DistanceMx("euclidean", m.grid.coords)
+	return DistanceMx(Euclidean, m.grid.coords)
 }
 
 // BMUs returns a slice which contains indices of Best Match Unit vectors to the map
@@ -137,7 +137,7 @@ func (m Map) mapBMUclasses(data *mat.Dense, classes map[int]int) (map[int][]int,
 	bmuClasses := make(map[int][]int)
 	for row := 0; row < rows; row++ {
 		// find BMU
-		cbi, err := ClosestVec("euclidean", data.RawRowView(row), m.codebook)
+		cbi, err := ClosestVec(Euclidean, data.RawRowView(row), m.codebook)
 		if err != nil {
 			return nil, err
 		}
@@ -223,7 +223,7 @@ func (m *Map) seqTrain(tc *TrainConfig, data *mat.Dense, iters int) error {
 		sample := data.RawRowView(r.Intn(rows))
 		// no need to check for error here:
 		// sample and codebook are not nil and have the same dimension
-		bmu, _ := ClosestVec("euclidean", sample, m.codebook)
+		bmu, _ := ClosestVec(Euclidean, sample, m.codebook)
 		// no need to check for errors:
 		// LRate and Radius are checked by config validation
 		lRate, _ := LRate(i, iters, tc.LDecay, tc.LRate)
@@ -367,7 +367,7 @@ func (m Map) processBatch(res chan<- *batchResult, wg *sync.WaitGroup,
 	for i := from; i < count+from; i++ {
 		row := data.RawRowView(i)
 		// find codebook BMU for this data row
-		bmu, _ := ClosestVec("euclidean", row, m.codebook)
+		bmu, _ := ClosestVec(Euclidean, row, m.codebook)
 		// calculate radius for this iteration
 		radius, _ := Radius(iter, bc.iters, bc.tc.RDecay, bc.tc.Radius)
 		// pick the BMU's distance row
