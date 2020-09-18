@@ -14,39 +14,38 @@ import (
 
 // Map is a Self Organizing Map (SOM)
 type Map struct {
-	// codebook is a matrix which contains SOM codebook vectors
-	// codebook dimensions: SOM units x data features
+	// codebook contains SOM codebook aka model vectors
+	// codebook dimensions: SOM (grid) units x data features
 	codebook *mat.Dense
-	// grid is a matrix which contains SOM unit coordinages
+	// grid is a matrix which contains SOM unit coordinates
 	// grid dimensions depend on chosen configuration
 	grid *Grid
 }
 
-// NewMap creates new SOM based on the provided configuration.
+// NewMap creates a new SOM based on the provided configuration.
 // It creates a map grid and initializes codebook vectors using the provided configuration parameter.
 // NewMap returns error if the provided configuration is not valid or if the data matrix is nil or
 // if the codebook matrix could not be initialized.
 // TODO: Avoid passing in data matrix when creating new map
 func NewMap(c *MapConfig, data *mat.Dense) (*Map, error) {
-	// if input data is empty throw error
 	if data == nil {
 		return nil, fmt.Errorf("invalid input data: %v", data)
 	}
-	// validate codebook config
+
 	if err := validateCbConfig(c.Cb); err != nil {
 		return nil, err
 	}
-	// initialize codebook
+
 	codebook, err := c.Cb.InitFunc(data, c.Grid.Size)
 	if err != nil {
 		return nil, err
 	}
-	// make new grid
+
 	grid, err := NewGrid(c.Grid)
 	if err != nil {
 		return nil, err
 	}
-	// return pointer to new map
+
 	return &Map{
 		codebook: codebook,
 		grid:     grid,
@@ -83,12 +82,14 @@ func (m *Map) MarshalTo(format string, w io.Writer) (int, error) {
 	case "gonum":
 		return m.codebook.MarshalBinaryTo(w)
 	}
-	// marshal binary to file path
+
 	return 0, fmt.Errorf("unsupported format: %s", format)
 }
 
 // UMatrix generates SOM u-matrix in a given format and writes the output to w.
-// At the moment only SVG format is supported. It fails with error if the write to w fails.
+// NOTE: if the map has not been trained u-matrix returns seemingly non-sensical results.
+// At the moment only SVG format is supported -- requesting other formats fails with error.
+// It fails with error if the write to w fails.
 func (m Map) UMatrix(w io.Writer, data *mat.Dense, classMap map[int]int, format, title string) error {
 	switch format {
 	case "svg":
@@ -126,10 +127,10 @@ func (m Map) UMatrix(w io.Writer, data *mat.Dense, classMap map[int]int, format,
 		}
 	}
 
-	return fmt.Errorf("invalid format %s", format)
+	return fmt.Errorf("unsupported format %s", format)
 }
 
-// mapBMUclasses returns a map which contains a list of classes to which this BMUs input samples are members of
+// mapBMUclasses returns a map which contains a list of classes of which this BMUs input samples are members of.
 // We go through all data samples and add their classes to the list of classes of their respective BMUs.
 func (m Map) mapBMUclasses(data *mat.Dense, classes map[int]int) (map[int][]int, error) {
 	rows, _ := data.Dims()
@@ -204,12 +205,28 @@ func (m Map) TopoError(data *mat.Dense) (float64, error) {
 	return TopoError(data, m.codebook, m.grid.coords)
 }
 
+// seqUpdateCbVec updates codebook vector on row cbIdx given the learning rate l,
+// radius r, distance d and neihgbourhood function nFn, provided sample data vector
+func (m *Map) seqUpdateCbVec(cbIdx int, sample []float64, l, r, d float64, nFn NeighbFunc) {
+	// pick codebook vector that should be updated
+	cbVec := m.codebook.RawRowView(cbIdx)
+	mul := l
+	// Update codebook vector element by element
+	for i := 0; i < len(cbVec); i++ {
+		// nFn returns 1 for d == 0; skipping this case will save us some CPU time
+		if d > 0.0 {
+			mul *= nFn(d, r)
+		}
+		cbVec[i] = cbVec[i] + mul*(sample[i]-cbVec[i])
+	}
+}
+
 // seqTrain runs sequential SOM training algorithm on a given data set
 func (m *Map) seqTrain(tc *TrainConfig, data *mat.Dense, iters int) error {
 	rows, _ := data.Dims()
 	// create random number generator
-	rSrc := rand.NewSource(time.Now().UnixNano())
-	r := rand.New(rSrc)
+	src := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(src)
 	// calculate unit distances
 	unitDist, err := m.UnitDist()
 	if err != nil {
@@ -245,22 +262,6 @@ func (m *Map) seqTrain(tc *TrainConfig, data *mat.Dense, iters int) error {
 	return nil
 }
 
-// seqUpdateCbVec updates codebook vector on row cbIdx given the learning rate l,
-// radius r, distance d and neihgbourhood function nFn, provided sample data vector
-func (m *Map) seqUpdateCbVec(cbIdx int, sample []float64, l, r, d float64, nFn NeighbFunc) {
-	// pick codebook vector that should be updated
-	cbVec := m.codebook.RawRowView(cbIdx)
-	mul := l
-	// Update codebook vector element by element
-	for i := 0; i < len(cbVec); i++ {
-		// nFn returns 1 for d == 0; skipping this case will save us some CPU time
-		if d > 0.0 {
-			mul *= nFn(d, r)
-		}
-		cbVec[i] = cbVec[i] + mul*(sample[i]-cbVec[i])
-	}
-}
-
 // batchConfig holds batch training configuration
 type batchConfig struct {
 	// tc is SOM training configuration
@@ -275,6 +276,50 @@ type batchResult struct {
 	vecs [][]float64
 	// nghbs is a slice of BMU neighbourhoods
 	nghbs []float64
+}
+
+// processRow processes data rows and sends tehm down the results channel
+func (m Map) processBatch(res chan<- *batchResult, wg *sync.WaitGroup,
+	bc *batchConfig, unitDist, data *mat.Dense, from, count, iter int) {
+	// allocate codebook vectors and neighbourhoods
+	rows, _ := m.codebook.Dims()
+	vecs := make([][]float64, rows)
+	nghbs := make([]float64, rows)
+	// retrieve Neighbourhood function
+	nFn := bc.tc.NeighbFn
+	// iterate through the whole batch
+	for i := from; i < count+from; i++ {
+		row := data.RawRowView(i)
+		// find codebook BMU for this data row
+		bmu, _ := ClosestVec(Euclidean, row, m.codebook)
+		// calculate radius for this iteration
+		radius, _ := Radius(iter, bc.iters, bc.tc.RDecay, bc.tc.Radius)
+		// pick the BMU's distance row
+		bmuDists := unitDist.RawRowView(bmu)
+		for j := 0; j < len(bmuDists); j++ {
+			// bmu distance to i-th map unit
+			dist := bmuDists[j]
+			// when in BMU radius, scale and add to all neighbourhood vecs
+			if dist < radius {
+				// calculate neighbourhood function
+				nghb := nFn(dist, radius)
+				if vecs[j] != nil {
+					for k := 0; k < len(vecs[j]); k++ {
+						vecs[j][k] += nghb * row[k]
+					}
+				} else {
+					vecs[j] = make([]float64, len(row))
+					for k := 0; k < len(vecs[j]); k++ {
+						vecs[j][k] = nghb * row[k]
+					}
+				}
+				nghbs[j] += nghb
+			}
+		}
+	}
+	// send batchResult down results channel
+	res <- &batchResult{vecs: vecs, nghbs: nghbs}
+	wg.Done()
 }
 
 // batchTrain runs batch SOM training on a given data set
@@ -352,48 +397,4 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat.Dense, iters int) error {
 	}
 
 	return nil
-}
-
-// processRow processes data rows and sends tehm down the results channel
-func (m Map) processBatch(res chan<- *batchResult, wg *sync.WaitGroup,
-	bc *batchConfig, unitDist, data *mat.Dense, from, count, iter int) {
-	// allocate codebook vectors and neighbourhoods
-	rows, _ := m.codebook.Dims()
-	vecs := make([][]float64, rows)
-	nghbs := make([]float64, rows)
-	// retrieve Neighbourhood function
-	nFn := bc.tc.NeighbFn
-	// iterate through the whole batch
-	for i := from; i < count+from; i++ {
-		row := data.RawRowView(i)
-		// find codebook BMU for this data row
-		bmu, _ := ClosestVec(Euclidean, row, m.codebook)
-		// calculate radius for this iteration
-		radius, _ := Radius(iter, bc.iters, bc.tc.RDecay, bc.tc.Radius)
-		// pick the BMU's distance row
-		bmuDists := unitDist.RawRowView(bmu)
-		for j := 0; j < len(bmuDists); j++ {
-			// bmu distance to i-th map unit
-			dist := bmuDists[j]
-			// when in BMU radius, scale and add to all neighbourhood vecs
-			if dist < radius {
-				// calculate neighbourhood function
-				nghb := nFn(dist, radius)
-				if vecs[j] != nil {
-					for k := 0; k < len(vecs[j]); k++ {
-						vecs[j][k] += nghb * row[k]
-					}
-				} else {
-					vecs[j] = make([]float64, len(row))
-					for k := 0; k < len(vecs[j]); k++ {
-						vecs[j][k] = nghb * row[k]
-					}
-				}
-				nghbs[j] += nghb
-			}
-		}
-	}
-	// send batchResult down results channel
-	res <- &batchResult{vecs: vecs, nghbs: nghbs}
-	wg.Done()
 }
