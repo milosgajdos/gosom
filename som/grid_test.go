@@ -122,11 +122,6 @@ func TestRandInit(t *testing.T) {
 	randMx, err = RandInit(inMx, []int{-4, 3})
 	assert.Nil(randMx)
 	assert.Error(err)
-	// empty matrix
-	emptyMx := mat.NewDense(0, 0, nil)
-	randMx, err = RandInit(emptyMx, []int{2, 3})
-	assert.Nil(randMx)
-	assert.Error(err)
 }
 
 func TestLinInit(t *testing.T) {

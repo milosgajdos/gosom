@@ -249,7 +249,7 @@ func validateLinInit(data *mat.Dense, dims []int) error {
 	// Linear initialization requires at least 2 samples
 	samples, _ := data.Dims()
 	if samples < 2 {
-		return fmt.Errorf("Insufficient number of samples: %d", samples)
+		return fmt.Errorf("insufficient number of samples: %d", samples)
 	}
 	return nil
 }
@@ -258,9 +258,10 @@ func validateLinInit(data *mat.Dense, dims []int) error {
 // It returns a matrix that contains the linear space base vectors.
 // It fails with error if the principal components could not be found
 func getBaseVecs(data *mat.Dense, mapDim int) (*mat.Dense, error) {
-	// mapVecs is a matrix that holds the map linear base vectors
+	// baseVecs is a matrix that holds the map linear base vectors
 	baseVecs := new(mat.Dense)
-	// If both data dimension and requested map dimensions are >1 do PCA
+
+	// If both data dimension and requested map dimensions are > 1 do PCA
 	// In other words we only do PCA if the map has at least 2 dimensions
 	// and if the real map dimensions are at most the same as data dimensions
 	samples, dataDim := data.Dims()
@@ -269,10 +270,11 @@ func getBaseVecs(data *mat.Dense, mapDim int) (*mat.Dense, error) {
 		var pc stat.PC
 		ok := pc.PrincipalComponents(data, nil)
 		if !ok {
-			return nil, fmt.Errorf("Could not determine Principal Components")
+			return nil, fmt.Errorf("could not determine Principal Components")
 		}
 		// principal components and their eigen values
-		vecs := pc.VectorsTo(nil)
+		vecs := new(mat.Dense)
+		pc.VectorsTo(vecs)
 		vals := pc.VarsTo(nil)
 		// normalize the eigenvectors
 		for i := 0; i < mapDim; i++ {
@@ -280,7 +282,7 @@ func getBaseVecs(data *mat.Dense, mapDim int) (*mat.Dense, error) {
 			vec.ScaleVec(math.Sqrt(vals[i])/mat.Norm(vec, 2), vec)
 		}
 		// pick first m eigenvectors
-		baseVecs.Clone(vecs.Slice(0, dataDim, 0, mapDim))
+		baseVecs.CloneFrom(vecs.Slice(0, dataDim, 0, mapDim))
 	} else {
 		// we have only 1D data i.e. 1 column - let's get standard deviation
 		col := make([]float64, samples)
@@ -288,6 +290,7 @@ func getBaseVecs(data *mat.Dense, mapDim int) (*mat.Dense, error) {
 		baseVecs.Grow(1, 1)
 		baseVecs.Set(0, 0, stdev)
 	}
+
 	return baseVecs, nil
 }
 
