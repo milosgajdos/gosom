@@ -22,7 +22,7 @@ func QuantError(data, codebook *mat.Dense) (float64, error) {
 		return -1.0, fmt.Errorf("invalid codebook supplied: %v", codebook)
 	}
 	var qErr float64
-	metric := "euclidean"
+	metric := Euclidean
 	rows, _ := data.Dims()
 	for i := 0; i < rows; i++ {
 		bmuIdx, err := ClosestVec(metric, data.RawRowView(i), codebook)
@@ -60,8 +60,8 @@ func TopoProduct(codebook, grid *mat.Dense) (float64, error) {
 		return 0.0, fmt.Errorf("Grid and codebook dimension mismatch")
 	}
 	// unit and codebook distance matrices -- no need to check for error here
-	uDistMx, _ := DistanceMx("euclidean", grid)
-	cDistMx, _ := DistanceMx("euclidean", codebook)
+	uDistMx, _ := DistanceMx(Euclidean, grid)
+	cDistMx, _ := DistanceMx(Euclidean, codebook)
 	// tp is the topographic product
 	var tp float64
 	// loop through all neurons
@@ -116,12 +116,12 @@ func TopoError(data, codebook, grid *mat.Dense) (float64, error) {
 		return -1.0, fmt.Errorf("invalid grid supplied: %v", grid)
 	}
 	// unit distance matrix -- no need to check for error
-	uDistMx, _ := DistanceMx("euclidean", grid)
+	uDistMx, _ := DistanceMx(Euclidean, grid)
 	var te float64
 	// iterate through all data samples
 	rows, _ := data.Dims()
 	for i := 0; i < rows; i++ {
-		closest, err := ClosestNVec("euclidean", 2, data.RawRowView(i), codebook)
+		closest, err := ClosestNVec(Euclidean, 2, data.RawRowView(i), codebook)
 		if err != nil {
 			return -1.0, err
 		}

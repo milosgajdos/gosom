@@ -12,9 +12,9 @@ import (
 func TestDistance(t *testing.T) {
 	assert := assert.New(t)
 
-	metric := "euclidean"
+	metric := Euclidean
 	testCases := []struct {
-		metric   string
+		metric   Metric
 		a        []float64
 		b        []float64
 		expected float64
@@ -30,20 +30,20 @@ func TestDistance(t *testing.T) {
 		assert.InDelta(tc.expected, dist, 0.01)
 	}
 
-	// foobar metric returns euclidean distance
+	// unknown metric returns euclidean distance
 	a := []float64{0.0, 0.0}
 	b := []float64{0.0, 1.0}
-	d, err := Distance("foobar", a, b)
+	d, err := Distance(Metric(1000), a, b)
 	assert.NoError(err)
 	assert.InDelta(1.0, d, 0.01)
 	// nil vectors
-	d, err = Distance("euclidean", nil, nil)
+	d, err = Distance(metric, nil, nil)
 	assert.Error(err)
 	assert.Equal(0.0, d)
 	// different vector dimensions
 	a = []float64{0.0, 0.0}
 	b = []float64{1.0}
-	d, err = Distance("euclidean", a, b)
+	d, err = Distance(metric, a, b)
 	assert.Error(err)
 	assert.Equal(0.0, d)
 }
@@ -51,6 +51,7 @@ func TestDistance(t *testing.T) {
 func TestDistanceMx(t *testing.T) {
 	assert := assert.New(t)
 
+	metric := Euclidean
 	one := mat.NewDense(2, 2, []float64{
 		0.0, 0.0,
 		1.0, 0.0,
@@ -62,13 +63,13 @@ func TestDistanceMx(t *testing.T) {
 		1.0, 0.0,
 	})
 
-	oneOut, err := DistanceMx("euclidean", one)
+	oneOut, err := DistanceMx(metric, one)
 
 	assert.NoError(err)
 	assert.True(mat.EqualApprox(oneOutExpected, oneOut, 0.01))
 
 	// test if default distance is computed for unknown matrix
-	oneOut, err = DistanceMx("foobar", one)
+	oneOut, err = DistanceMx(Metric(1000), one)
 
 	assert.NoError(err)
 	assert.True(mat.EqualApprox(oneOutExpected, oneOut, 0.01))
@@ -84,7 +85,7 @@ func TestDistanceMx(t *testing.T) {
 		0.0, 0.0,
 	})
 
-	zeroOut, err := DistanceMx("euclidean", zero)
+	zeroOut, err := DistanceMx(metric, zero)
 
 	assert.NoError(err)
 	assert.True(mat.EqualApprox(zeroOutExpected, zeroOut, 0.01))
@@ -100,12 +101,12 @@ func TestDistanceMx(t *testing.T) {
 		100.0, 0.0,
 	})
 
-	negativeOut, err := DistanceMx("euclidean", negative)
+	negativeOut, err := DistanceMx(metric, negative)
 
 	assert.NoError(err)
 	assert.True(mat.EqualApprox(negativeOutExpected, negativeOut, 0.01))
 
-	nilMatrix, err := DistanceMx("euclidean", nil)
+	nilMatrix, err := DistanceMx(metric, nil)
 
 	assert.Error(err)
 	assert.Nil(nilMatrix)
@@ -114,9 +115,9 @@ func TestDistanceMx(t *testing.T) {
 func TestClosestVec(t *testing.T) {
 	assert := assert.New(t)
 
-	metric := "euclidean"
+	metric := Euclidean
 	testCases := []struct {
-		metric   string
+		metric   Metric
 		v        []float64
 		m        []float64
 		expected int
@@ -160,7 +161,7 @@ func TestClosestVec(t *testing.T) {
 func TestClosestNVec(t *testing.T) {
 	assert := assert.New(t)
 
-	metric := "euclidean"
+	metric := Euclidean
 	// test failure cases
 	v := []float64{}
 	m := new(mat.Dense)

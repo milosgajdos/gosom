@@ -121,9 +121,10 @@ func SaveImage(path string, img image.Image) error {
 		return png.Encode(f, img)
 	}
 
-	return fmt.Errorf("Unsupported image format: %s\n", filepath.Ext(path))
+	return fmt.Errorf("unsupported image format: %s", filepath.Ext(path))
 }
 
+// Image2Data transforms img into mat.Dense
 func Image2Data(img image.Image) *mat.Dense {
 	// get image bounds
 	b := img.Bounds()
@@ -146,6 +147,7 @@ func Image2Data(img image.Image) *mat.Dense {
 	return data
 }
 
+// Data2Image transforms data to image.Image
 func Data2Image(data *mat.Dense, w, h int) image.Image {
 	// create new RGB image
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
