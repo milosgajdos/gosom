@@ -325,7 +325,7 @@ func scale(mx mat.Matrix, inPlace bool) *mat.Dense {
 	}
 	// otherwise allocate new data matrix
 	dataMx := new(mat.Dense)
-	dataMx.Clone(mx)
+	dataMx.CloneFrom(mx)
 	dataMx.Apply(scale, dataMx)
 	return dataMx
 }

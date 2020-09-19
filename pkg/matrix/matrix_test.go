@@ -53,16 +53,6 @@ func TestRowsColsMax(t *testing.T) {
 	max, err = RowsMax(rows, mx)
 	assert.Nil(max)
 	assert.EqualError(err, fmt.Sprintf(errInvMx, mx))
-	// zero elements in matrix
-	data = []float64{}
-	mx = mat.NewDense(0, 0, data)
-	assert.NotNil(mx)
-	max, err = ColsMax(cols, mx)
-	assert.Nil(max)
-	assert.EqualError(err, fmt.Sprintf(errInvColsMx, mx))
-	max, err = RowsMax(rows, mx)
-	assert.Nil(max)
-	assert.EqualError(err, fmt.Sprintf(errInvrowsMx, mx))
 }
 
 func TestColsMin(t *testing.T) {
@@ -101,16 +91,6 @@ func TestColsMin(t *testing.T) {
 	min, err = RowsMin(rows, mx)
 	assert.Nil(min)
 	assert.EqualError(err, fmt.Sprintf(errInvMx, mx))
-	// zero elements in matrix
-	data = []float64{}
-	mx = mat.NewDense(0, 0, data)
-	assert.NotNil(mx)
-	min, err = ColsMin(cols, mx)
-	assert.Nil(min)
-	assert.EqualError(err, fmt.Sprintf(errInvColsMx, mx))
-	min, err = RowsMin(rows, mx)
-	assert.Nil(min)
-	assert.EqualError(err, fmt.Sprintf(errInvrowsMx, mx))
 }
 
 func TestColsMean(t *testing.T) {
