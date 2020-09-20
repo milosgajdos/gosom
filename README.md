@@ -109,7 +109,7 @@ $ ./_build/colors -umatrix umatrix.html -dims 40,40 -radius 500.0 -rdecay exp -l
 
 This program reads in a sample "noisy" image (each pixel has a random pixel value assigned from Uniform distribution `[0,255]`). The training then "organizes" the input values into SOM model (aka codebook) vectors. You can see the results of the training below along with a simple capture of the training process:
 
-<p float="left">
+<p float="center">
 <img src="./examples/colors/testdata/colors.png" alt="Noisy image" width="200">
 <img src="./examples/colors/out.gif" alt="Self-organization" width="200">
 <img src="./examples/colors/som.png" alt="Self-organized color image" width="200">
