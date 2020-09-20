@@ -95,7 +95,7 @@ SOMs are a very good tool to perform data clustering. Examples directory contain
 
 ## Colors example
 
-A classic schoolbook example of this is clustering of colors in arbitrary nosiy images. You can find a simple example program which does just this in the `colors` subdirectory of examples. When you build the program you can run it as follows:
+A classic "schoolbook" example of self-organisation is clustering of colors in arbitrarily "nosiy" images. You can find a simple program which does this in the `colors` subdirectory of `examples`. When you build the program you can run it as follows:
 
 ```
 $ make colors
@@ -107,17 +107,13 @@ $ ./_build/colors -umatrix umatrix.html -dims 40,40 -radius 500.0 -rdecay exp -l
 [ gosom ] Saving U-Matrix to umatrix.html
 ```
 
-This program reads in a sample "noisy" image from the test data directory which looks like this:
+This program reads in a sample "noisy" image (each pixel has a random pixel value assigned from Uniform distribution `[0,255]`). The training then "organizes" the input values into SOM model (aka codebook) vectors. You can see the results of the training below along with a simple capture of the training process:
 
+<p float="left">
 <img src="./examples/colors/testdata/colors.png" alt="Noisy image" width="200">
-
-It will spit out a new image `som.png` which looks like this:
-
-<img src="./examples/colors/som.png" alt="Sorted color image" width="200">
-
-Lastly, it will generate a `u-matrix` which looks like this:
-
-<img src="./examples/colors/umatrix.png" alt="u-matrix" width="200">
+<img src="./examples/colors/out.gif" alt="Self-organization" width="200">
+<img src="./examples/colors/som.png" alt="Self-organized color image" width="200">
+</p>
 
 ## Arbitrary labeled data
 
