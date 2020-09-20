@@ -281,13 +281,17 @@ type batchResult struct {
 // processRow processes data rows and sends tehm down the results channel
 func (m Map) processBatch(res chan<- *batchResult, wg *sync.WaitGroup,
 	bc *batchConfig, unitDist, data *mat.Dense, from, count, iter int) {
-	// allocate codebook vectors and neighbourhoods
-	rows, _ := m.codebook.Dims()
-	vecs := make([][]float64, rows)
-	nghbs := make([]float64, rows)
+	// We pre-allocate a slice for all potential BMU neihbour vectors
+	// NOTE: maxLen is equal to the number of model vectors i.e. gridWidth * gridHeight
+	// Go provides zero-allocation so even if the vecs array is sparse the "empty" items
+	// won't have any effect on the result, but this will give us much better performance!
+	maxLen, _ := unitDist.Dims()
+	vecs := make([][]float64, maxLen)
+	nghbs := make([]float64, maxLen)
+
 	// retrieve Neighbourhood function
 	nFn := bc.tc.NeighbFn
-	// iterate through the whole batch
+
 	for i := from; i < count+from; i++ {
 		row := data.RawRowView(i)
 		// find codebook BMU for this data row
@@ -326,32 +330,35 @@ func (m Map) processBatch(res chan<- *batchResult, wg *sync.WaitGroup,
 func (m *Map) batchTrain(tc *TrainConfig, data *mat.Dense, iters int) error {
 	cbRows, _ := m.codebook.Dims()
 	rows, _ := data.Dims()
+
 	// batchConfig holds training config and number of iterations
 	bc := &batchConfig{
 		tc:    tc,
 		iters: iters,
 	}
+
 	// calculate unit distances
 	unitDist, err := m.UnitDist()
 	if err != nil {
 		return err
 	}
-	// number of worker goroutines
+	r, _ := unitDist.Dims()
+
+	// evenly distribute batches between workers
 	workers := runtime.NumCPU()
-	// evenly distribute batch work between workers
-	workerBatch := rows / workers
-	// train for a number of iterations
+	batchSize := rows / workers
+
 	for i := 0; i < iters; i++ {
 		// reset from index and input count
 		from := 0
-		count := workerBatch
+		count := batchSize
 		// create batch results channel
 		results := make(chan *batchResult, workers*40)
 		wg := &sync.WaitGroup{}
 		// start worker goroutines
 		for j := 0; j < workers; j++ {
 			// from is data matrix row pointer
-			from = j * workerBatch
+			from = j * batchSize
 			// last worker will work through the batch reminder
 			if j == workers-1 {
 				count += rows % workers
@@ -363,14 +370,16 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat.Dense, iters int) error {
 			wg.Add(1)
 			go m.processBatch(results, wg, bc, unitDist, data, from, count, i)
 		}
+
 		// wait for workers to finish and close the result channel
 		go func() {
 			wg.Wait()
 			close(results)
 		}()
+
 		// collect batch results from all workers
-		vecs := make([][]float64, cbRows)
-		nghbs := make([]float64, cbRows)
+		vecs := make([][]float64, r)
+		nghbs := make([]float64, r)
 		for result := range results {
 			for k := 0; k < len(result.vecs); k++ {
 				if result.vecs[k] != nil {
@@ -385,6 +394,7 @@ func (m *Map) batchTrain(tc *TrainConfig, data *mat.Dense, iters int) error {
 				}
 			}
 		}
+
 		// update codebook vectors
 		for k := 0; k < cbRows; k++ {
 			if vecs[k] != nil {
