@@ -175,7 +175,7 @@ func TestClosestNVec(t *testing.T) {
 	v = []float64{1.0}
 	m = nil
 	errString = "invalid matrix: %v"
-	closest, err = ClosestNVec(metric, n, v, m)
+	_, err = ClosestNVec(metric, n, v, m)
 	assert.EqualError(err, fmt.Sprintf(errString, m))
 	// incorrect number of n closest vectors
 	m = new(mat.Dense)
@@ -189,6 +189,7 @@ func TestClosestNVec(t *testing.T) {
 	v, mData := []float64{0.0, 0.0}, []float64{0.0, 1.0, 0.0, 0.1}
 	m = mat.NewDense(2, len(v), mData)
 	closest, err = ClosestNVec(metric, n, v, m)
+	assert.NoError(err)
 	assert.NotNil(closest)
 	assert.Equal(1, closest[0])
 	// find 2 closest vectors

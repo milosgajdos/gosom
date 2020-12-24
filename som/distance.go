@@ -60,7 +60,7 @@ func DistanceMx(m Metric, mat *mat.Dense) (*mat.Dense, error) {
 // ClosestVec returns error if either v or m are nil or if the v dimension is different from
 // the number of m columns. When the ClosestVec fails with error returned index is set to -1.
 func ClosestVec(m Metric, v []float64, mat *mat.Dense) (int, error) {
-	if v == nil || len(v) == 0 {
+	if len(v) == 0 {
 		return -1, fmt.Errorf("invalid vector: %v", v)
 	}
 
@@ -91,7 +91,7 @@ func ClosestVec(m Metric, v []float64, mat *mat.Dense) (int, error) {
 // ClosestNVec fails in the same way as ClosestVec. If n is higher than the number of
 // rows in m, or if it is not a positive integer, it fails with error too.
 func ClosestNVec(m Metric, n int, v []float64, mat *mat.Dense) ([]int, error) {
-	if v == nil || len(v) == 0 {
+	if len(v) == 0 {
 		return nil, fmt.Errorf("invalid vector: %v", v)
 	}
 

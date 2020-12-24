@@ -71,9 +71,8 @@ func newFloat64Heap(cap int, items ...*float64Item) (*float64Heap, error) {
 
 	// pre-allocate heap buffer
 	heapItems := make([]*float64Item, cap)
-	for i, item := range items {
-		heapItems[i] = item
-	}
+	copy(heapItems, items)
+
 	// init the heap
 	h := &float64Heap{
 		items: heapItems,

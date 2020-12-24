@@ -404,10 +404,10 @@ func validateGridCoords(uShape string, dims []int) error {
 	if dims == nil {
 		return fmt.Errorf("invalid dimensions supplied: %v", dims)
 	}
-	// check if the dimensions are postive numbers
+	// check if the dimensions are positive numbers
 	for _, dim := range dims {
 		if dim <= 0 {
-			return fmt.Errorf("Non-Positive dimensions supplied: %v", dims)
+			return fmt.Errorf("non-positive dimensions supplied: %v", dims)
 		}
 	}
 	// map dims can't be longer than 3

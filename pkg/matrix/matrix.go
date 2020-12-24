@@ -83,7 +83,7 @@ func MakeConstant(rows, cols int, val float64) (*mat.Dense, error) {
 }
 
 // AddConst adds a constant value to every element of matrix
-// It modifies the matrix m passed in as a paramter.
+// It modifies the matrix m passed in as a parameter.
 // AddConstant fails with error if empty matrix is supplied
 func AddConst(val float64, m *mat.Dense) (*mat.Dense, error) {
 	if m == nil {

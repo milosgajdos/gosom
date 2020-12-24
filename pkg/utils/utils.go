@@ -11,12 +11,13 @@ import (
 // It returns error if a non-empty string is passed in as a parameter and
 // the values it contains can not be converted to integers.
 func ParseDims(dimString string) ([]int, error) {
-	var intDims []int
 	// if empty string, return empty slice
 	if dimString == "" {
-		intDims = make([]int, 2)
-		return intDims, nil
+		return make([]int, 2), nil
 	}
+
+	// nolint:prealloc
+	var intDims []int
 	// parse non-empty string into int slice
 	strDims := strings.Split(dimString, ",")
 	for _, strDim := range strDims {

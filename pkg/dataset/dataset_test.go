@@ -69,11 +69,11 @@ func TestDataSet(t *testing.T) {
 	assert.True(mat.Equal(scaledMx, ds.Data))
 
 	// unsupported file format
-	ds, err = New("example", "")
+	_, err = New("example", "")
 	assert.Error(err)
 
 	// Nonexistent file
-	ds, err = New(path.Join(".", "nonexistent.csv"), "")
+	_, err = New(path.Join(".", "nonexistent.csv"), "")
 	assert.Error(err)
 }
 

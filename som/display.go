@@ -164,7 +164,9 @@ func UMatrixSVG(codebook *mat.Dense, dims []int, uShape, title string, writer io
 
 	elems = append(elems, svgElem)
 
-	xmlEncoder.Encode(elems)
+	if err := xmlEncoder.Encode(elems); err != nil {
+		return err
+	}
 	xmlEncoder.Flush()
 
 	return nil

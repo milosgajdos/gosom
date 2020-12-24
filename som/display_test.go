@@ -25,7 +25,8 @@ func TestUMatrixSVG(t *testing.T) {
 	title := "Done"
 	writer := bytes.NewBufferString("")
 
-	UMatrixSVG(mUnits, coordDims, uShape, title, writer, make(map[int]int))
+	err := UMatrixSVG(mUnits, coordDims, uShape, title, writer, make(map[int]int))
+	assert.NoError(err)
 
 	assert.Equal(svg, writer.String())
 	// make sure there is at least one fully black element
@@ -52,7 +53,9 @@ func TestUMatrixSVGWithClusters(t *testing.T) {
 		0: 0,
 		1: 1,
 	}
-	UMatrixSVG(mUnits, coordDims, uShape, title, writer, classes)
+
+	err := UMatrixSVG(mUnits, coordDims, uShape, title, writer, classes)
+	assert.NoError(err)
 
 	assert.Equal(svg, writer.String())
 	// make sure there is at least one text element

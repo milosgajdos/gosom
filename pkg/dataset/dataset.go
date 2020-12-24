@@ -190,8 +190,6 @@ func LoadLRN(reader io.Reader) (*mat.Dense, error) {
 				}
 				// allocate data matrix because we know rows and cols now
 				mxData = make([]float64, rows*cols)
-			} else if headerRow == LrnHeaderNames { // col names
-				// discard
 			}
 			headerRow++
 		} else { // data

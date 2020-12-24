@@ -69,7 +69,7 @@ func TestTopoProduct(t *testing.T) {
 	assert.EqualError(err, errString)
 	assert.Equal(0.0, tp)
 	// this should go through without errors
-	tp, err = TopoProduct(qCbook, qGrid)
+	_, err = TopoProduct(qCbook, qGrid)
 	assert.NoError(err)
 }
 
@@ -77,6 +77,8 @@ func TestTopoError(t *testing.T) {
 	assert := assert.New(t)
 
 	qGrid, err := GridCoords("rectangle", []int{1, 3})
+	assert.NoError(err)
+	assert.NotNil(qGrid)
 	// nil data returns error
 	errString := "invalid data supplied: %v"
 	te, err := TopoError(nil, qCbook, qGrid)

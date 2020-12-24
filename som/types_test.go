@@ -13,9 +13,9 @@ func TestNewHeap(t *testing.T) {
 
 	highest := 9.0
 	fItems := []*float64Item{
-		&float64Item{val: highest, index: 2},
-		&float64Item{val: 7.0, index: 4},
-		&float64Item{val: 8.0, index: 0}}
+		{val: highest, index: 2},
+		{val: 7.0, index: 4},
+		{val: 8.0, index: 0}}
 	// can't have negative capacity
 	cap := -4
 	errString := "invalid capacity supplied: %d"
@@ -48,11 +48,11 @@ func TestNewHeap(t *testing.T) {
 	assert.NoError(err)
 	// test float items
 	fItems = []*float64Item{
-		&float64Item{val: 9.0, index: 1},
-		&float64Item{val: 7.0, index: 4},
-		&float64Item{val: 9.0, index: 2},
-		&float64Item{val: 8.0, index: 0},
-		&float64Item{val: 9.0, index: 3}}
+		{val: 9.0, index: 1},
+		{val: 7.0, index: 4},
+		{val: 9.0, index: 2},
+		{val: 8.0, index: 0},
+		{val: 9.0, index: 3}}
 	for _, fItem := range fItems {
 		heap.Push(h, fItem)
 	}

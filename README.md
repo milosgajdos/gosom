@@ -1,9 +1,10 @@
-# gosom
+# gosom: Self-organizing maps in Go
 
+[![Build Status](https://github.com/milosgajdos/gosom/workflows/CI/badge.svg)](https://github.com/milosgajdos/gosom/actions?query=workflow%3ACI)
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/milosgajdos/gosom)
 [![GoDoc](https://godoc.org/github.com/milosgajdos/gosom?status.svg)](https://godoc.org/github.com/milosgajdos/gosom)
-[![License](https://img.shields.io/:license-apache-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Travis CI](https://travis-ci.org/milosgajdos/gosom.svg?branch=master)](https://travis-ci.org/milosgajdos/gosom)
 [![Go Report Card](https://goreportcard.com/badge/milosgajdos/gosom)](https://goreportcard.com/report/github.com/milosgajdos/gosom)
+[![License](https://img.shields.io/:license-apache-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 This project provides an implementation of [Self-Organizing Map](https://en.wikipedia.org/wiki/Self-organizing_map) (SOM) in Go. It implements the two most well known SOM training algorithms: `sequential` and `batch`. The `batch` training is faster than the `sequential` as it can be parallelized, taking advantage of as many cores as your machine provides. However it can be less accurate as it merely provides a resonable approximation of SOM, but still acceptable. The `sequential` algorithm is performed as its name implies, sequentially. Because of its sequential nature it's slower than `batch` training, but more accurate. You can read more about SOM training algorithms [here](http://www.scholarpedia.org/article/Kohonen_network).
 

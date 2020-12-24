@@ -10,11 +10,9 @@ import (
 )
 
 var (
-	errInvMx     = "invalid matrix supplied: %v"
-	errInvColsMx = "invalid number of columns supplied: %v"
-	errInvrowsMx = "invalid number of rows supplied: %v"
-	errExcCols   = "column count exceeds matrix columns: %d"
-	errExcrows   = "row count exceeds matrix rows: %d"
+	errInvMx   = "invalid matrix supplied: %v"
+	errExcCols = "column count exceeds matrix columns: %d"
+	errExcrows = "row count exceeds matrix rows: %d"
 )
 
 func TestRowsColsMax(t *testing.T) {
@@ -159,6 +157,7 @@ func TestMakeConstant(t *testing.T) {
 	constVec := []float64{1.0, 1.0, 1.0, 1.0}
 	constMx := mat.NewDense(2, 2, constVec)
 	mx, err := MakeConstant(2, 2, 1.0)
+	assert.NoError(err)
 	assert.NotNil(mx)
 	assert.True(mat.Equal(constMx, mx))
 	// Can't create new matrix

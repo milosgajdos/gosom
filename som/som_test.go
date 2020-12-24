@@ -161,14 +161,13 @@ func TestMapBmus(t *testing.T) {
 func TestTrain(t *testing.T) {
 	assert := assert.New(t)
 
-	iters := 100
 	// default config should not throw any errors
 	m, err := NewMap(mSom, dataMx)
 	assert.NotNil(m)
 	assert.NoError(err)
 	// incorrect number of iterations
 	errString := "invalid number of iterations: %d"
-	iters = -100
+	iters := -100
 	err = m.Train(tSom, dataMx, iters)
 	assert.EqualError(err, fmt.Sprintf(errString, iters))
 	iters = 100
