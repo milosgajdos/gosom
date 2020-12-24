@@ -20,7 +20,7 @@ Get the source code:
 $ go get -u github.com/milosgajdos/gosom
 ```
 
-**Make sure you've got all the dependencies** (`go get -u` should retrieve them, but this project might use a specific version of `gonum` so make sure you run the following command):
+Get all dependencies:
 
 ```
 $ make dep
