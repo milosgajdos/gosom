@@ -7,5 +7,5 @@ require (
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6 // indirect
 	gonum.org/v1/gonum v0.8.2
-	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
